@@ -1,4 +1,4 @@
-import { ArrowRight, Landmark, ShieldCheck, UsersRound, WalletCards } from "lucide-react";
+import { ArrowRight, Landmark, Lock, Share2, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -7,25 +7,25 @@ import { cn, formatCurrency } from "@/lib/utils";
 
 const phaseHighlights = [
   {
-    title: "Auth dulu, baru pool",
-    description: "Phase 1 fokus pada daftar masuk, daftar akaun, dan sesi yang kekal selepas refresh.",
-    icon: ShieldCheck,
+    title: "Cipta pool dari dashboard",
+    description: "Member boleh buka modal, isi nama pool, kategori, need text, dan target budget terus dari dashboard.",
+    icon: UsersRound,
   },
   {
-    title: "Allowance jelas nampak",
-    description: "Member terus nampak had PayLater individu sebelum masuk ke Phase 2 pool formation.",
-    icon: WalletCards,
+    title: "Jemput melalui kod & link",
+    description: "Setiap pool terus ada invite code, QR demo, dan pautan shareable untuk flow join ahli lain.",
+    icon: Share2,
   },
   {
-    title: "BM-first, kampung-aware",
-    description: "Copy dan struktur ikut register DuitLater: tenang, jelas, dan grounded pada komuniti.",
-    icon: Landmark,
+    title: "Lock combined cap",
+    description: "Initiator boleh lock roster dan bekukan combined cap sebelum masuk ke cadangan barang Phase 3.",
+    icon: Lock,
   },
 ] as const;
 
 const quickStats = [
   { label: "Ahli pool", value: "2-8" },
-  { label: "Fasa ini", value: "Auth + allowance" },
+  { label: "Fasa ini", value: "Pool + invite + lock" },
   { label: "Facilitator", value: "NADI" },
 ] as const;
 
@@ -53,15 +53,14 @@ export function LandingPage() {
         <section className="panel-surface overflow-hidden rounded-[2.25rem]">
           <div className="grid gap-10 px-6 py-8 md:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:px-10 lg:py-10">
             <div className="editorial-copy grid gap-6">
-              <Badge tone="gold">Phase 1 frontend preview</Badge>
+              <Badge tone="gold">Phase 2 frontend preview</Badge>
               <div className="grid gap-4">
                 <h1 className="max-w-4xl text-5xl sm:text-6xl lg:text-7xl">
-                  Allowance PayLater kau, terus nampak lepas sign in.
+                  Cipta pool, jemput ahli, kemudian lock combined cap.
                 </h1>
                 <p className="max-w-2xl text-base text-[color:var(--dl-slate)] sm:text-lg">
-                  DuitLater kumpulkan flow paling penting dulu: daftar akaun, masuk semula, dan
-                  lihat allowance individu bersama konteks kampung. Ini asas sebelum Phase 2 buka
-                  pool, jemput ahli, dan lock combined cap.
+                  DuitLater dah bergerak masuk Phase 2 frontend: member boleh buka pool sendiri,
+                  kongsi invite code, dan tengok cap semasa naik bila ahli lain join sebelum lock.
                 </p>
               </div>
 
@@ -99,33 +98,32 @@ export function LandingPage() {
                   <UsersRound aria-hidden="true" size={22} />
                 </div>
                 <div className="grid gap-2">
-                  <CardTitle className="text-4xl text-white">PayLater Saya</CardTitle>
+                  <CardTitle className="text-4xl text-white">Pool Gedangsa Jahit</CardTitle>
                   <CardDescription className="text-white/78">
-                    Phase 1 member landing selepas session berjaya dipulihkan.
+                    Phase 2 member flow lepas initiator cipta pool dan mula jemput ahli.
                   </CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="grid gap-6 py-6">
                 <div className="rounded-[1.75rem] border border-white/18 bg-black/10 p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70">
-                    Nurul Aisyah · Felda Gedangsa
+                    Nurul Aisyah · Felda Gedangsa · Draft
                   </p>
                   <p className="data-figure mt-3 text-5xl font-semibold tracking-[-0.08em]">
-                    {formatCurrency(30_000)}
+                    {formatCurrency(75_000)}
                   </p>
                   <p className="mt-3 max-w-sm text-sm text-white/78">
-                    Allowance ini dipaparkan besar, jelas, dan kekal selepas page reload.
+                    Combined cap semasa naik bila ahli lain join. Lepas initiator lock, angka ini dibekukan.
                   </p>
                 </div>
 
                 <div className="grid gap-4 rounded-[1.75rem] border border-white/16 bg-white/10 p-5">
                   <div className="flex items-center gap-3 text-white">
                     <Landmark aria-hidden="true" size={18} />
-                    <strong className="text-base font-semibold">Belum ada pool.</strong>
+                    <strong className="text-base font-semibold">Invite code: K6P8T2QW</strong>
                   </div>
                   <p className="text-sm text-white/78">
-                    Cipta atau sertai pool masuk dalam Phase 2. Untuk sekarang, member boleh tengok
-                    allowance peribadi dan identiti kampung dulu.
+                    Ahli lain boleh buka halaman join, sertai pool, dan initiator terus nampak roster ahli di detail page.
                   </p>
                 </div>
               </CardContent>

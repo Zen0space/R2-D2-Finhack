@@ -1,5 +1,11 @@
 import { SignUpPage } from "@/components/duitlater/auth-page";
 
-export default function SignUpRoute() {
-  return <SignUpPage />;
+export default async function SignUpRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+
+  return <SignUpPage nextPath={next ?? null} />;
 }

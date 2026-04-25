@@ -78,6 +78,14 @@ const pageCopy = {
   },
 } as const;
 
+function resolveNextPath(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/dashboard";
+  }
+
+  return value;
+}
+
 function AuthStory({ mode }: { mode: AuthMode }) {
   return (
     <Card className="h-full">
@@ -139,7 +147,7 @@ function AuthStory({ mode }: { mode: AuthMode }) {
   );
 }
 
-function SignInFormCard() {
+function SignInFormCard({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const form = useForm<SignInFormValues>({
@@ -156,7 +164,7 @@ function SignInFormCard() {
     onSuccess: ({ session }) => {
       queryClient.setQueryData(["auth", "session"], session);
       toast.success(pageCopy["sign-in"].toast);
-      startTransition(() => router.push("/dashboard"));
+      startTransition(() => router.push(nextPath));
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Tak dapat masuk sekarang.");
@@ -221,7 +229,7 @@ function SignInFormCard() {
   );
 }
 
-function SignUpFormCard() {
+function SignUpFormCard({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const form = useForm<SignUpFormValues>({
@@ -247,7 +255,7 @@ function SignUpFormCard() {
     onSuccess: ({ session }) => {
       queryClient.setQueryData(["auth", "session"], session);
       toast.success(pageCopy["sign-up"].toast);
-      startTransition(() => router.push("/dashboard"));
+      startTransition(() => router.push(nextPath));
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Tak dapat cipta akaun sekarang.");
@@ -375,18 +383,18 @@ function AuthLayout({ children, mode }: { children: ReactNode; mode: AuthMode })
   );
 }
 
-export function SignInPage() {
+export function SignInPage({ nextPath }: { nextPath: string | null }) {
   return (
     <AuthLayout mode="sign-in">
-      <SignInFormCard />
+      <SignInFormCard nextPath={resolveNextPath(nextPath)} />
     </AuthLayout>
   );
 }
 
-export function SignUpPage() {
+export function SignUpPage({ nextPath }: { nextPath: string | null }) {
   return (
     <AuthLayout mode="sign-up">
-      <SignUpFormCard />
+      <SignUpFormCard nextPath={resolveNextPath(nextPath)} />
     </AuthLayout>
   );
 }
