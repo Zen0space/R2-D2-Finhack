@@ -61,6 +61,11 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            cd /var/www/R2-D2-Finhack/infra
-            docker compose -f docker-compose.dev.yml -p dev pull app
-            docker compose -f docker-compose.dev.yml -p dev up -d app
+            set -e
+            cd /var/www/R2-D2-Finhack
+            git pull origin dev
+            export DUITLATER_DOMAIN=${{ secrets.DUITLATER_DOMAIN }}
+            docker compose -f infra/docker-compose.dev.yml -p dev pull app
+            docker compose -f infra/docker-compose.dev.yml -p dev up -d app
+            echo "✅ Dev backend deployed"
+            docker compose -f infra/docker-compose.dev.yml -p dev logs app --tail 20
