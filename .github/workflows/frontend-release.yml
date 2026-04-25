@@ -8,6 +8,9 @@ on:
       - 'packages/db/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - '.dockerignore'
+      - '.github/workflows/frontend-release.yml'
+  workflow_dispatch:
 
 jobs:
   release:
