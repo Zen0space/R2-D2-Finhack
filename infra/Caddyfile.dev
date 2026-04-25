@@ -1,10 +1,28 @@
 # DuitLater · shared Caddyfile (dev + prod on one server)
 # Subdomains:
+#   <domain>         → prod Next.js frontend :3000
+#   api.<domain>     → prod Hono backend :4000
 #   dev.<domain>     → dev Next.js frontend :3000
 #   api.dev.<domain> → dev Hono backend :4000
-#   api.<domain>     → prod Hono backend :4000
 #
 # Set at deploy time: export DUITLATER_DOMAIN=duitlater.com
+
+{$DUITLATER_DOMAIN:localhost} {
+    encode gzip zstd
+
+    reverse_proxy duitlater-prod-frontend:3000
+
+    header {
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}
 
 dev.{$DUITLATER_DOMAIN:localhost} {
     encode gzip zstd

@@ -69,6 +69,17 @@ services:
       timeout: 5s
       retries: 5
 
+  prod-frontend:
+    image: ghcr.io/zen0space/duitlater-frontend:${PROD_FRONTEND_TAG:-latest}
+    container_name: duitlater-prod-frontend
+    restart: unless-stopped
+    env_file:
+      - ../packages/frontend/.env.prod
+    networks:
+      - web
+    expose:
+      - "3000"
+
   prod-app:
     image: ghcr.io/zen0space/duitlater-backend:${PROD_BACKEND_TAG:-latest}
     container_name: duitlater-prod-app
