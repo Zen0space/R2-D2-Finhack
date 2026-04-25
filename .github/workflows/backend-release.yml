@@ -53,12 +53,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Print pull command
-        run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "Prod image pushed. Pull on VPS:"
-            echo "   docker pull ghcr.io/${{ github.repository_owner }}/duitlater-backend:latest"
-          else
-            echo "Dev image pushed. Pull on VPS:"
-            echo "   docker pull ghcr.io/${{ github.repository_owner }}/duitlater-backend:dev"
-          fi
+      - name: Deploy to server (dev branch only)
+        if: github.ref == 'refs/heads/dev'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /var/www/R2-D2-Finhack/infra
+            docker compose -f docker-compose.dev.yml -p dev pull app
+            docker compose -f docker-compose.dev.yml -p dev up -d app
