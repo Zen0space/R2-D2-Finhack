@@ -1,6 +1,22 @@
 # The Kutu Digitizer World
 
-**A working manifesto · the why beneath the build**
+**A working manifesto · the why beneath the build · TNG FINHACK 2026 · Innovation Track**
+
+---
+
+## The Three Pillars
+
+Kutu Digitizer is a single platform with three pillars on one TNG eWallet rail:
+
+| Pillar | Function | Track angle |
+|---|---|---|
+| **Kutu** | Communal rotating savings — auto-deduct, transparent ledger, visible trust score | Financial Inclusion |
+| **Penasihat** | AI robo-advisor for community-pool investment recommendations, bilingual BM-first | Innovation core |
+| **Pengawal** | AI scam sentinel — warns before TNG payment lands with a fraudster | Security & Fraud |
+
+Each pillar stands alone as a deliverable. Together they form the umbrella story: communal financial life for the unbanked, with a path to growth and a guard against predation.
+
+The product is submitted to the **Innovation track** because the brief — *"a secure, AI-driven eWallet platform that enhances digital payment transparency, automates regulatory compliance, and delivers real-time financial insights for users and regulators"* — describes what the three pillars do together.
 
 ---
 
@@ -45,9 +61,16 @@ Specifically:
 
 4. **Visible trust score.** A member's reputation accumulates with every cycle they honour. After their first complete tabung, they have a portable record. After their fifth, they have a credit story.
 
-5. **AI Penasihat — bilingual financial advisor.** BM-first. Grounded in the user's actual tabung state. Answers questions like "Should I join another tabung?" or "What happens if I miss this month?" — not generic advice, but advice tied to their numbers.
+5. **Penasihat — bilingual AI robo-advisor.** Two modes:
+   - **Tabung-grounded chat** — answers like *"Should I join another tabung?"* or *"What happens if I miss this month?"* tied to the user's actual numbers, not generic advice.
+   - **Investment recommendation engine** — for members who completed at least one tabung cycle, presents three risk-tuned investment options (conservative · balanced · growth) with BM-first reasoning. Recommendations cite real instruments (ASNB, money-market, low-cost ETFs) — no black-box scoring.
 
-6. **Optional investment pool.** Members who consistently complete tabung cycles can opt into a community micro-investment pool. Returns flow back to the participants, not to a faceless fund manager.
+6. **Pengawal — AI scam sentinel.** Bilingual, BM-first. Triggers when the user is about to confirm a TNG payment, especially to a recipient outside their tabung circle. Three checks before money leaves:
+   - **Recipient reputation** (community-fed scam list + new-account caution)
+   - **Pattern match** (scan for common scam phrasing across BM/EN/Mandarin)
+   - **Behavioural anomaly** (amount, time, first-time recipient)
+
+   Output: a warning modal — *"Pengawal jumpa red flag. Yakin nak teruskan?"* — that the user can override but not bypass silently. Vulnerable populations get scammed in their own language; the warning meets them in their own language too.
 
 ---
 
@@ -88,17 +111,17 @@ We stand on this lineage. We bring it to Malaysia.
 
 ## Demo Story (4-Minute Pitch Arc)
 
-**Minute 1 — The Practice**
-*"My grandmother runs a kutu with seven of her neighbours. RM 200 per month for eight months. They have done this for fifteen years without missing a cycle. Bank Negara has never seen a single one of these transactions."*
+**Minute 1 — The Practice + The Gap**
+*"My grandmother runs a kutu with seven of her neighbours. RM 200 a month for eight months. They've done this for fifteen years. Bank Negara has never seen a single one of those transactions. 15% of Malaysian adults remain unbanked — many of them already practising this discipline, invisible to formal systems."*
 
-**Minute 2 — The Gap**
-*"15% of Malaysian adults are unbanked. Many of them practice kutu. Their financial discipline is invisible to formal systems. When they apply for housing or business financing, they appear as ghosts."*
+**Minute 2 — The Three Pillars**
+*"We built Kutu Digitizer on the rails 30 million Malaysians already use — TNG eWallet — with three pillars on one rail: **Kutu** for savings, **Penasihat** for growth, **Pengawal** for protection. One platform. Three problems. One TNG integration."*
 
-**Minute 3 — The Solution**
-*"Kutu Digitizer. TNG eWallet auto-deduct. Transparent ledger. Visible trust score. AI Penasihat in BM. Live demo: create tabung, invite members, contribute, receive payout — under three minutes on stage."*
+**Minute 3 — The Demo**
+*"Live on stage: create a tabung, invite a member, contribute via TNG. Then ask **Penasihat** in BM — 'should I take my payout into ASNB or stay liquid?' — and watch it answer with risk-tuned recommendations grounded in the user's tabung state. Then attempt a transfer to a flagged recipient — **Pengawal** intercepts in BM with concrete red flags. Three pillars demonstrated in three minutes."*
 
 **Minute 4 — The Ask**
-*"Two days, four people, one platform. We're not building a bank. We're surfacing a practice 2.5 billion people already perform — onto rails 30 million Malaysians already use. We need partner support: TNG sandbox access, regulatory guidance, and the next cohort of tabung-holders to test with us."*
+*"Two days, five people, one platform. Three pillars on one rail — savings, growth, protection. We're not building a bank — we're surfacing a practice 2.5 billion people already perform onto rails Malaysians already use, then layering AI advice and AI guardianship on top. We need: TNG sandbox extended access, regulatory introductions, and the next cohort to test with."*
 
 ---
 
@@ -106,7 +129,7 @@ We stand on this lineage. We bring it to Malaysia.
 
 - **Real problem.** Not a synthetic hackathon prompt — a practice the team has lived around their whole lives.
 - **Real users available.** Every Malaysian developer knows multiple kutu participants who would test this.
-- **Sponsor-aligned.** TNG track wants Financial Inclusion. We deliver on the literal definition.
+- **Sponsor-aligned.** TNG track Innovation brief asks for "secure, AI-driven eWallet platform · transparency · regulatory compliance · real-time insights" — three pillars on one rail describes that literally.
 - **Tech-stack proportional.** Stack matches scope — no Kubernetes for a 4-month MVP.
 - **Pitch-ready in 4 minutes.** The story explains itself; the demo proves it.
 - **Cultural authenticity.** No imported ROSCA model — Malaysian kutu, in Malaysian voice, on Malaysian rails.

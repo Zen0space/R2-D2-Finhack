@@ -1,22 +1,32 @@
 # Kutu Digitizer
 
-**TNG FINHACK 2026 · Financial Inclusion Track · 25–26 April 2026**
+**TNG FINHACK 2026 · Innovation Track · 25–26 April 2026**
 
-A digital ROSCA (Rotating Savings and Credit Association) platform for unbanked and underserved Malaysian communities — built on TNG eWallet rails with AI-assisted financial guidance.
+A TNG-powered platform with three pillars on one rail — savings, growth, and protection — for the unbanked and underserved Malaysian community.
 
 ---
 
 ## What this is
 
-Communal savings practice — *kutu* in Malaysian, *arisan* in Indonesia, *ajo* in Yoruba, *susu* in the Caribbean — is ancient and globally practiced, yet still mostly analog and invisible to formal banking. **Kutu Digitizer** brings the practice onto rails the unbanked already use: TNG eWallet.
+Kutu Digitizer is a single eWallet-native platform built around three pillars:
 
-**Core features:**
+| Pillar | What it does | Track alignment |
+|---|---|---|
+| **Kutu** | Communal rotating savings on TNG rails — auto-deduct, transparent ledger, trust score | Financial Inclusion |
+| **Penasihat** | Bilingual AI robo-advisor for community-pool investment recommendations, grounded in tabung state | Innovation (core) |
+| **Pengawal** | AI scam sentinel — detects fraud patterns before users send money to fraudsters | Security & Fraud |
+
+The three pillars share one TNG eWallet rail, one Postgres ledger, one Better Auth identity, and one Claude API for AI features. Submitted to the **Innovation** track per FINHACK rules (single track per team) — chosen because the Innovation brief covers AI-driven transparency, regulatory compliance, and real-time financial insights, which describe the platform across all three pillars.
+
+**Why Innovation track:** Communal savings (Kutu) without growth-path (Penasihat) leaves the unbanked stuck below the formal financial system. Communal savings without fraud protection (Pengawal) exposes vulnerable users to the scams that target them disproportionately. The umbrella is necessary; one feature alone is not the answer.
+
+**Core capabilities across all pillars:**
 - Auto-deduct monthly contributions via TNG eWallet
 - Transparent immutable ledger (every member sees every transaction)
-- Visible trust score per member (reputation, not hidden)
-- Optional community micro-investment pool
-- AI Penasihat — bilingual financial advisor (BM-first), grounded in user's actual tabung state
-- Rotation scheduling with auto-payout to scheduled recipient
+- Visible trust score per member (portable reputation across tabung)
+- AI Penasihat robo-advisor for risk-tuned investment recommendations (BM-first)
+- AI Pengawal scam sentinel that warns before money leaves the user's hand
+- Rotation scheduling with auto-payout to the scheduled recipient
 
 Built by team **R2-D2** (KrackedDevs): Ijam · Mung · Akmal · Kairu · MatNep.
 
@@ -241,15 +251,17 @@ Full inventory + version locks: [TECH-STACK.md](./TECH-STACK.md).
 
 ## BMAD phases
 
-| Phase | Goal | Lead |
-|---|---|---|
-| 0 | Stack activation · `/health` + frontend renders | Mung + Akmal |
-| 1 | Auth + first tabung created | Mung + Akmal |
-| 2 | Member invite + join | Akmal + Mung |
-| 3 | Contribution flow via TNG sandbox | Mung |
-| 4 | Rotation payout (auto or manual) | Mung + Kairu |
-| 5 | AI Penasihat (BM-first chat grounded in tabung) | Akmal + Mung |
-| 6 | Pitch polish (deck · video · rehearsal) | Ijam + MatNep |
+| Phase | Goal | Pillar | Lead |
+|---|---|---|---|
+| 0 | Stack activation · `/health` + frontend renders | foundation | Mung + Akmal |
+| 1 | Auth + first tabung created | Kutu | Mung + Akmal |
+| 2 | Member invite + join | Kutu | Akmal + Mung |
+| 3 | Contribution flow via TNG sandbox | Kutu | Mung |
+| 4 | Rotation payout (auto or manual demo) | Kutu | Mung + Kairu |
+| 5a | Penasihat — robo-advisor for surplus-capital investment recommendations (BM-first) | Innovation | Akmal + Mung |
+| 5b | Pengawal — AI scam sentinel warning before TNG payment | Security | Mung + Akmal |
+| 5c | Penasihat-chat grounded in tabung state (carry-over from original Phase 5) | Kutu × Innovation | Akmal + Mung |
+| 6 | Pitch polish (deck · video · rehearsal) | all | Ijam + MatNep |
 
 Live phase status: [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md) → Phase Status table.
 

@@ -24,18 +24,20 @@ docs/
 
 ---
 
-## Pitch Deck Outline (8 slides · 4 min)
+## Pitch Deck Outline (8 slides · 4 min · Innovation Track)
 
 | # | Slide | Time |
 |---|---|---|
-| 1 | Title — Kutu Digitizer | 10s |
-| 2 | The Practice — kutu around the world | 30s |
-| 3 | The Gap — 15% unbanked, invisible discipline | 40s |
-| 4 | The Solution — three pillars (rails · ledger · trust) | 60s |
-| 5 | Demo — live walkthrough cued | 60s |
-| 6 | Stack — minimal (Node · TS · Postgres · S3 · Better Auth) | 20s |
-| 7 | Lineage — comparable references with valuations | 20s |
-| 8 | Ask — TNG sandbox · regulatory · next cohort | 20s |
+| 1 | Title — Kutu Digitizer · *three pillars on one rail* | 10s |
+| 2 | Practice + Gap — 15% unbanked, kutu invisible to formal system | 30s |
+| 3 | Three pillars — Kutu (savings) · Penasihat (growth) · Pengawal (security) | 50s |
+| 4 | Why Innovation Track — track brief verbatim mapped to pillars | 30s |
+| 5 | Demo — live walkthrough across all three pillars | 70s |
+| 6 | Stack — minimal (Node · TS · Postgres · TNG · Claude) | 20s |
+| 7 | Lineage — billion-dollar precedent per pillar | 20s |
+| 8 | Ask — TNG extended · regulatory · next cohort | 10s |
+
+Total: 240s strict. Cut Pengawal sub-demo first if demo runs long (Slide 5 fallback).
 
 ---
 

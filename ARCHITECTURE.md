@@ -147,6 +147,94 @@ sequenceDiagram
 
 ---
 
+## 4b. Penasihat Robo-Advisor Flow (Innovation pillar)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Member
+    participant F as Frontend
+    participant A as Backend (Hono)
+    participant P as Postgres
+    participant C as Claude API
+
+    Note over U,C: Risk profile (first-time only)
+    U->>F: Open /penasihat/cadang
+    F->>A: GET /api/penasihat/profile
+    A->>P: SELECT user_risk_profiles
+    P-->>A: empty
+    A-->>F: { profileNeeded: true }
+    U->>F: Submit 5-question questionnaire
+    F->>A: POST /api/penasihat/profile
+    A->>P: INSERT user_risk_profiles
+    P-->>A: { riskBand: 'balanced' }
+
+    Note over U,C: Recommendation request
+    U->>F: Click "Cadang"
+    F->>A: POST /api/penasihat/recommend<br/>{ surplusAmount }
+    A->>P: SELECT user.completedCycles, riskProfile
+    P-->>A: context
+    A->>C: prompt: BM-first robo-advisor<br/>+ user context + instrument list
+    C-->>A: 3 structured recommendations<br/>(conservative / balanced / growth)
+    A->>P: INSERT pengawal_recommendations (audit)
+    A-->>F: 3 recommendation cards
+    F-->>U: Render cards (BM reasoning + allocation)
+
+    Note over U,P: Demo stub (no real broker)
+    U->>F: Click "Pilih balanced"
+    F->>A: POST /api/penasihat/execute (stub)
+    A->>P: INSERT recommendation_taken
+    A-->>F: { ok: true, demoStub: true }
+```
+
+---
+
+## 4c. Pengawal Scam Sentinel Flow (Security pillar)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Member
+    participant F as Frontend
+    participant A as Backend (Hono)
+    participant P as Postgres
+    participant C as Claude API
+
+    Note over U,C: User initiates a transfer (TNG-bound)
+    U->>F: Enter recipient + amount + (optional) message
+    F->>F: Show "Confirm transfer?" preview
+    F->>A: POST /api/pengawal/check<br/>{ recipientHandle, amount, messageContext }
+
+    A->>P: SELECT flagged_recipients WHERE handle=?
+    P-->>A: { flagged: true, reasons: [...], reportCount: 5 }
+    A->>P: SELECT user.medianTransfer, recentRecipients
+    P-->>A: behavioural baseline
+
+    A->>C: prompt: scam-pattern detector<br/>+ message context (BM/EN/Mandarin)
+    C-->>A: { patternMatches: ['investment guarantee', ...] }
+
+    A->>A: Combine signals → riskScore (0-100)
+    A->>P: INSERT pengawal_checks (audit)
+
+    alt riskScore >= 60
+        A-->>F: { recommendation: 'warn', flags: [...] }
+        F-->>U: Render Pengawal warning modal (BM-first)
+        U->>F: Click "Batal" OR "Teruskan, aku faham risiko"
+        alt user chooses Batal
+            F->>F: Cancel transfer · no TNG call
+        else user overrides
+            F->>A: POST /api/pengawal/override (audit)
+            A->>P: INSERT pengawal_overrides
+            F->>A: Continue with TNG transfer flow
+        end
+    else low risk
+        A-->>F: { recommendation: 'allow' }
+        F->>A: Continue with TNG transfer flow
+    end
+```
+
+---
+
 ## 5. S3 Upload Flow (Presigned URL)
 
 ```mermaid
@@ -292,6 +380,64 @@ erDiagram
         timestamp paid_at
     }
 ```
+
+### Phase 5 additional tables (Innovation + Security pillars)
+
+```mermaid
+erDiagram
+    USERS ||--o| USER_RISK_PROFILES : "has one"
+    USERS ||--o{ PENASIHAT_RECOMMENDATIONS : "received"
+    USERS ||--o{ PENGAWAL_CHECKS : "ran"
+    USERS ||--o{ PENGAWAL_OVERRIDES : "overrode"
+    FLAGGED_RECIPIENTS ||--o{ PENGAWAL_CHECKS : "matched in"
+
+    USER_RISK_PROFILES {
+        uuid user_id PK_FK
+        string risk_band
+        json questionnaire_answers
+        timestamp updated_at
+    }
+
+    PENASIHAT_RECOMMENDATIONS {
+        uuid id PK
+        uuid user_id FK
+        int surplus_amount_cents
+        json recommendations
+        timestamp created_at
+    }
+
+    FLAGGED_RECIPIENTS {
+        uuid id PK
+        string handle UK
+        string flag_reason
+        int report_count
+        timestamp first_flagged_at
+    }
+
+    PENGAWAL_CHECKS {
+        uuid id PK
+        uuid sender_user_id FK
+        string recipient_handle FK
+        int amount_cents
+        json signals
+        int risk_score
+        string recommendation
+        timestamp checked_at
+    }
+
+    PENGAWAL_OVERRIDES {
+        uuid id PK
+        uuid check_id FK
+        uuid user_id FK
+        timestamp overridden_at
+    }
+```
+
+Notes:
+
+- `flagged_recipients` is seeded for demo (one known-bad handle for the on-stage Pengawal trigger). In production, the table is populated by community reports + scam list integrations.
+- `pengawal_checks` is append-only audit. Every check leaves a row whether or not the user overrode the warning — regulator-friendly trail.
+- `penasihat_recommendations.recommendations` is JSON for demo speed; in production it would normalize to a child table.
 
 ---
 

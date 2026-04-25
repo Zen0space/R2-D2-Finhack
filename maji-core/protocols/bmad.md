@@ -4,19 +4,23 @@
 
 ---
 
-## The seven phases
+## The phases
 
 Phases are defined in [DEVELOPMENT-PLAN.md](../../DEVELOPMENT-PLAN.md) at the repo root. maji-core treats the **Phase Status table** in that file as the live phase registry.
 
-| Phase | Goal | Testable outcome |
-|---|---|---|
-| 0 — Stack Activation | Empty repos to "hello world" hitting the stack | `curl /health` returns `{"ok":true}` AND frontend renders at `:3000` |
-| 1 — Auth + First Tabung | Signed-in user creates a tabung and sees it persisted | Register → create tabung → reload → tabung still there |
-| 2 — Member Invite + Join | Creator invites, invitee joins, roster appears | Generate invite code → second account accepts → roster shows two |
-| 3 — Contribution Flow | Member contributes via TNG sandbox; ledger reflects | Contribute → sandbox returns → ledger green + trust +1 |
-| 4 — Rotation Payout | Cycle completes; scheduled recipient receives payout | All paid → trigger rotation → correct recipient receives |
-| 5 — AI Penasihat | BM chat grounded in tabung state | Ask BM question → streamed BM reply citing real data |
-| 6 — Pitch Polish | Demo + deck + rehearsal | Live URL + 4-min demo + deck + video + submission filed |
+The product is submitted to the **Innovation track** (TNG FINHACK 2026) with three pillars under the Innovation umbrella: **Kutu** (savings · Financial Inclusion-aligned), **Penasihat** (AI robo-advisor · Innovation core), and **Pengawal** (AI scam sentinel · Security & Fraud-aligned). Phase 5 splits into 5a / 5b / 5c — one sub-phase per pillar feature.
+
+| Phase | Pillar | Goal | Testable outcome |
+|---|---|---|---|
+| 0 — Stack Activation | foundation | Empty repos to "hello world" hitting the stack | `curl /health` returns `{"ok":true}` AND frontend renders at `:3000` |
+| 1 — Auth + First Tabung | Kutu | Signed-in user creates a tabung and sees it persisted | Register → create tabung → reload → tabung still there |
+| 2 — Member Invite + Join | Kutu | Creator invites, invitee joins, roster appears | Generate invite code → second account accepts → roster shows two |
+| 3 — Contribution Flow | Kutu | Member contributes via TNG sandbox; ledger reflects | Contribute → sandbox returns → ledger green + trust +1 |
+| 4 — Rotation Payout | Kutu | Cycle completes; scheduled recipient receives payout | All paid → trigger rotation → correct recipient receives |
+| 5a — Penasihat Chat | Innovation | BM chat grounded in tabung state | Ask BM question → streamed BM reply citing real tabung data |
+| 5b — Penasihat Robo-Advisor | Innovation | Risk-tuned investment recommendations · BM-first reasoning | Complete questionnaire → receive 3 recommendations citing instruments + allocation% + BM reasoning |
+| 5c — Pengawal Scam Sentinel | Security | AI scam pattern detection · BM-first warning · community-fed reputation | Attempt transfer to seeded flagged recipient → Pengawal modal in BM with concrete red flags → user override logged |
+| 6 — Pitch Polish | all | Demo + deck + rehearsal | Live URL + 4-min demo across 3 pillars + deck + video + submission filed |
 
 ---
 
@@ -77,7 +81,9 @@ maji-core detects phase state by checking for expected artifacts:
 | 2 | `backend/src/routes/members.ts` + invite code generator + `/join/:code` page |
 | 3 | `backend/src/routes/contributions.ts` + `backend/src/webhooks/tng.ts` + ledger UI |
 | 4 | `backend/src/services/rotation-engine.ts` + `rotations` + `payouts` tables |
-| 5 | `backend/src/routes/penasihat.ts` + `/penasihat` page + streaming reply |
+| 5a | `backend/src/routes/penasihat/chat.ts` + `/penasihat` page + streaming reply |
+| 5b | `backend/src/routes/penasihat/recommend.ts` + `user_risk_profiles` table + `/penasihat/cadang` page + 3-card UI |
+| 5c | `backend/src/routes/pengawal/check.ts` + `flagged_recipients` + `pengawal_checks` tables + warning modal in transfer flow |
 | 6 | `docs/pitch-deck.pdf` + `docs/demo-video.mp4` + deployed URL |
 
 A phase is only ✅ when (a) its artifacts exist and (b) its testable outcome has been verified.

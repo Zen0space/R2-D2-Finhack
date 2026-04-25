@@ -129,23 +129,96 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 ---
 
-## Phase 5 — AI Penasihat
+## Phase 5 — Innovation + Security pillars (split into 5a / 5b / 5c)
 
-**Goal:** BM-first chat grounded in user's tabung state.
+This is the heaviest phase — three sub-features that together prove the Innovation umbrella pitch. Owners are paired across sub-phases. Cut-line awareness: if 5a ships clean, prioritise 5b stub before chasing full 5c polish.
+
+---
+
+### Phase 5a — Penasihat Chat (BM-grounded conversational mode)
+
+**Goal:** Bilingual BM-first chat grounded in the user's actual tabung state.
 
 **Backend**
 - Route: `POST /api/penasihat/chat` — receives message, fetches user's tabung context, calls Claude API with system prompt + context, streams response back via SSE
-- System prompt: "You are Penasihat, a bilingual financial advisor. Default BM. Use the user's tabung state below. Cite specific numbers. Never recommend leaving a tabung mid-cycle."
+- System prompt: *"You are Penasihat, a bilingual financial advisor. Default BM. Use the user's tabung state below. Cite specific numbers. Never recommend leaving a tabung mid-cycle."*
 
 **Frontend**
 - `/penasihat` page with chat UI (shadcn `Dialog` or full-page)
-- Streaming display via TanStack Query `useStream` or fetch + ReadableStream
-- Quick-prompt chips: "Patut ke aku join tabung lagi?" · "Apa jadi kalau aku miss bulan ni?" · "Bila next payout aku?"
+- Streaming display via fetch + ReadableStream
+- Quick-prompt chips: *"Patut ke aku join tabung lagi?"* · *"Apa jadi kalau aku miss bulan ni?"* · *"Bila next payout aku?"*
 
-**Testable outcome:**
-> Open Penasihat · type "Bila next payout aku?" · receive streamed BM reply citing actual rotation date from user's tabung.
+**Testable outcome (5a):**
+> Open `/penasihat` · type *"Bila next payout aku?"* · receive streamed BM reply citing the actual rotation date from the user's tabung.
 
-**Time estimate:** 2-3 hours (Sunday 13:00 → 16:00)
+**Time estimate:** 2.5–3 hours
+
+---
+
+### Phase 5b — Penasihat Robo-Advisor (Innovation pillar)
+
+**Goal:** Risk-tuned investment recommendations for surplus capital, BM-first, grounded in completed-cycle history.
+
+**Backend**
+- Route: `POST /api/penasihat/recommend` — accepts `{userId, riskProfile, surplusAmount}` → returns three recommendations (conservative · balanced · growth) with BM-first reasoning
+- Hardcoded portfolio options for demo (ASNB · money-market · low-cost ETF mix · ASN equity)
+- Claude API call with structured output: `{instrument, allocation%, reasoning_bm, reasoning_en, expected_return_pct, risk_band}`
+- Risk profile derived from a 5-question questionnaire stored in `user_risk_profiles` table
+
+**Frontend**
+- `/penasihat/cadang` page (or modal in dashboard)
+- Risk profile questionnaire (5 short questions · radio + slider) on first use
+- Recommendation cards (3 across, shadcn `Card`) — each showing instrument, allocation, BM reasoning, expected return, risk band
+- "Cadang" button per card — demo stub, logs the recommendation, no real broker integration
+
+**Testable outcome (5b):**
+> Member with at least one completed cycle opens *Cadang* · completes risk questionnaire · receives three recommendation cards in BM with cited instruments + allocation% + expected return · clicks one to log the demo stub.
+
+**Time estimate:** 3.5–4 hours
+
+---
+
+### Phase 5c — Pengawal Scam Sentinel (Security pillar)
+
+**Goal:** AI scam sentinel that warns the user before a TNG payment to a flagged or anomalous recipient is confirmed.
+
+**Backend**
+- Route: `POST /api/pengawal/check` — accepts `{senderUserId, recipientHandle, amount, messageContext}` → returns `{riskScore: 0–100, flags: string[], recommendation: 'allow' | 'warn' | 'block'}`
+- Three-stage check:
+  1. **Recipient reputation** — query a community-fed `flagged_recipients` table (seeded for demo)
+  2. **Pattern match** — Claude API call with system prompt that scans message context for known scam phrasing in BM, EN, Mandarin (urgent help · investment guarantee · authority impersonation · romance bait · lottery winner)
+  3. **Behavioural anomaly** — amount > 3× user median · time in unusual band · first-time recipient outside tabung circle
+- New tables: `flagged_recipients` (community-fed seed), `pengawal_checks` (audit log)
+
+**Frontend**
+- Pengawal warning modal — shadcn `Dialog`, BM-first
+- Triggered in:
+  1. Free-form transfer surface (new — minimal UI for demo, no full transfer feature)
+  2. Optional: when contributing to a tabung that includes a member with a flagged history (demo only)
+- Modal shows risk score, flags as bullet points, two buttons: *"Batal"* (default focused) and *"Teruskan, aku faham risiko"*
+- An overridden warning logs to `pengawal_checks` for audit
+
+**Testable outcome (5c):**
+> User attempts to transfer RM 800 to a seeded flagged recipient · Pengawal modal appears in BM with concrete red flags · user can override but the override is logged.
+
+**Time estimate:** 3.5–4 hours
+
+---
+
+### Phase 5 totals
+
+- **Combined estimate:** ~10–11 hours (5a + 5b + 5c)
+- **Hard requirement:** 5a (Penasihat chat) — without it, the AI brand has no anchor
+- **Pitch requirement:** 5b (robo-advisor) + 5c (Pengawal) — without these, the Innovation umbrella is a single-pillar pitch
+- **Order to ship:** 5a → 5c → 5b. Pengawal demo lands before Robo-Advisor because Pengawal has fewer dependencies (no questionnaire flow) and pitch slide 5 sequences Penasihat-chat → Penasihat-robo → Pengawal anyway.
+
+**Cut-lines for Phase 5:**
+
+If Phase 4 cut to manual button → Phase 5 has full Sunday morning + early afternoon → ship all three.
+
+If Phase 4 ate Sunday morning → ship 5a + 5c only. 5b becomes "demoed in repo, not on stage". Pitch deck slide 5 grid drops Robo-Advisor screenshot to 5×1 layout.
+
+If Phase 5a + 5c stable but 5b not started by Sunday 14:00 → cut 5b entirely. Pitch reframes Innovation pillar around Penasihat-chat as the AI-driven advisor (still valid Innovation framing, narrower scope).
 
 ---
 
@@ -207,7 +280,9 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 | 2 — Member Invite + Join | ⏳ Pending | — | — | — |
 | 3 — Contribution Flow | ⏳ Pending | — | — | — |
 | 4 — Rotation Payout | ⏳ Pending | — | — | — |
-| 5 — AI Penasihat | ⏳ Pending | — | — | — |
+| 5a — Penasihat Chat | ⏳ Pending | — | — | — |
+| 5b — Penasihat Robo-Advisor | ⏳ Pending | — | — | — |
+| 5c — Pengawal Scam Sentinel | ⏳ Pending | — | — | — |
 | 6 — Pitch Polish | ⏳ Pending | — | — | — |
 
 Phase 0 pre-scaffold details live in [QUICKSTART.md](./QUICKSTART.md). Team runs `npm install` in both repos + `docker compose -f docker-compose.dev.yml up -d` to reach the testable outcome.

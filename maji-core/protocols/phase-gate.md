@@ -41,8 +41,10 @@ If REFUSE, name the specific thing still pending.
 | 2 | Creator generates invite code · copies link · incognito browser registers second account · accepts invite · creator's view shows two members |
 | 3 | Member clicks "Contribute" · TNG sandbox flow completes · webhook fires · ledger entry appears green · trust score +1 · reload persists |
 | 4 | All members contribute for cycle 1 · admin triggers rotation · scheduled recipient sees payout · timeline updates · cycle 2 begins |
-| 5 | Open `/penasihat` · type "bila next payout aku?" in BM · receive streamed BM reply citing real rotation date from user's tabung |
-| 6 | Live URL accessible from any laptop · 4-min demo runs without breakage · deck exported to PDF · demo video uploaded · FINHACK portal submission complete |
+| 5a | Open `/penasihat` · type "bila next payout aku?" in BM · receive streamed BM reply citing real rotation date from user's tabung |
+| 5b | Member with at least one completed cycle opens `/penasihat/cadang` · completes 5-question risk questionnaire · receives 3 recommendation cards (conservative · balanced · growth) in BM citing real instruments + allocation% + expected return · clicks one to log demo stub |
+| 5c | User attempts transfer of RM 800 to a seeded flagged recipient · Pengawal modal appears in BM with concrete red flags · user can choose Batal (cancel) or Teruskan (override · logged to audit) |
+| 6 | Live URL accessible from any laptop · 4-min demo runs across all 3 pillars without breakage · deck exported to PDF · demo video uploaded · FINHACK portal submission complete |
 
 If a phase wants to claim ✅ but its testable outcome line above does NOT pass, the gate refuses.
 
@@ -60,7 +62,9 @@ If a phase wants to claim ✅ but its testable outcome line above does NOT pass,
 | 2 | Akmal + Mung | Kairu |
 | 3 | Mung | Akmal |
 | 4 | Mung + Kairu | Ijam |
-| 5 | Akmal + Mung | Ijam |
+| 5a | Akmal + Mung | Ijam |
+| 5b | Mung + Akmal | Ijam |
+| 5c | Mung + Akmal | Kairu |
 | 6 | Ijam + MatNep | Kairu |
 
 The verifier runs the testable outcome on their own machine. If it works, they mark the phase ✅. If it does not work, they log the specific failure in `team-ledger.md` and the phase stays 🟡.
