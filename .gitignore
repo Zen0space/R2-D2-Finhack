@@ -15,6 +15,7 @@ out/
 .nuxt/
 .output/
 .turbo/
+repo-reference/
 
 # Serwist generated service workers
 **/public/sw*
