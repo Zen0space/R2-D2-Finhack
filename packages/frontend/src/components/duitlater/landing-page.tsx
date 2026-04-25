@@ -38,81 +38,69 @@ export function LandingPage() {
   return (
     <main className="zine-paper min-h-screen pb-24">
       {/* ─── HERO — slide 1 DNA ──────────────────────────────────────── */}
-      <ZineSection color="brick" className="px-4 pb-20 pt-10 md:pt-14">
+      <ZineSection color="brick" className="px-4 pb-24 pt-16 md:pb-28 md:pt-24">
         <div className="page-shell relative">
           <ScribbleCircle
             color="paper"
-            size={420}
+            size={520}
             variant="loop"
-            className="left-[15%] top-8 opacity-30"
+            className="left-1/2 top-1/2 -translate-x-[55%] -translate-y-[55%] opacity-20"
           />
           <ScribbleCircle
             color="paper"
-            size={520}
+            size={420}
             variant="double"
-            className="right-[10%] top-20 opacity-25"
+            className="left-1/2 top-1/2 -translate-x-[40%] -translate-y-[35%] opacity-15"
           />
 
-          <header className="relative z-10 flex items-center justify-between gap-4">
-            <Logo width={200} priority />
-            <div className="zine-display rounded-sm border-2 border-[var(--dl-zine-paper)] px-3 py-1.5 text-sm tracking-wide text-[var(--dl-zine-paper)] md:text-base">
+          <div className="relative z-10 mx-auto max-w-3xl text-center">
+            <span
+              className="zine-display inline-block border-2 border-[var(--dl-zine-paper)] px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-[var(--dl-zine-paper)] md:text-xs"
+              style={{ boxShadow: "3px 3px 0 var(--dl-zine-brick-dark)" }}
+            >
               TNG FINHACK 2026 · Financial Inclusion
-            </div>
-          </header>
+            </span>
 
-          <div className="relative z-10 mt-12">
-            <div className="mx-auto max-w-3xl text-center">
-              <BrushHeadline
-                color="cream"
-                size="3xl"
-                rotate={-3}
-                as="h1"
-                className="block leading-[0.85]"
+            <h1 className="mt-8 zine-display text-[var(--dl-zine-paper)] text-5xl leading-[0.9] tracking-tight md:text-7xl lg:text-8xl">
+              Sendiri tak mampu,
+            </h1>
+            <BrushHeadline
+              color="cream"
+              size="2xl"
+              rotate={-2}
+              className="mt-4 block leading-[0.85] md:mt-6"
+            >
+              ramai-ramai boleh!?
+            </BrushHeadline>
+
+            <p className="mx-auto mt-10 max-w-xl text-base text-[var(--dl-zine-paper)] opacity-90 md:text-lg">
+              Pool kelompok B40 · combine TNG PayLater · AI Penasihat picks from MyKasih ·
+              kampung trust score grows. Built on real Malaysian rails — TNG · NADI · MyKasih.
+            </p>
+
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/sign-up"
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "zine-display !bg-[var(--dl-zine-paper)] !text-[var(--dl-zine-brick)] hover:!bg-[var(--dl-zine-paper-warm)]",
+                )}
+                style={{ boxShadow: "5px 5px 0 var(--dl-zine-brick-dark)" }}
               >
-                Sendiri tak mampu,
-              </BrushHeadline>
-              <BrushHeadline
-                color="cream"
-                size="3xl"
-                rotate={2}
-                className="mt-3 block leading-[0.85]"
+                Mula pool sekarang
+              </Link>
+              <Link
+                href="/sign-in"
+                className={cn(
+                  buttonVariants({ size: "lg", variant: "outline" }),
+                  "zine-display !border-[var(--dl-zine-paper)] !text-[var(--dl-zine-paper)] hover:!bg-[rgba(245,240,220,0.12)]",
+                )}
               >
-                ramai-ramai boleh!?
-              </BrushHeadline>
-
-              <p className="mx-auto mt-8 max-w-xl text-base text-[var(--dl-zine-paper)] opacity-90 md:text-lg">
-                Pool kelompok B40 · combine TNG PayLater · AI Penasihat picks from MyKasih ·
-                kampung trust score grows. Built on real Malaysian rails — TNG · NADI · MyKasih.
-              </p>
-
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-                <Link
-                  href="/sign-up"
-                  className={cn(
-                    buttonVariants({ size: "lg" }),
-                    "zine-display !bg-[var(--dl-zine-paper)] !text-[var(--dl-zine-brick)] hover:!bg-[var(--dl-zine-paper-warm)]",
-                  )}
-                  style={{ boxShadow: "5px 5px 0 var(--dl-zine-brick-dark)" }}
-                >
-                  Mula pool sekarang
-                </Link>
-                <Link
-                  href="/sign-in"
-                  className={cn(
-                    buttonVariants({ size: "lg", variant: "outline" }),
-                    "zine-display !border-[var(--dl-zine-paper)] !text-[var(--dl-zine-paper)] hover:!bg-[rgba(245,240,220,0.12)]",
-                  )}
-                >
-                  Daftar masuk
-                </Link>
-                <InstallAppButton />
-              </div>
+                Daftar masuk
+              </Link>
+              <InstallAppButton />
             </div>
           </div>
-
-          <p className="relative z-10 mt-12 text-center text-xs uppercase tracking-[0.3em] text-[var(--dl-zine-paper)] opacity-70">
-            Team R2-D2 · Ijam · Moon · Akmal · Kairu · MatNep
-          </p>
         </div>
       </ZineSection>
 
