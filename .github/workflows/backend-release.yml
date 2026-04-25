@@ -67,5 +67,8 @@ jobs:
             export DUITLATER_DOMAIN=${{ secrets.DUITLATER_DOMAIN }}
             docker compose -f infra/docker-compose.dev.yml -p dev pull app
             docker compose -f infra/docker-compose.dev.yml -p dev up -d app
-            echo "✅ Dev backend deployed"
+            echo "⏳ Waiting for app to be healthy..."
+            sleep 5
+            docker exec duitlater-dev-app npx prisma migrate deploy
+            echo "✅ Dev backend deployed + migrations applied"
             docker compose -f infra/docker-compose.dev.yml -p dev logs app --tail 20
