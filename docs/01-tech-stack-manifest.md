@@ -1,10 +1,19 @@
-# Pusat Tabung — Complete Tech Stack Manifest
+# DuitLater — Complete Tech Stack Manifest
 
-**Quest:** TNG FINHACK 2026 · Financial Inclusion · Kutu Digitizer
+**Quest:** TNG FINHACK 2026 · Financial Inclusion · DuitLater Pool Investment
+**Domain:** duitlater.com
 **Duration:** 48 hours (25-26 April 2026)
 **Deploy target:** Single EC2 instance (t3.medium · ap-southeast-1)
 **Sponsor credits:** AWS · Alibaba Cloud
-**Last updated:** Imperial Day 499 (2026-04-25) · pnpm-workspace + Prisma + PWA-first revision
+**Last updated:** Imperial Day 499 (2026-04-25) · DuitLater pool-investment pivot · pnpm-workspace + Prisma + PWA-first revision
+
+---
+
+## Section 0.0 — Product One-Liner
+
+**DuitLater** is a multi-user pool investment vehicle. One Pool = up to 6 members, each contributing equal principal. The pool earns a fixed dividend rate (4% or 6%) over a defined tenure; at *tempo matang* (maturity) the dividend is split equally across members on top of returned principal.
+
+**Worked example:** 6 members × RM10,000 = RM60,000 pool · 4% rate · maturity in 6 months → dividend pool = RM2,400 · per-member share = RM400 → each member receives RM10,400 at maturity.
 
 ---
 
@@ -189,10 +198,10 @@ This gives one source of truth for: Prisma schema → generated client (used by 
 
 | Package | Version | Role |
 |---|---|---|
-| `node-cron` | ^3.0 | Monthly rotation triggers (core Kutu feature) |
-| `date-fns` | ^4.1 | Date arithmetic (v4 — built-in TZ support) |
-| `nanoid` | ^5.0 | Short secure IDs + invite codes (`KT-A1B2C3`) |
-| `dinero.js` (optional) | ^2.0 | Money math — or stick to integer cents approach |
+| `node-cron` | ^3.0 | Maturity payout triggers (core DuitLater feature) |
+| `date-fns` | ^4.1 | Date arithmetic (v4 — built-in TZ support) — maturity countdowns, tenure math |
+| `nanoid` | ^5.0 | Short secure IDs + invite codes (`DL-A1B2C3`) |
+| `dinero.js` (optional) | ^2.0 | Money math — or stick to integer cents approach (recommended for principal/dividend exactness) |
 
 ### 1.8 Logging & Observability
 
@@ -307,7 +316,7 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 
 | Package | Version | Role |
 |---|---|---|
-| `recharts` | ^2.15 | Charts (ledger trends, trust-score history, rotation timeline) |
+| `recharts` | ^2.15 | Charts (pool growth projection, dividend history, maturity-countdown timeline) |
 | `motion` | ^11.15 | Micro-interactions (rebrand of `framer-motion`; same API) |
 | `sonner` | ^1.7 | Toast notifications (shadcn-compatible) |
 
@@ -315,8 +324,8 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 
 | Package | Version | Role |
 |---|---|---|
-| `qrcode` | ^1.5 | Server-side QR generation (invite PDFs etc) |
-| `react-qr-code` | ^2.0 | Client-side QR display (invite screen) |
+| `qrcode` | ^1.5 | Server-side QR generation (pool invite PDFs etc) |
+| `react-qr-code` | ^2.0 | Client-side QR display (pool invite screen) |
 
 ### 2.9 Utilities
 
@@ -327,7 +336,7 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 
 ### 2.10 PWA — **Primary deliverable** (not optional)
 
-Kutu Digitizer ships **as a PWA first**. The pitch story is "install on phone, run offline-tolerant, push install prompt during demo." This isn't a late add-on — it's a Day 1 scaffolding step in `packages/frontend`.
+DuitLater ships **as a PWA first**. The pitch story is "install on phone, run offline-tolerant, push install prompt during demo." This isn't a late add-on — it's a Day 1 scaffolding step in `packages/frontend`.
 
 | Package | Version | Role |
 |---|---|---|
@@ -352,17 +361,17 @@ Kutu Digitizer ships **as a PWA first**. The pitch story is "install on phone, r
 |---|---|---|
 | `/_next/static/*` | CacheFirst | Build-versioned, immutable |
 | `/api/auth/*` | NetworkOnly | Never cache auth |
-| `/api/tabung/*` | NetworkFirst (5s timeout → cache) | Show stale ledger if offline |
+| `/api/pools/*` | NetworkFirst (5s timeout → cache) | Show stale pool data if offline |
 | `/api/penasihat/chat` | NetworkOnly | LLM responses must be fresh |
 | Pages (`document` requests) | NetworkFirst with offline fallback | Graceful degradation |
 | `/icons/*`, fonts | CacheFirst | Static assets |
 
 **Install prompt UX:**
 - Capture `beforeinstallprompt` event in a client component, stash to zustand
-- Surface custom "Pasang Kutu" button after first successful tabung action (intent signal)
+- Surface custom "Pasang DuitLater" button after first successful pool action (creating/joining a pool — intent signal)
 - iOS doesn't fire `beforeinstallprompt` — show "Add to Home Screen" instructions in a `<Sheet>` triggered by user-agent sniff
 
-**Demo script:** judge clicks install button → app opens standalone → kill wifi → app still loads cached tabung → reconnect → ledger syncs. Three-beat narrative.
+**Demo script:** judge clicks install button → app opens standalone → kill wifi → app still loads cached pool dashboard with maturity countdown → reconnect → balances + member list sync. Three-beat narrative.
 
 ### 2.11 Dev Tooling (Frontend)
 
@@ -405,14 +414,15 @@ Kutu Digitizer ships **as a PWA first**. The pitch story is "install on phone, r
 |---|---|
 | Registrar | Namecheap / Porkbun / Cloudflare Registrar |
 | Budget | RM 40-60/year |
-| Record | `kutu.yourdomain.com` A → Elastic IP |
+| Domain | `duitlater.com` (apex) — `www.duitlater.com` redirects to apex |
+| Record | `duitlater.com` A → Elastic IP |
 | SSL | Let's Encrypt via Caddy (automatic) |
 
 ### 3.5 AWS Services (Sponsor Credit)
 
 | Service | Role |
 |---|---|
-| S3 | `kutu-uploads` bucket · presigned-URL uploads |
+| S3 | `duitlater-uploads` bucket · presigned-URL uploads (KYC docs, pool agreement PDFs, profile avatars) |
 | IAM | Service-user credentials for app container |
 | CloudWatch (optional) | Log aggregation + basic monitoring |
 | SES (optional) | Transactional email (account verification) |
@@ -483,7 +493,7 @@ packages/db/prisma/schema.prisma  ──┐
               ▼                                           ▼
 packages/backend (Hono routes,             packages/frontend (RHF + RQ,
  Prisma queries, zod request validation)    zod inferred types for forms)
-  import { prisma, schemas } from "db"       import { schemas, type Tabung } from "db"
+  import { prisma, schemas } from "db"       import { schemas, type Pool } from "db"
 ```
 
 **`packages/db/prisma/schema.prisma` (excerpt):**
@@ -556,26 +566,145 @@ Better Auth needs these models in `schema.prisma`:
 
 Backend endpoint generates presigned URL → frontend uploads directly to S3 → backend confirms on success. No file bytes ever pass through Node server.
 
-### 7.4 Cron trigger pattern (monthly rotations)
+### 7.4 DuitLater pool domain — schema, lifecycle, payout math
+
+#### Lifecycle
+
+```
+DRAFT ──► FUNDING ──► LOCKED ──► MATURED ──► PAID_OUT
+  │          │           │           │            │
+creator   inviting    full or     maturityDate   distributions
+drafts    members     manually    reached, cron  settled to all
+pool      (1..6)      closed      computes share members
+config                principal
+                      committed
+```
+
+| Status | Trigger | Mutations allowed |
+|---|---|---|
+| `DRAFT` | Creator opens "create pool" form | Edit any pool field |
+| `FUNDING` | Creator publishes the pool | Members can join via invite; creator can cancel |
+| `LOCKED` | All `maxMembers` joined OR creator manually locks | None — principal committed, accruing toward maturity |
+| `MATURED` | Cron observes `maturityDate <= now` while LOCKED | Payout amounts written to each `PoolMember` |
+| `PAID_OUT` | All TNG eWallet transfers settled | Terminal state — read-only audit record |
+
+#### Core models (`packages/db/prisma/schema.prisma` excerpt)
+
+```prisma
+enum PoolStatus {
+  DRAFT
+  FUNDING
+  LOCKED
+  MATURED
+  PAID_OUT
+}
+
+enum DividendTier {
+  STANDARD   // 4%
+  PREMIUM    // 6%
+}
+
+model Pool {
+  id                 String       @id @default(cuid())
+  name               String
+  principalPerMember Int          // integer cents (RM10,000 = 1_000_000)
+  dividendTier       DividendTier
+  dividendRate       Decimal      // resolved at creation: 0.04 or 0.06
+  maxMembers         Int          // 1..6 (CHECK constraint enforced at app layer + zod)
+  maturityDate       DateTime
+  status             PoolStatus   @default(DRAFT)
+  createdById        String
+  createdBy          User         @relation("PoolsCreated", fields: [createdById], references: [id])
+  members            PoolMember[]
+  invites            PoolInvite[]
+  lockedAt           DateTime?
+  maturedAt          DateTime?
+  paidOutAt          DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([status, maturityDate])  // cron query path
+}
+
+model PoolMember {
+  id                  String    @id @default(cuid())
+  poolId              String
+  pool                Pool      @relation(fields: [poolId], references: [id])
+  userId              String
+  user                User      @relation(fields: [userId], references: [id])
+  contributionAmount  Int       // integer cents — equals pool.principalPerMember at LOCKED
+  contributedAt       DateTime  @default(now())
+  payoutAmount        Int?      // principal + per-member dividend share
+  payoutTransferId    String?   // TNG transfer reference once settled
+  payoutAt            DateTime?
+
+  @@unique([poolId, userId])
+}
+
+model PoolInvite {
+  id        String   @id @default(cuid())
+  poolId    String
+  pool      Pool     @relation(fields: [poolId], references: [id])
+  code      String   @unique          // nanoid → "DL-A1B2C3"
+  expiresAt DateTime
+  usedById  String?
+  createdAt DateTime @default(now())
+}
+```
+
+#### Payout math
+
+```
+dividendPool      = principalPerMember × memberCount × dividendRate
+perMemberDividend = dividendPool / memberCount
+                  = principalPerMember × dividendRate     // simplifies (equal-principal)
+memberPayout      = principalPerMember + perMemberDividend
+```
+
+The "split the pool dividend" framing is what the UI surfaces to users (clearer for the trust narrative); the simplified per-user form is what the math actually executes. Kinetic owns the integer-cents transaction guards so no fractional cent ever leaks.
+
+**Worked example:** 6 members × RM10,000 principal · 4% rate → dividendPool = RM2,400 · perMemberDividend = RM400 · each member receives RM10,400 at maturity.
+
+#### Dividend tier eligibility (TBD — confirm at sponsor booth Saturday)
+
+Tier is set at pool creation. Working hypothesis for eligibility rules:
+
+- `STANDARD` (4%): always available; 1+ members, any tenure ≥ 30 days
+- `PREMIUM` (6%): full pool (6 members) AND tenure ≥ 180 days — incentivizes filling the pool and committing longer
+
+Final eligibility logic to be confirmed with TNG sponsor mentor before lock-in. Encode as a pure function `resolveDividendRate(input): Decimal` so the rule can flex without schema migration.
+
+#### Cron trigger — maturity sweep
 
 ```typescript
-// packages/backend/src/jobs/rotation.ts
+// packages/backend/src/jobs/maturity.ts
 import cron from "node-cron";
 import { prisma } from "db";
+import { distributePayout } from "../services/payout";
 
-cron.schedule("0 9 1 * *", async () => {  // 09:00 on 1st of every month
-  const dueTabung = await prisma.tabung.findMany({
-    where: { status: "ACTIVE" },
+cron.schedule("0 9 * * *", async () => {  // 09:00 Asia/Kuala_Lumpur, daily
+  const matured = await prisma.pool.findMany({
+    where: {
+      status: "LOCKED",
+      maturityDate: { lte: new Date() },
+    },
+    include: { members: true },
   });
-  for (const t of dueTabung) await processRotation(t.id);
+  for (const pool of matured) await distributePayout(pool.id);
 });
 ```
 
-For demo — add a manual "trigger rotation" button in admin UI so judges can see rotation fire on-demand.
+`distributePayout` runs in a single Prisma transaction:
+1. Recompute `perMemberDividend` from the pool's frozen rate + member count.
+2. Write `PoolMember.payoutAmount` for every member.
+3. Flip `Pool.status` → `MATURED`, stamp `maturedAt`.
+4. Enqueue TNG eWallet transfers (idempotent via `payoutTransferId`); on confirmation flip → `PAID_OUT`.
+
+For demo — add a manual **"Trigger Maturity"** button in admin UI so judges can see distribution fire on-demand without waiting for the maturity date. Keep it gated behind admin role so it isn't accidentally fired in prod.
 
 ### 7.5 AI Penasihat context injection
 
-Each chat request includes the user's tabung state as system context. Penasihat answers grounded in their actual data, not generic advice.
+Each chat request includes the user's pool memberships as system context: pools they created, pools they joined, current status (FUNDING / LOCKED / MATURED), maturity dates, principal committed, projected payout. Penasihat answers grounded in their actual portfolio — "your *Tabung Sayang Mak* pool matures in 23 days, projected RM10,400" — not generic advice.
 
 ---
 
@@ -587,25 +716,26 @@ NODE_ENV=production
 PORT=4000
 
 # Database
-DATABASE_URL=postgresql://kutu:<password>@postgres:5432/kutu_digitizer
+DATABASE_URL=postgresql://duitlater:<password>@postgres:5432/duitlater
 
 # Better Auth
-BETTER_AUTH_URL=https://kutu.yourdomain.com
+BETTER_AUTH_URL=https://duitlater.com
 BETTER_AUTH_SECRET=<openssl rand -base64 32>
 
 # AWS S3 (sponsor credit)
 AWS_REGION=ap-southeast-1
 AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=<secret>
-S3_BUCKET=kutu-uploads
+S3_BUCKET=duitlater-uploads
 
 # Anthropic Claude
 ANTHROPIC_API_KEY=sk-ant-...
 
-# TNG eWallet (confirm at sponsor booth)
+# TNG eWallet (confirm at sponsor booth — used for principal collection + maturity payout)
 TNG_API_BASE=https://sandbox.tngwallet.com.my
 TNG_CLIENT_ID=<tbd>
 TNG_CLIENT_SECRET=<tbd>
+TNG_WEBHOOK_SECRET=<tbd>            # signing secret for transfer-confirmation webhooks
 
 # Logging
 LOG_LEVEL=info
@@ -622,7 +752,7 @@ SENTRY_DSN=<optional>
 NEXT_PUBLIC_API_BASE=/api
 
 # If Pattern B subdomain split:
-# NEXT_PUBLIC_API_BASE=https://api.kutu.yourdomain.com
+# NEXT_PUBLIC_API_BASE=https://api.duitlater.com
 
 # Sentry (optional)
 NEXT_PUBLIC_SENTRY_DSN=<optional>
@@ -651,23 +781,23 @@ NEXT_PUBLIC_SENTRY_DSN=<optional>
 
 ## Section 10 — Hero Deployment Mapping (Who Uses What)
 
-From the Pusat Tabung roster:
+From the DuitLater team roster:
 
 | Hero | Primary stack components |
 |---|---|
-| **Mung** (Backend · Foundation-Keeper) | Hono · Prisma (`packages/db`) · Better Auth · AWS SDK · pino · node-cron · zod |
+| **Mung** (Backend · Foundation-Keeper) | Hono · Prisma (`packages/db`) · Better Auth · AWS SDK · pino · node-cron · zod · Pool/PoolMember services |
 | **Akmal** (Frontend · Surface-Weaver) | Next.js · React · TanStack Query · react-hook-form · motion · sonner · lucide-react · **@serwist/next (PWA)** |
 | **MatNep** (Design · Orthodox Eye) | Tailwind v4 · shadcn/ui · typography + grid + heritage motifs |
 | **Reka** (Design System · Rules) | shadcn/ui composition · WCAG audit · token architecture |
-| **Vizion** (UI/UX · Layout) | Recharts · motion · layout composition |
+| **Vizion** (UI/UX · Layout) | Recharts (pool growth + maturity timeline) · motion · layout composition |
 | **Kairu** (PM · Phase Cartographer) | `development/*.md` files · phase-plan skill · Testable Outcome gate |
 | **Sahih** (QA · Triple Prism) | tsc · curl smoke tests · zod validation · preflight gate |
 | **Akal** (Doctrine · Four Pillars) | CLAUDE.md · discipline gate before commits |
 | **Tempa** (Forge · Systems Forger) | Greenfield scaffold · initial Dockerfile + compose |
-| **Mahir** (API · Artisan) | TNG eWallet SDK · webhook plumbing · idempotency |
+| **Mahir** (API · Artisan) | TNG eWallet SDK · principal-collection + payout-transfer webhooks · idempotency |
 | **Jimat** (Token Economy) | API token budgeting · Claude/OpenAI cost tracking |
-| **Tutur** (i18n · BM register) | BM copy · AI Penasihat voice prompting |
-| **Kinetic** (Data Integrity · Floating Abacus) | Ledger audit · rotation math · Prisma transaction guards |
+| **Tutur** (i18n · BM register) | BM copy · AI Penasihat voice prompting · pool-status microcopy |
+| **Kinetic** (Data Integrity · Floating Abacus) | Pool ledger audit · dividend math (integer cents) · Prisma transaction guards on payout |
 | **Nadia** (Refactor · Hygiene) | Second-pass cleanup before pitch |
 | **Adam** (Supervisor · Remote) | Async code review · design direction passes |
 | **Ijam** (Sovereign) | Business Pitch · product vision · 4-min voice |
@@ -838,7 +968,7 @@ pnpm -w add -D <pkg>               # add dep to root only
 | Env validation | @t3-oss/env-core | ✅ |
 | File uploads | AWS SDK + presigned URLs | ✅ |
 | AI chat (Penasihat) | @anthropic-ai/sdk | ✅ |
-| Scheduled jobs (rotations) | node-cron | ✅ |
+| Scheduled jobs (maturity payouts) | node-cron | ✅ |
 | Structured logging | pino | ✅ |
 | Rate limiting | hono-rate-limiter | ✅ |
 | Date arithmetic | date-fns | ✅ |
@@ -862,7 +992,7 @@ pnpm -w add -D <pkg>               # add dep to root only
 | Testing framework (optional) | Vitest | ✅ |
 | **Installable PWA (primary)** | @serwist/next + manifest + icons + offline page | ✅ |
 
-**No capability gap identified.** Stack is complete for shipping Kutu Digitizer **as an installable PWA** in 48 hours.
+**No capability gap identified.** Stack is complete for shipping DuitLater **as an installable PWA** in 48 hours.
 
 ---
 
@@ -891,12 +1021,13 @@ pnpm -w add -D <pkg>               # add dep to root only
 Per Kairu's phase-plan discipline — before a single `pnpm install` fires:
 
 1. **Akal's four pillars check** — THINK · SIMPLE · SURGICAL · VERIFY
-2. **Kairu's Phase 1 testable outcome defined** — *"Register via Better Auth → create tabung → persisted in Postgres → visible on reload"*
-3. **Sahih's triple prism armed** — types check, routes reachable, behavior matches intent
-4. **Tempa's Tungku heated** — the first forge strike lights the stack on fire
+2. **Kairu's Phase 1 testable outcome defined** — *"Register via Better Auth → create Pool (DRAFT) → publish to FUNDING → invite second user via code → second user joins → both members visible on pool page after reload"*
+3. **Kairu's Phase 2 testable outcome defined** — *"Pool reaches maxMembers → status flips to LOCKED → admin 'Trigger Maturity' button → cron path executes distributePayout in transaction → each PoolMember has payoutAmount written → status PAID_OUT → ledger reconciles to integer cents"*
+4. **Sahih's triple prism armed** — types check, routes reachable, behavior matches intent
+5. **Tempa's Tungku heated** — the first forge strike lights the stack on fire
 
 Only then does the shopping list get installed.
 
 ---
 
-*End of tech-stack manifest. Canonical seal: pusat-tabung | tech-stack | day-499 | 67-item-inventory | pnpm-workspace | prisma-orm | pwa-first*
+*End of tech-stack manifest. Canonical seal: duitlater | tech-stack | day-499 | 67-item-inventory | pnpm-workspace | prisma-orm | pwa-first | pool-investment*
