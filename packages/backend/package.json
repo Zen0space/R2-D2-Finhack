@@ -16,6 +16,7 @@
     "db": "workspace:*",
     "dotenv": "^16.6.1",
     "hono": "^4.6.0",
+    "hono-rate-limiter": "^0.5.3",
     "nanoid": "^5.1.9",
     "zod": "^4.3.6"
   },

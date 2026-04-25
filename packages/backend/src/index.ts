@@ -1,8 +1,11 @@
 import "dotenv/config";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
+import { csrf } from "hono/csrf";
 import { secureHeaders } from "hono/secure-headers";
 import { serve } from "@hono/node-server";
+import { rateLimiter } from "hono-rate-limiter";
 import { requestLogger, log } from "./middleware/logger.js";
 import { auth } from "./lib/auth.js";
 import { mykasihRouter } from "./routes/mykasih.js";
@@ -37,18 +40,71 @@ app.notFound((c) => {
   );
 });
 
+const allowedOrigins = process.env.CORS_ORIGIN?.split(",") ?? ["http://localhost:3000"];
+
 app.use("*", requestLogger);
 app.use("*", secureHeaders());
 app.use(
   "*",
+  bodyLimit({
+    maxSize: 1 * 1024 * 1024, // 1 MB — largest legitimate body is pool create / summary req
+    onError: (c) =>
+      c.json(
+        errorResponse(ApiError.badRequest("Request body too large (max 1 MB)")),
+        413,
+      ),
+  }),
+);
+app.use(
+  "*",
   cors({
-    origin: process.env.CORS_ORIGIN?.split(",") ?? ["http://localhost:3000"],
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
+// CSRF: only allow mutating requests from our own origins (browsers always
+// send Origin on POST/PUT/PATCH/DELETE). GET/HEAD/OPTIONS are unaffected.
+app.use("*", csrf({ origin: allowedOrigins }));
+
+// Rate limit factory — keyed by client IP via Caddy's forwarded headers.
+const clientIp = (c: { req: { header: (name: string) => string | undefined } }) =>
+  c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
+  c.req.header("x-real-ip") ??
+  "unknown";
+
+const tooManyRequests = (c: import("hono").Context) =>
+  c.json(
+    errorResponse(
+      new ApiError(429, "RATE_LIMITED", "Too many requests. Try again later."),
+    ),
+    429,
+  );
+
+// 20 mutating auth requests per IP per minute (login, signup, password reset).
+const authLimiter = rateLimiter({
+  windowMs: 60_000,
+  limit: 20,
+  standardHeaders: "draft-6",
+  keyGenerator: clientIp,
+  handler: tooManyRequests,
+});
+
+// 10 AI calls per IP per minute — protects Claude/Qwen budget.
+const aiLimiter = rateLimiter({
+  windowMs: 60_000,
+  limit: 10,
+  standardHeaders: "draft-6",
+  keyGenerator: clientIp,
+  handler: tooManyRequests,
+});
 
 // Better Auth — mounts /api/auth/* (sign-up · sign-in · sign-out · session · etc.)
+app.on(["POST"], "/api/auth/*", authLimiter);
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
+// AI endpoints — wrap in tighter rate limit before the routers handle them.
+app.use("/api/v1/pools/:id/suggest", aiLimiter);
+app.use("/api/v1/nadi/summary", aiLimiter);
 
 // Simple ping with DB check — used by Caddy + Cloudflare LB health monitor
 app.get("/health", async (c) => {
