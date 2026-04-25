@@ -321,8 +321,8 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 | 2 — Pool Formation + Lock | 🟡 In progress (frontend) | 2026-04-25 | — | — |
 | 3 — Penasihat + Catalogue | 🟡 In progress (frontend) | 2026-04-26 | — | — |
 | 4 — Vote + TNG Approval + Purchase | ✅ done (frontend slice) | 2026-04-26 | 2026-04-26 | Akmal |
-| 5 — Repayment + Kampung Trust | 🟡 In progress (frontend slice) | 2026-04-26 | — | Akmal |
-| 5b — NADI Weekly Summary (AI) | ⏳ Pending | — | — | — |
+| 5 — Repayment + Kampung Trust | ✅ done (frontend slice + repayment route) | 2026-04-26 | 2026-04-26 | Akmal |
+| 5b — NADI Weekly Summary (AI) | 🟡 In progress (frontend slice + summary route) | 2026-04-26 | — | Akmal |
 | 6b — Multi-Cloud Infra + HA | ⏳ Pending | — | — | — |
 | 6 — NADI Portal + Pitch Polish | ⏳ Pending | — | — | — |
 

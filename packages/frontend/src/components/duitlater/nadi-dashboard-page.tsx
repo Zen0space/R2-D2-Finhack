@@ -1,10 +1,11 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, Truck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, RefreshCw, ShieldCheck, Sparkles, TriangleAlert, Truck } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { toast } from "sonner";
-import { useNadiPoolsQuery } from "@/hooks/use-pools-query";
+import { useNadiPoolsQuery, useNadiWeeklySummaryQuery } from "@/hooks/use-pools-query";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { poolsClient } from "@/lib/pools/client";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -23,10 +24,18 @@ function formatDateTime(value: string | null) {
   }).format(new Date(value));
 }
 
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("ms-MY", {
+    dateStyle: "medium",
+  }).format(new Date(value));
+}
+
 export function NadiDashboardPage() {
   const queryClient = useQueryClient();
+  const [isRefreshCoolingDown, setIsRefreshCoolingDown] = useState(false);
   const { data: session, isLoading: isSessionLoading } = useSessionQuery();
   const poolsQuery = useNadiPoolsQuery(session?.user ?? null);
+  const summaryQuery = useNadiWeeklySummaryQuery(session?.user ?? null);
 
   const confirmMutation = useMutation({
     mutationFn: (poolId: string) => {
@@ -124,6 +133,24 @@ export function NadiDashboardPage() {
   const pendingPools = pools.filter((pool) => pool.state === "approved");
   const activePools = pools.filter((pool) => pool.state === "active");
   const totalMembersAwaiting = pendingPools.reduce((sum, pool) => sum + pool.members.length, 0);
+  const weeklySummary = summaryQuery.data;
+  const isRefreshingSummary = summaryQuery.isFetching && !summaryQuery.isLoading;
+
+  async function handleRefreshSummary() {
+    try {
+      const result = await summaryQuery.refetch();
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      setIsRefreshCoolingDown(true);
+      window.setTimeout(() => setIsRefreshCoolingDown(false), 15_000);
+      toast.success("Ringkasan minggu dijana semula.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Tak dapat jana semula ringkasan minggu.");
+    }
+  }
 
   return (
     <main className="px-4 py-6 sm:px-6 lg:py-10">
@@ -138,8 +165,7 @@ export function NadiDashboardPage() {
               <div className="grid gap-3">
                 <h1 className="text-5xl sm:text-6xl">Pengesahan penghantaran pool.</h1>
                 <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
-                  Halaman ini hanya paparkan ringkasan pool di peringkat kampung. Tiada jumlah individu
-                  sensitif dipaparkan selain bilangan ahli dan status penghantaran.
+                  Halaman ini paparkan ringkasan pool di peringkat kampung, termasuk briefing mingguan BM-first untuk staf NADI. Tiada jumlah individu sensitif dipaparkan selain bilangan ahli dan status penghantaran.
                 </p>
               </div>
             </div>
@@ -182,6 +208,196 @@ export function NadiDashboardPage() {
             </div>
           </div>
         </header>
+
+        <section className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+          <Card className="overflow-hidden">
+            <CardHeader className="gap-3 border-b border-[color:rgba(224,216,200,0.72)]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-3">
+                  <Badge tone="maroon">Ringkasan Minggu</Badge>
+                  {weeklySummary ? (
+                    <Badge tone={weeklySummary.provider === "alibaba-qwen" ? "forest" : "gold"}>
+                      {weeklySummary.provider === "alibaba-qwen" ? "AI live" : "Demo heuristic"}
+                    </Badge>
+                  ) : null}
+                </div>
+                <Button
+                  className="w-full sm:w-auto"
+                  disabled={summaryQuery.isLoading || isRefreshingSummary || isRefreshCoolingDown}
+                  size="sm"
+                  variant="outline"
+                  onClick={handleRefreshSummary}
+                >
+                  <RefreshCw aria-hidden="true" size={16} />
+                  {isRefreshingSummary
+                    ? "Sedang jana..."
+                    : isRefreshCoolingDown
+                      ? "Tunggu sekejap"
+                      : "Refresh"}
+                </Button>
+              </div>
+              <CardTitle className="text-4xl">Briefing mingguan untuk staf NADI</CardTitle>
+              <CardDescription className="text-base">
+                Ringkasan ini menumpukan pola kampung untuk minggu semasa, bukan butiran individu. Ia bantu staf nampak jumlah pool baharu, item yang paling menonjol, delta trust, dan signal yang perlukan perhatian.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 py-6">
+              {summaryQuery.isLoading ? (
+                <>
+                  <div className="h-20 animate-pulse rounded-[1.5rem] bg-[color:rgba(248,244,236,0.9)]" />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {Array.from({ length: 3 }, (_, index) => (
+                      <div
+                        className="h-24 animate-pulse rounded-[1.25rem] bg-[color:rgba(224,216,200,0.72)]"
+                        key={`nadi-summary-skeleton-${index}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : summaryQuery.isError || !weeklySummary ? (
+                <div className="rounded-[1.5rem] border border-[color:rgba(122,46,46,0.18)] bg-[color:rgba(122,46,46,0.06)] p-4 text-sm text-[color:var(--dl-maroon)]">
+                  Ringkasan minggu belum dapat dijana sekarang. Cuba refresh semula bila sambungan backend kembali stabil.
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-[1.75rem] border border-transparent bg-[linear-gradient(160deg,rgba(122,46,46,0.96),rgba(200,148,31,0.94))] p-5 text-white">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/72">
+                          Tempoh ringkasan
+                        </p>
+                        <p className="mt-2 text-sm text-white/80">
+                          {formatDate(weeklySummary.weekStart)} hingga {formatDate(weeklySummary.weekEnd)}
+                        </p>
+                      </div>
+                      <Badge className="border-white/16 bg-white/10 text-white" tone="neutral">
+                        Dijana {formatDateTime(weeklySummary.generatedAt)}
+                      </Badge>
+                    </div>
+                    <p className="mt-4 text-2xl font-semibold leading-tight sm:text-3xl">
+                      {weeklySummary.summary.headlineBm}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                        Pool dibentuk
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold">{weeklySummary.metrics.poolsFormedCount}</p>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                        Item menonjol
+                      </p>
+                      <p className="mt-2 text-base font-semibold">
+                        {weeklySummary.metrics.topItemNameBm ?? "Belum menonjol"}
+                      </p>
+                    </div>
+                    <div className="rounded-[1.25rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
+                        Delta trust
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold text-[color:var(--dl-forest)]">
+                        {weeklySummary.metrics.trustDelta > 0 ? "+" : ""}
+                        {weeklySummary.metrics.trustDelta.toFixed(1)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3">
+                    {weeklySummary.summary.observationsBm.map((observation) => (
+                      <div
+                        className="flex items-start gap-3 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4"
+                        key={observation}
+                      >
+                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[color:rgba(200,148,31,0.14)] text-[color:var(--dl-gold-dark)]">
+                          <Sparkles aria-hidden="true" size={18} />
+                        </div>
+                        <p className="text-sm text-[color:var(--dl-ink)] sm:text-base">{observation}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {weeklySummary.summary.anomaliesBm.length > 0 ? (
+                    <div className="grid gap-3 rounded-[1.5rem] border border-[color:rgba(122,46,46,0.18)] bg-[color:rgba(122,46,46,0.06)] p-4">
+                      <div className="flex items-center gap-3 text-[color:var(--dl-maroon)]">
+                        <TriangleAlert aria-hidden="true" size={18} />
+                        <p className="text-sm font-semibold uppercase tracking-[0.18em]">
+                          Anomali minggu ini
+                        </p>
+                      </div>
+                      {weeklySummary.summary.anomaliesBm.map((anomaly) => (
+                        <p className="text-sm text-[color:var(--dl-maroon)] sm:text-base" key={anomaly}>
+                          {anomaly}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4 text-sm text-[color:var(--dl-forest)]">
+                      <CheckCircle2 aria-hidden="true" size={18} />
+                      Tiada anomali besar dikesan untuk minggu ini. Ritma kampung masih terkawal.
+                    </div>
+                  )}
+
+                  <div className="rounded-[1.5rem] border border-[color:rgba(200,148,31,0.22)] bg-[color:rgba(200,148,31,0.08)] p-4">
+                    <div className="flex items-center gap-3 text-[color:var(--dl-gold-dark)]">
+                      <ShieldCheck aria-hidden="true" size={18} />
+                      <p className="text-sm font-semibold uppercase tracking-[0.18em]">
+                        Cadangan tindakan
+                      </p>
+                    </div>
+                    <p className="mt-3 text-sm text-[color:var(--dl-ink)] sm:text-base">
+                      {weeklySummary.summary.suggestionBm}
+                    </p>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="gap-3">
+              <Badge tone="forest">Signal kampung</Badge>
+              <CardTitle className="text-4xl">Meter ringkas untuk semakan cepat</CardTitle>
+              <CardDescription className="text-base">
+                Kad ini membantu staf baca jumlah yang paling penting tanpa tengok rekod individu.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              <div className="rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
+                  Skor trust semasa
+                </p>
+                <p className="mt-2 text-4xl font-semibold text-[color:var(--dl-forest)]">
+                  {weeklySummary ? Math.round(weeklySummary.metrics.trustScore) : "—"}
+                </p>
+                <p className="mt-2 text-sm text-[color:var(--dl-forest)]">
+                  Dibaca pada peringkat kampung supaya NADI nampak health komuniti, bukan individu tertentu.
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                  Bayaran direkod minggu ini
+                </p>
+                <p className="mt-2 text-3xl font-semibold">
+                  {weeklySummary?.metrics.repaymentsThisWeek ?? 0}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                  Signal lewat
+                </p>
+                <p className="mt-2 text-3xl font-semibold">
+                  {weeklySummary?.metrics.latePaymentEvents ?? 0}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 text-sm text-[color:var(--dl-slate)]">
+                Refresh akan jana semula ringkasan minggu yang sama. Dalam demo ini, tindakan itu dikawal dengan cooldown ringkas supaya briefing tak dipanggil bertalu-talu.
+              </div>
+            </CardContent>
+          </Card>
+        </section>
 
         <section className="grid gap-4">
           <div>

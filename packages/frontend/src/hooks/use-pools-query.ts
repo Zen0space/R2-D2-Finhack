@@ -2,6 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { MemberProfile } from "@/types/auth";
+import type { NadiWeeklySummaryRecord } from "@/types/nadi";
+import { nadiClient } from "@/lib/nadi/client";
 import { poolsClient } from "@/lib/pools/client";
 
 export function usePoolsQuery(userId: string | null) {
@@ -45,5 +47,16 @@ export function useKampungTrustQuery(kampungId: string | null) {
     queryFn: () => poolsClient.getKampungTrust(kampungId ?? ""),
     enabled: kampungId !== null,
     refetchInterval: 5_000,
+  });
+}
+
+export function useNadiWeeklySummaryQuery(user: MemberProfile | null, weekStart?: string) {
+  const resolvedWeekStart = weekStart ?? nadiClient.getCurrentWeekStart();
+
+  return useQuery<NadiWeeklySummaryRecord>({
+    queryKey: ["nadi", "summary", user?.kampung.id, resolvedWeekStart],
+    queryFn: () => nadiClient.getWeeklySummary(user?.kampung.id ?? "", resolvedWeekStart),
+    enabled: user?.role === "nadi_staff",
+    staleTime: 30_000,
   });
 }
