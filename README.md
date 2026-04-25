@@ -59,9 +59,8 @@ R2-D2-Finhack/
 │   ├── process/           # DEVELOPMENT-PLAN, QUICKSTART
 │   └── pitch/             # pitch deck, narration, product manifest
 ├── maji-core/             # Team protocols, heroes, commands
-├── infra/                 # Caddyfile + infra docs
+├── infra/                 # Caddyfile + docker-compose.{local,dev,prod}.yml
 ├── scripts/               # Dev scripts (setup, kill-ports)
-├── docker-compose.yml
 ├── pnpm-workspace.yaml
 └── package.json
 ```

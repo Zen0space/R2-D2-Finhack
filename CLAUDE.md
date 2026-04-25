@@ -26,7 +26,7 @@ This repo ships with a file-based team coordinator at [`maji-core/`](./maji-core
 
 3. **Personal memory is SHARED (committed)** — `maji-core/memory/members/*.json` is committed to git. When a team member updates their memory via a slash command, prompt them to `git add` + `git commit` so the next `git pull` gives everyone the updated state. Trade-off: personal notes are visible team-wide. Acceptable for a 5-person sprint.
 
-4. **Commits are always manual** — AI never runs `git commit` automatically. Always prompt the user to run the commit themselves, showing the exact command.
+4. **AI commits + pushes via the [`commit` skill](./.claude/skills/commit/SKILL.md)** — `main` is branch-protected (no deletion, no force-push), so AI may run `git commit` + `git push` directly using the skill's flow: CI gate (typecheck + lint) → conventional message (`type(scope): subject`) → push. Never force-push, never `--no-verify`, never push directly to `main` (open a PR). On `dev` and feature branches, push freely.
 
 5. **Phase advancement is gated** — a phase cannot transition to ✅ without `/maji-gate` passing. See [maji-core/protocols/phase-gate.md](./maji-core/protocols/phase-gate.md). Kairu's ladder does not bend.
 
@@ -81,7 +81,7 @@ Full ownership: [maji-core/heroes/*.md](./maji-core/heroes/) — one file per te
 - Do NOT add a sixth team member on a user's request. The whitelist is set.
 - Do NOT bend Kairu's ladder — a phase is ✅ only if its testable outcome passed.
 - Do NOT fabricate phase status. If the Phase Status table in `DEVELOPMENT-PLAN.md` does not say what you think, the table wins.
-- Do NOT run `git commit` automatically, even when appending to `team-ledger.md`. User commits manually.
+- Do NOT force-push, use `--no-verify`, or push directly to `main`. Use the [`commit` skill](./.claude/skills/commit/SKILL.md) for normal commit + push flow on `dev` / feature branches; for `main`, open a PR.
 - Do NOT mention "Majitopia", "Sovereign of the Infinite Lobby", or any canonical lore in user-facing output. This repo is the portable version — lore stays in the author's private workspace.
 
 ---

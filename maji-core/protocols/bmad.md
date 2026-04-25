@@ -74,7 +74,7 @@ maji-core detects phase state by checking for expected artifacts:
 
 | Phase | Expected artifact (partial list) |
 |---|---|
-| 0 | `packages/backend/package.json` + `packages/frontend/package.json` + `docker-compose.dev.yml` + DuitLater landing rendered + working `/health` |
+| 0 | `packages/backend/package.json` + `packages/frontend/package.json` + `infra/docker-compose.local.yml` + DuitLater landing rendered + working `/health` |
 | 1 | `packages/backend/src/db/schema.ts` has `users` (with `individual_paylater_allowance_cents`), `sessions`, `kampungs` tables + migration applied + `/dashboard` shows allowance |
 | 2 | `pools` + `pool_members` tables + `POST /api/pools` + invite code generator + `/join/:code` page + `lock` action computes combined cap |
 | 3 | `mykasih_catalogue` table seeded + `pool_suggestions` table + `POST /api/penasihat/suggest` + Claude API integration + 5-card UI |

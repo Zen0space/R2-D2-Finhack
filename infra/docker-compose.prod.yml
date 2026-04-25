@@ -1,44 +1,47 @@
+# DuitLater · prod stack (main branch → duitlater.com)
+# Run on VPS: docker compose -f infra/docker-compose.prod.yml -p prod up -d
+# Backend pulls pre-built image from GHCR. Frontend awaits packages/frontend/Dockerfile (Akmal).
+
 services:
   caddy:
     image: caddy:2-alpine
-    container_name: duitlater-caddy
+    container_name: duitlater-prod-caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - duitlater_web
+      - web
     depends_on:
       - frontend
       - app
 
   frontend:
+    # TODO(akmal): swap to `image: ghcr.io/zen0space/duitlater-frontend:latest` once packages/frontend/Dockerfile lands.
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: duitlater-frontend
+      context: ..
+      dockerfile: packages/frontend/Dockerfile
+    container_name: duitlater-prod-frontend
     restart: unless-stopped
     env_file:
-      - ./frontend/.env.prod
+      - ../packages/frontend/.env.prod
     networks:
-      - duitlater_web
+      - web
     expose:
       - "3000"
 
   app:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: duitlater-app
+    image: ghcr.io/zen0space/duitlater-backend:latest
+    container_name: duitlater-prod-app
     restart: unless-stopped
     env_file:
-      - ./backend/.env.prod
+      - ../packages/backend/.env.prod
     networks:
-      - duitlater_web
+      - web
     expose:
       - "4000"
     depends_on:
@@ -47,18 +50,18 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: duitlater-postgres
+    container_name: duitlater-prod-postgres
     restart: unless-stopped
     env_file:
-      - ./backend/.env.prod
+      - ../packages/backend/.env.prod
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-duitlater}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-duitlater}
     volumes:
-      - duitlater_postgres_data:/var/lib/postgresql/data
+      - duitlater_prod_postgres_data:/var/lib/postgresql/data
     networks:
-      - duitlater_web
+      - web
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-duitlater} -d ${POSTGRES_DB:-duitlater}"]
       interval: 10s
@@ -66,10 +69,11 @@ services:
       retries: 5
 
 volumes:
-  duitlater_postgres_data:
+  duitlater_prod_postgres_data:
   caddy_data:
   caddy_config:
 
 networks:
-  duitlater_web:
+  web:
+    name: duitlater_web
     driver: bridge
