@@ -16,6 +16,7 @@ import { Prisma, prisma, type Pool, type PoolMember, type User } from "db";
 import { customAlphabet } from "nanoid";
 
 import { requireAuth } from "../middleware/require-auth.js";
+import { requireRole } from "../middleware/require-role.js";
 import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
 import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
@@ -268,44 +269,45 @@ poolsRouter.get("/mine", async (c) => {
 // + COMPLETED. Ordered by most recent approval first.
 // ---------------------------------------------------------------------------
 
-poolsRouter.get("/nadi", zValidator("query", nadiListQuerySchema), async (c) => {
-  const user = c.get("user");
+poolsRouter.get(
+  "/nadi",
+  requireRole("NADI_STAFF", "ADMIN"),
+  zValidator("query", nadiListQuerySchema),
+  async (c) => {
+    const user = c.get("user");
 
-  if (user.role !== "NADI_STAFF" && user.role !== "ADMIN") {
-    throw ApiError.forbidden("NADI staff access required");
-  }
+    if (user.role === "NADI_STAFF" && !user.kampungId) {
+      throw ApiError.badRequest("NADI staff account is missing a kampung assignment");
+    }
 
-  if (user.role === "NADI_STAFF" && !user.kampungId) {
-    throw ApiError.badRequest("NADI staff account is missing a kampung assignment");
-  }
+    const { state } = c.req.valid("query");
+    const stateFilter = state ? (Array.isArray(state) ? state : [state]) : [...nadiPoolStateValues];
 
-  const { state } = c.req.valid("query");
-  const stateFilter = state ? (Array.isArray(state) ? state : [state]) : [...nadiPoolStateValues];
-
-  const pools = await prisma.pool.findMany({
-    where: {
-      state: { in: stateFilter },
-      ...(user.role === "NADI_STAFF" ? { kampungId: user.kampungId! } : {}),
-    },
-    include: {
-      members: {
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, individualPaylaterCents: true },
+    const pools = await prisma.pool.findMany({
+      where: {
+        state: { in: stateFilter },
+        ...(user.role === "NADI_STAFF" ? { kampungId: user.kampungId! } : {}),
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, individualPaylaterCents: true },
+            },
           },
         },
+        kampung: { select: { id: true, name: true, districtHint: true } },
       },
-      kampung: { select: { id: true, name: true, districtHint: true } },
-    },
-    orderBy: [{ approvedAt: "desc" }, { createdAt: "desc" }],
-  });
+      orderBy: [{ approvedAt: "desc" }, { createdAt: "desc" }],
+    });
 
-  return c.json(
-    successResponse({
-      pools: pools.map(poolView),
-    }),
-  );
-});
+    return c.json(
+      successResponse({
+        pools: pools.map(poolView),
+      }),
+    );
+  },
+);
 
 // ---------------------------------------------------------------------------
 // E2.6 — GET /api/v1/pools/by-code/:code (public preview for join page)
@@ -780,16 +782,15 @@ poolsRouter.post(
 );
 
 // ---------------------------------------------------------------------------
-// E4.3 — POST /api/v1/pools/:id/confirm-delivery
-//   (Simplified: any authenticated user can confirm. Production: NADI_STAFF role.)
+// E4.3 — POST /api/v1/pools/:id/confirm-delivery (NADI staff only)
 // ---------------------------------------------------------------------------
 
 poolsRouter.post(
   "/:id/confirm-delivery",
+  requireRole("NADI_STAFF", "ADMIN"),
   zValidator("param", idParamSchema),
   async (c) => {
     const { id } = c.req.valid("param");
-    const user = c.get("user");
 
     const pool = await prisma.pool.findUnique({
       where: { id },
@@ -797,9 +798,6 @@ poolsRouter.post(
     });
     if (!pool) throw ApiError.notFound("Pool");
     assertState(pool, ["APPROVED"], "confirm delivery");
-    if (user.role !== "NADI_STAFF" && user.role !== "ADMIN") {
-      throw ApiError.forbidden("Only NADI staff can confirm delivery");
-    }
     if (!pool.transaction) {
       throw ApiError.badRequest("Pool has no transaction yet");
     }

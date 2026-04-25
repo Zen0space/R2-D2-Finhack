@@ -6,7 +6,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatErrorMessage } from "@/lib/api/errors";
-import { useNadiPoolsQuery, useNadiWeeklySummaryQuery } from "@/hooks/use-pools-query";
+import {
+  useNadiDashboardQuery,
+  useNadiPoolsQuery,
+  useNadiWeeklySummaryQuery,
+} from "@/hooks/use-pools-query";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { poolsClient } from "@/lib/pools/client";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -37,6 +41,7 @@ export function NadiDashboardPage() {
   const { data: session, isLoading: isSessionLoading } = useSessionQuery();
   const poolsQuery = useNadiPoolsQuery(session?.user ?? null);
   const summaryQuery = useNadiWeeklySummaryQuery(session?.user ?? null);
+  const dashboardQuery = useNadiDashboardQuery(session?.user ?? null);
 
   const confirmMutation = useMutation({
     mutationFn: (poolId: string) => {
@@ -133,7 +138,11 @@ export function NadiDashboardPage() {
   const pools = poolsQuery.data ?? [];
   const pendingPools = pools.filter((pool) => pool.state === "approved");
   const activePools = pools.filter((pool) => pool.state === "active");
-  const totalMembersAwaiting = pendingPools.reduce((sum, pool) => sum + pool.members.length, 0);
+  const stats = dashboardQuery.data;
+  const pendingCount = stats?.pools.pendingDelivery ?? pendingPools.length;
+  const activeCount = stats?.pools.active ?? activePools.length;
+  const totalMembersInKampung =
+    stats?.members.totalSeats ?? pendingPools.reduce((sum, pool) => sum + pool.members.length, 0);
   const weeklySummary = summaryQuery.data;
   const isRefreshingSummary = summaryQuery.isFetching && !summaryQuery.isLoading;
 
@@ -177,12 +186,12 @@ export function NadiDashboardPage() {
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+          <div className="mt-8 grid gap-4 lg:grid-cols-4">
             <div className="rounded-[1.75rem] border border-[color:rgba(122,46,46,0.12)] bg-[linear-gradient(160deg,rgba(122,46,46,0.96),rgba(200,148,31,0.94))] p-5 text-white">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/72">
                 Menunggu pengesahan
               </p>
-              <p className="mt-3 text-5xl font-semibold">{pendingPools.length}</p>
+              <p className="mt-3 text-5xl font-semibold">{pendingCount}</p>
               <p className="mt-3 text-sm text-white/78 sm:text-base">
                 Pool yang sudah lulus undian dan perlukan tindakan staf NADI.
               </p>
@@ -192,7 +201,7 @@ export function NadiDashboardPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
                 Sudah active
               </p>
-              <p className="mt-3 text-3xl font-semibold">{activePools.length}</p>
+              <p className="mt-3 text-3xl font-semibold">{activeCount}</p>
               <p className="mt-2 text-sm text-[color:var(--dl-slate)]">
                 Pool yang sudah disahkan penghantarannya.
               </p>
@@ -200,11 +209,25 @@ export function NadiDashboardPage() {
 
             <div className="rounded-[1.75rem] border border-[color:var(--dl-sand)] bg-white/82 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                Ahli terlibat
+                Tempat duduk ahli
               </p>
-              <p className="mt-3 text-3xl font-semibold">{totalMembersAwaiting}</p>
+              <p className="mt-3 text-3xl font-semibold">{totalMembersInKampung}</p>
               <p className="mt-2 text-sm text-[color:var(--dl-slate)]">
-                Jumlah ahli merentasi semua pool yang masih menunggu pengesahan.
+                Jumlah keahlian pool merentasi seluruh kampung anda.
+              </p>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
+                Skor trust kampung
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-[color:var(--dl-forest)]">
+                {stats ? Math.round(stats.kampung.trustScore) : "—"}
+              </p>
+              <p className="mt-2 text-sm text-[color:var(--dl-forest)]">
+                {stats
+                  ? `RM ${(stats.finance.totalDisbursedCents / 100).toLocaleString("ms-MY")} dah disalurkan · ${stats.finance.repaymentCompletionPct}% bayaran selesai.`
+                  : "Sedang muat metrik kampung."}
               </p>
             </div>
           </div>
