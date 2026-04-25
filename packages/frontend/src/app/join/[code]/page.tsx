@@ -1,5 +1,7 @@
 import { JoinPoolPage } from "@/components/duitlater/join-pool-page";
 
+export const dynamic = "force-dynamic";
+
 export default async function JoinPoolRoute({
   params,
   searchParams,
