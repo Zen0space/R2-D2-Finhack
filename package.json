@@ -6,7 +6,14 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "lint:fix": "pnpm -r lint:fix"
+    "lint:fix": "pnpm -r lint:fix",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:generate": "pnpm --filter db generate",
+    "db:migrate": "pnpm --filter db migrate",
+    "db:migrate:new": "pnpm --filter db migrate:new",
+    "db:studio": "pnpm --filter db studio"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",

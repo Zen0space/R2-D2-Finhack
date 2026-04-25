@@ -9,15 +9,17 @@ R2-D2-Finhack/
 ├── packages/
 │   ├── backend/     # API server
 │   ├── frontend/    # Web client
-│   └── db/          # Database schema & migrations
+│   └── db/          # Database schema & migrations (Prisma)
+├── docker-compose.yml
 ├── pnpm-workspace.yaml
 └── package.json
 ```
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 18
+- [Node.js](https://nodejs.org/) >= 22
 - [pnpm](https://pnpm.io/) >= 9
+- [Docker](https://www.docker.com/) (for PostgreSQL)
 
 ```bash
 npm install -g pnpm
@@ -25,22 +27,45 @@ npm install -g pnpm
 
 ## Getting Started
 
+### First run (one-time setup)
+
 ```bash
-# Install all dependencies across packages
+# 1. Install dependencies across all packages
 pnpm install
 
-# Run all packages in dev mode
+# 2. Start the PostgreSQL database in Docker
+docker compose up -d
+
+# 3. Run the initial database migration
+cd packages/db
+npx prisma migrate dev --name init
+
+# 4. Open Prisma Studio to verify the database
+npx prisma studio
+# Opens http://localhost:5555
+```
+
+### Development
+
+```bash
+# Run all packages in dev mode (backend + frontend in parallel)
 pnpm dev
 
 # Build all packages
 pnpm build
+
+# Type-check all packages
+pnpm typecheck
+
+# Lint all packages
+pnpm lint
 ```
 
 ## Packages
 
 ### `packages/backend`
 
-API server. See [`packages/backend/README.md`](packages/backend/README.md) for details.
+API server.
 
 ```bash
 pnpm --filter backend dev
@@ -48,7 +73,7 @@ pnpm --filter backend dev
 
 ### `packages/frontend`
 
-Web client. See [`packages/frontend/README.md`](packages/frontend/README.md) for details.
+Web client.
 
 ```bash
 pnpm --filter frontend dev
@@ -56,29 +81,39 @@ pnpm --filter frontend dev
 
 ### `packages/db`
 
-Database schema and migrations. See [`packages/db/README.md`](packages/db/README.md) for details.
+Prisma schema, migrations, and generated client. All Prisma commands are run from inside this directory.
 
 ```bash
-# Run migrations
-pnpm --filter db migrate
+cd packages/db
 
-# Generate new migration
-pnpm --filter db migrate:new
+npx prisma migrate dev --name <migration-name>   # Create & apply a new migration
+npx prisma migrate deploy                         # Apply pending migrations (prod)
+npx prisma generate                               # Regenerate Prisma client
+npx prisma studio                                 # Open Prisma Studio (http://localhost:5555)
+npx prisma db push                                # Push schema without a migration (prototyping)
+```
+
+## Database Setup
+
+PostgreSQL runs in Docker via `docker-compose.yml`.
+
+**Environment variables** — create `packages/db/.env` (gitignored):
+```
+DATABASE_URL=postgresql://kutu:kutu_dev@localhost:5432/kutu_digitizer
+```
+
+These match the defaults in `docker-compose.yml`.
+
+```bash
+# Start / stop
+docker compose up -d
+docker compose down
+
+# View logs
+docker compose logs -f postgres
 ```
 
 ## Workspace Commands
-
-Run a command in a specific package:
-
-```bash
-pnpm --filter <package-name> <command>
-```
-
-Run a command across all packages:
-
-```bash
-pnpm -r <command>
-```
 
 Add a dependency to a specific package:
 
@@ -90,4 +125,10 @@ Add a shared dev dependency at the root:
 
 ```bash
 pnpm add -D -w <dependency>
+```
+
+Run a command across all packages:
+
+```bash
+pnpm -r <command>
 ```
