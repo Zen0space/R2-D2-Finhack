@@ -409,21 +409,21 @@ export function joinPool(inviteCode: string, user: MemberProfile) {
   const poolIndex = pools.findIndex((pool) => pool.inviteCode === normalizedCode);
 
   if (poolIndex < 0) {
-    throw new Error("Kod jemputan ini belum wujud dalam demo frontend ini.");
+    throw new Error("Invite code not found.");
   }
 
   const pool = pools[poolIndex];
 
   if (!pool) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   if (pool.state !== "draft") {
-    throw new Error("Pool ini dah dikunci. Tak boleh sertai lagi.");
+    throw new Error("Pool is locked — joining is no longer allowed.");
   }
 
   if (pool.kampungId !== user.kampung.id) {
-    throw new Error(`Pool ini untuk ahli ${pool.kampungName}.`);
+    throw new Error(`Pool is restricted to members of ${pool.kampungName}.`);
   }
 
   if (pool.members.some((member) => member.userId === user.id)) {
@@ -431,7 +431,7 @@ export function joinPool(inviteCode: string, user: MemberProfile) {
   }
 
   if (pool.members.length >= pool.maxMembers) {
-    throw new Error("Pool ini dah penuh.");
+    throw new Error("Pool is full.");
   }
 
   const updatedPool: PoolRecord = {
@@ -450,25 +450,25 @@ export function lockPool(poolId: string, userId: string) {
   const poolIndex = pools.findIndex((pool) => pool.id === poolId);
 
   if (poolIndex < 0) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   const pool = pools[poolIndex];
 
   if (!pool) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   if (pool.initiatorUserId !== userId) {
-    throw new Error("Hanya pencipta pool boleh lock pool ini.");
+    throw new Error("Only the pool initiator can lock this pool.");
   }
 
   if (pool.state !== "draft") {
-    throw new Error("Pool ini bukan lagi dalam status draft.");
+    throw new Error("Pool is no longer in draft state.");
   }
 
   if (pool.members.length < MIN_MEMBERS_TO_LOCK) {
-    throw new Error("Pool perlukan sekurang-kurangnya 2 ahli sebelum boleh dikunci.");
+    throw new Error("Pool needs at least 2 members before it can be locked.");
   }
 
   const combinedCapCents = calculateLiveCombinedCapCents(pool);
@@ -494,23 +494,23 @@ export function suggestPool(poolId: string, filter: PoolSuggestionFilter = "semu
   const poolIndex = pools.findIndex((pool) => pool.id === poolId);
 
   if (poolIndex < 0) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   const pool = pools[poolIndex];
 
   if (!pool) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   if (!["locked", "suggesting"].includes(pool.state)) {
-    throw new Error("Cadangan barang hanya boleh dijana untuk pool yang sudah dikunci.");
+    throw new Error("Suggestions can only be generated after the pool is locked.");
   }
 
   const suggestions = buildPoolSuggestions(pool, filter);
 
   if (suggestions.length === 0) {
-    throw new Error("Belum ada item katalog yang muat dalam combined cap pool ini.");
+    throw new Error("No catalogue items fit within the pool's combined cap.");
   }
 
   const updatedPool: PoolRecord = {
@@ -538,23 +538,23 @@ export function selectSuggestion(poolId: string, suggestionId: string) {
   const poolIndex = pools.findIndex((pool) => pool.id === poolId);
 
   if (poolIndex < 0) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   const pool = pools[poolIndex];
 
   if (!pool) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   const selectedSuggestion = pool.suggestions.find((suggestion) => suggestion.id === suggestionId);
 
   if (!selectedSuggestion) {
-    throw new Error("Cadangan barang ini belum tersedia lagi.");
+    throw new Error("This suggestion is no longer available.");
   }
 
   if (!["suggesting", "locked"].includes(pool.state)) {
-    throw new Error("Pool ini belum berada pada fasa pemilihan barang.");
+    throw new Error("Pool is not in the suggestion-selection phase.");
   }
 
   const updatedPool: PoolRecord = {
@@ -579,33 +579,33 @@ export function voteOnPool(poolId: string, userId: string, vote: PoolVoteChoice)
   const poolIndex = pools.findIndex((pool) => pool.id === poolId);
 
   if (poolIndex < 0) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   const pool = pools[poolIndex];
 
   if (!pool) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   if (pool.state !== "voting") {
-    throw new Error("Undian hanya dibuka untuk pool yang sedang dalam fasa voting.");
+    throw new Error("Voting is only open while the pool is in the voting phase.");
   }
 
   const member = pool.members.find((entry) => entry.userId === userId);
 
   if (!member) {
-    throw new Error("Hanya ahli pool boleh mengundi.");
+    throw new Error("Only pool members can vote.");
   }
 
   if (pool.votes.some((entry) => entry.userId === userId)) {
-    throw new Error("Anda sudah hantar undian untuk pusingan ini.");
+    throw new Error("You have already voted in this round.");
   }
 
   const selectedSuggestion = getSelectedSuggestion(pool);
 
   if (!selectedSuggestion) {
-    throw new Error("Barang untuk diundi belum dipilih.");
+    throw new Error("No item has been selected for voting yet.");
   }
 
   const poolWithVote: PoolRecord = {
@@ -639,25 +639,25 @@ export function confirmPoolDelivery(poolId: string, user: MemberProfile) {
   const poolIndex = pools.findIndex((pool) => pool.id === poolId);
 
   if (poolIndex < 0) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   const pool = pools[poolIndex];
 
   if (!pool) {
-    throw new Error("Pool tak ditemui.");
+    throw new Error("Pool not found.");
   }
 
   if (user.role !== "nadi_staff") {
-    throw new Error("Hanya staf NADI boleh sahkan penghantaran.");
+    throw new Error("Only NADI staff can confirm delivery.");
   }
 
   if (pool.kampungId !== user.kampung.id) {
-    throw new Error(`Pool ini berada di luar kampung ${user.kampung.name}.`);
+    throw new Error(`Pool is outside ${user.kampung.name}'s scope.`);
   }
 
   if (pool.state !== "approved" || !pool.transaction) {
-    throw new Error("Pool ini belum menunggu pengesahan penghantaran.");
+    throw new Error("Pool is not awaiting delivery confirmation.");
   }
 
   const deliveredAt = new Date().toISOString();

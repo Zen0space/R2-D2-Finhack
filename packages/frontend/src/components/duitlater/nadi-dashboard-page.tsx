@@ -32,7 +32,7 @@ export function NadiDashboardPage() {
   const confirmMutation = useMutation({
     mutationFn: (poolId: string) => {
       if (!session) {
-        throw new Error("Sesi dah tamat. Masuk semula untuk teruskan.");
+        throw new Error("Session expired — sign in again to continue.");
       }
 
       return poolsClient.confirmDelivery(poolId, session.user);
@@ -43,7 +43,7 @@ export function NadiDashboardPage() {
       toast.success("Penghantaran telah disahkan. Pool kini bergerak ke state active.");
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat sahkan penghantaran sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't confirm delivery right now."));
     },
   });
 

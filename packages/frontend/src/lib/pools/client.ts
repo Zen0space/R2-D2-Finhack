@@ -567,7 +567,7 @@ export const poolsClient = {
     const pool = await fetchPoolRecord(response.data.poolId);
 
     if (!pool) {
-      throw new Error("Pool tak ditemui selepas join.");
+      throw new Error("Pool not found after join.");
     }
 
     return pool;
@@ -581,7 +581,7 @@ export const poolsClient = {
     const pool = await fetchPoolRecord(poolId);
 
     if (!pool) {
-      throw new Error("Pool tak ditemui selepas lock.");
+      throw new Error("Pool not found after lock.");
     }
 
     return pool;
@@ -591,7 +591,7 @@ export const poolsClient = {
     const currentPool = await fetchPoolRecord(poolId);
 
     if (!currentPool) {
-      throw new Error("Pool tak ditemui.");
+      throw new Error("Pool not found.");
     }
 
     const response = await apiFetch<{
@@ -618,7 +618,7 @@ export const poolsClient = {
     const pool = await fetchPoolRecord(poolId);
 
     if (!pool) {
-      throw new Error("Pool tak ditemui selepas jana cadangan.");
+      throw new Error("Pool not found after generating suggestions.");
     }
 
     return {
@@ -647,7 +647,7 @@ export const poolsClient = {
     const pool = await fetchPoolRecord(poolId);
 
     if (!pool) {
-      throw new Error("Pool tak ditemui selepas pilih barang.");
+      throw new Error("Pool not found after selecting an item.");
     }
 
     return pool;
@@ -664,7 +664,7 @@ export const poolsClient = {
     const pool = await fetchPoolRecord(poolId);
 
     if (!pool) {
-      throw new Error("Pool tak ditemui selepas undian dihantar.");
+      throw new Error("Pool not found after submitting vote.");
     }
 
     return pool;
@@ -680,7 +680,7 @@ export const poolsClient = {
     const pool = await fetchPoolRecord(poolId);
 
     if (!pool) {
-      throw new Error("Pool tak ditemui selepas pengesahan penghantaran.");
+      throw new Error("Pool not found after delivery confirmation.");
     }
 
     return pool;

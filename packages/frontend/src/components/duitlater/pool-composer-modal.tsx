@@ -76,7 +76,7 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
       startTransition(() => router.push(`/pools/${pool.id}`));
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat cipta pool sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't create pool right now."));
     },
   });
 

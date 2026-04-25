@@ -70,7 +70,7 @@ export function DashboardPage() {
       startTransition(() => router.push("/sign-in"));
     },
     onError: () => {
-      toast.error("Tak dapat sign out sekarang.");
+      toast.error("Couldn't sign out right now.");
     },
   });
 

@@ -176,7 +176,7 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
         email: values.email,
         password: values.password,
       });
-      if (result.error) throw new Error(result.error.message ?? "E-mel atau kata laluan tak padan.");
+      if (result.error) throw new Error(result.error.message ?? "Email or password is incorrect.");
       return result;
     },
     onSuccess: async () => {
@@ -185,7 +185,7 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
       startTransition(() => router.push(nextPath));
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat masuk sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't sign in right now."));
     },
   });
 
@@ -284,7 +284,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
         name: values.name,
         kampungId,
       });
-      if (result.error) throw new Error(result.error.message ?? "Tak dapat cipta akaun.");
+      if (result.error) throw new Error(result.error.message ?? "Couldn't create the account.");
       return result;
     },
     onSuccess: async () => {
@@ -293,7 +293,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
       startTransition(() => router.push(nextPath));
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat cipta akaun sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't create the account right now."));
     },
   });
 

@@ -60,7 +60,7 @@ async function copyText(value: string, successMessage: string) {
     await navigator.clipboard.writeText(value);
     toast.success(successMessage);
   } catch {
-    toast.error("Tak dapat copy sekarang.");
+    toast.error("Couldn't copy right now.");
   }
 }
 
@@ -106,7 +106,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       toast.success("Pool dah dikunci. Combined cap telah dibekukan.");
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat lock pool sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't lock the pool right now."));
     },
   });
 
@@ -121,7 +121,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       toast.success("Penasihat dah susun shortlist BM untuk pool ini.");
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat jana cadangan sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't generate suggestions right now."));
     },
     onSettled: () => {
       setPendingFilter(null);
@@ -139,7 +139,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       toast.success("Barang dipilih. Pool kini masuk ke fasa voting.");
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat pilih barang sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't select the item right now."));
     },
     onSettled: () => {
       setPendingSuggestionId(null);
@@ -161,7 +161,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       );
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat simpan undian sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't save your vote right now."));
     },
   });
 

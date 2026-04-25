@@ -44,7 +44,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
   const joinMutation = useMutation({
     mutationFn: () => {
       if (!session) {
-        throw new Error("Sign in dulu untuk sertai pool.");
+        throw new Error("Sign in before joining a pool.");
       }
 
       return poolsClient.join(normalizedInviteCode, session.user);
@@ -56,7 +56,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
       startTransition(() => router.push(`/pools/${joinedPool.id}`));
     },
     onError: (error) => {
-      toast.error(formatErrorMessage(error, "Tak dapat sertai pool sekarang."));
+      toast.error(formatErrorMessage(error, "Couldn't join the pool right now."));
     },
   });
 
