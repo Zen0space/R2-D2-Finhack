@@ -25,6 +25,7 @@ import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
 import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
 import { requireAuth } from "../middleware/require-auth.js";
+import { requireRole } from "../middleware/require-role.js";
 import { generateNadiWeeklySummary } from "../services/nadi-summary.js";
 
 // ---------------------------------------------------------------------------
@@ -199,18 +200,116 @@ nadiRouter.get("/districts", zValidator("query", districtsQuerySchema), async (c
   return c.json(successResponse({ state, districts: list }));
 });
 
+// GET /api/v1/nadi/dashboard
+//
+// Kampung-scoped aggregate stats for the NADI staff dashboard. Pool counts by
+// state, members served, total disbursed cents (delivered transactions), and
+// the kampung's current trust score. ADMIN may pass ?kampungId=... to inspect
+// any kampung; NADI_STAFF is locked to their own. No individual PII returned.
+nadiRouter.get(
+  "/dashboard",
+  requireAuth,
+  requireRole("NADI_STAFF", "ADMIN"),
+  zValidator("query", z.object({ kampungId: z.string().min(1).optional() })),
+  async (c) => {
+    const user = c.get("user");
+    const { kampungId: queryKampungId } = c.req.valid("query");
+
+    const kampungId =
+      user.role === "ADMIN" ? (queryKampungId ?? user.kampungId) : user.kampungId;
+
+    if (!kampungId) {
+      throw ApiError.badRequest("kampungId is required");
+    }
+
+    if (user.role !== "ADMIN" && queryKampungId && queryKampungId !== user.kampungId) {
+      throw ApiError.forbidden("This kampung is outside your scope");
+    }
+
+    const kampung = await prisma.kampung.findUnique({
+      where: { id: kampungId },
+      select: { id: true, name: true, districtHint: true, trustScore: true },
+    });
+    if (!kampung) {
+      throw ApiError.notFound("Kampung");
+    }
+
+    const [poolsByState, memberAgg, deliveredAgg, obligationAgg] = await Promise.all([
+      prisma.pool.groupBy({
+        by: ["state"],
+        where: { kampungId },
+        _count: { _all: true },
+      }),
+      prisma.poolMember.count({
+        where: { pool: { kampungId } },
+      }),
+      prisma.poolTransaction.aggregate({
+        where: { pool: { kampungId }, deliveredAt: { not: null } },
+        _sum: { totalAmountCents: true },
+      }),
+      prisma.paylaterObligation.aggregate({
+        where: { transaction: { pool: { kampungId } } },
+        _sum: { cyclesPaid: true, totalCycles: true },
+      }),
+    ]);
+
+    const stateCounts: Record<string, number> = {
+      DRAFT: 0,
+      LOCKED: 0,
+      SUGGESTING: 0,
+      VOTING: 0,
+      APPROVED: 0,
+      ACTIVE: 0,
+      COMPLETED: 0,
+      DISSOLVED: 0,
+    };
+    for (const row of poolsByState) {
+      stateCounts[row.state] = row._count._all;
+    }
+
+    const totalCycles = obligationAgg._sum.totalCycles ?? 0;
+    const cyclesPaid = obligationAgg._sum.cyclesPaid ?? 0;
+    const repaymentCompletionPct =
+      totalCycles > 0 ? Math.round((cyclesPaid / totalCycles) * 1000) / 10 : 0;
+
+    return c.json(
+      successResponse({
+        kampung: {
+          id: kampung.id,
+          name: kampung.name,
+          districtHint: kampung.districtHint,
+          trustScore: Number(kampung.trustScore),
+        },
+        pools: {
+          byState: stateCounts,
+          pendingDelivery: stateCounts.APPROVED,
+          active: stateCounts.ACTIVE,
+          completed: stateCounts.COMPLETED,
+          total: Object.values(stateCounts).reduce((sum, n) => sum + n, 0),
+        },
+        members: {
+          totalSeats: memberAgg,
+        },
+        finance: {
+          totalDisbursedCents: deliveredAgg._sum.totalAmountCents ?? 0,
+          repaymentCompletionPct,
+          cyclesPaid,
+          cyclesTotal: totalCycles,
+        },
+      }),
+    );
+  },
+);
+
 // POST /api/v1/nadi/summary
 nadiRouter.post(
   "/summary",
   requireAuth,
+  requireRole("NADI_STAFF", "ADMIN"),
   zValidator("json", summaryBodySchema),
   async (c) => {
     const user = c.get("user");
     const { kampungId, weekStart } = c.req.valid("json");
-
-    if (user.role !== "NADI_STAFF" && user.role !== "ADMIN") {
-      throw ApiError.forbidden("Only NADI staff can generate a weekly summary");
-    }
 
     if (user.role !== "ADMIN" && user.kampungId !== kampungId) {
       throw ApiError.forbidden("This summary is outside your kampung scope");

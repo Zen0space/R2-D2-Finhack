@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { MemberProfile } from "@/types/auth";
-import type { NadiWeeklySummaryRecord } from "@/types/nadi";
+import type { NadiDashboardStats, NadiWeeklySummaryRecord } from "@/types/nadi";
 import { nadiClient } from "@/lib/nadi/client";
 import { poolsClient } from "@/lib/pools/client";
 
@@ -46,6 +46,15 @@ export function useKampungTrustQuery(kampungId: string | null) {
     queryKey: ["kampung", "trust", kampungId],
     queryFn: () => poolsClient.getKampungTrust(kampungId ?? ""),
     enabled: kampungId !== null,
+    refetchInterval: 5_000,
+  });
+}
+
+export function useNadiDashboardQuery(user: MemberProfile | null) {
+  return useQuery<NadiDashboardStats>({
+    queryKey: ["nadi", "dashboard", user?.kampung.id],
+    queryFn: () => nadiClient.getDashboard(user?.kampung.id),
+    enabled: user?.role === "nadi_staff",
     refetchInterval: 5_000,
   });
 }
