@@ -2,7 +2,7 @@
 title: "DuitLater · Technical Pitch Deck"
 subtitle: "Multi-cloud architecture · HA failover · 3-layer AI · ~18 slides"
 event: "TNG FINHACK 2026 · Financial Inclusion Track"
-team: "R2-D2 — Ijam · Mung · Akmal · Kairu · MatNep"
+team: "R2-D2 — Ijam · Moon · Akmal · Kairu · MatNep"
 date: "25–26 April 2026"
 audience: "Technical judges · sponsor architects · Q&A handout"
 ---
@@ -668,7 +668,7 @@ These are answered/resolved at the organiser briefing on Day 1.
 | Member | Role | Archetype | Domain |
 |---|---|---|---|
 | **Ijam** (Zarul Izham) | Business Pitch Lead · Product Owner | *Narrative Spine* | Pitch · positioning · stakeholder framing |
-| **Mung** (Khairul Anuar) | Backend Lead | *Foundation-Keeper* | Hono · Prisma · Postgres replication · TNG · multi-cloud orchestration |
+| **Moon** (Khairul Anuar) | Backend Lead | *Foundation-Keeper* | Hono · Prisma · Postgres replication · TNG · multi-cloud orchestration |
 | **Akmal** | Frontend Lead | *Surface-Weaver* | Next.js 15 · Tailwind v4 · interaction craft · NADI portal UI |
 | **Kairu** | Product Manager · Phase Discipline | *Ladder-Keeper* | Phase plan · testable outcomes · scope guard · phase-gate verifier |
 | **MatNep** | Classical Designer | *Orthodox Eye* | Brand · typography · grid · accessibility-as-craft · pitch deck design |
@@ -741,7 +741,7 @@ These are answered/resolved at the organiser briefing on Day 1.
 - `DEVELOPMENT-PLAN.md` — 7-phase build · cut-line strategy · phase status table
 - `docs/pitch/business-pitch-deck.{md,pdf}` — this 8-slide pitch
 - `docs/pitch/technical-pitch-deck.{md,pdf}` — this technical deck
-- `docs/tech/multi-cloud-setup.{md,pdf}` — 1,400-line setup guide for Mung
+- `docs/tech/multi-cloud-setup.{md,pdf}` — 1,400-line setup guide for Moon
 - `docs/ai-methodology.md` — 3-layer AI integration explained
 - `infra/RELEASE.md` — single-EC2 baseline runbook
 - `alibaba-function-compute/` — deployable Qwen wrapper

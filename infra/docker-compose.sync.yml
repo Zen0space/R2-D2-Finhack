@@ -1,0 +1,21 @@
+# DuitLater · host-level Syncthing for upload folders
+# Run once per VPS:
+#   docker compose --env-file infra/.env -f infra/docker-compose.sync.yml -p sync up -d
+#
+# Syncthing syncs files only. Never point it at Postgres data volumes.
+
+services:
+  syncthing:
+    image: syncthing/syncthing:latest
+    container_name: duitlater-syncthing
+    restart: unless-stopped
+    user: "${SYNCTHING_UID:-1000}:${SYNCTHING_GID:-1000}"
+    hostname: ${SERVER_NAME:-duitlater-vps}
+    ports:
+      - "${SYNCTHING_PORT:-22000}:22000/tcp"
+      - "${SYNCTHING_PORT:-22000}:22000/udp"
+      - "${SYNCTHING_GUI_BIND:-127.0.0.1:8384}:8384"
+    volumes:
+      - ${SYNCTHING_CONFIG_HOST_PATH:-/var/lib/duitlater/syncthing/config}:/var/syncthing/config
+      - ${PROD_UPLOAD_HOST_PATH:-/var/lib/duitlater/prod/uploads}:/var/syncthing/prod-uploads
+      - ${DEV_UPLOAD_HOST_PATH:-/var/lib/duitlater/dev/uploads}:/var/syncthing/dev-uploads

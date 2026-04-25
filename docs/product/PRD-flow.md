@@ -266,12 +266,12 @@ gantt
 
 | Phase | Lead | Testable outcome |
 |---|---|---|
-| 0 | Mung + Akmal · Kairu gate | `docker compose up` · `/health` returns 200 · landing renders |
-| 1 | Mung + Akmal | Register → login → dashboard shows individual PayLater allowance |
-| 2 | Akmal + Mung | Create pool → invite → 2nd user joins → lock → combinedCap visible |
-| 3 | Mung | Locked pool → Penasihat returns top-5 BM-ranked items |
-| 4 | Mung + Kairu | Members vote → majority approves → simulated TNG debit → ACTIVE |
-| 5 | Mung + Akmal | Monthly Bayar → ledger appends → kampung trust score updates |
+| 0 | Moon + Akmal · Kairu gate | `docker compose up` · `/health` returns 200 · landing renders |
+| 1 | Moon + Akmal | Register → login → dashboard shows individual PayLater allowance |
+| 2 | Akmal + Moon | Create pool → invite → 2nd user joins → lock → combinedCap visible |
+| 3 | Moon | Locked pool → Penasihat returns top-5 BM-ranked items |
+| 4 | Moon + Kairu | Members vote → majority approves → simulated TNG debit → ACTIVE |
+| 5 | Moon + Akmal | Monthly Bayar → ledger appends → kampung trust score updates |
 | 6 | Ijam + MatNep | NADI portal · pitch deck · 4-min on-stage rehearsal |
 
 ---

@@ -14,7 +14,7 @@ Run the pre-flight check per [`protocols/preflight.md`](../protocols/preflight.m
 
 Check session context for who is invoking. If unknown:
 
-> Kau siapa? (mung / akmal / kairu / matnep / ijam)
+> Kau siapa? (moon / akmal / kairu / matnep / ijam)
 
 Whitelist check — if not in the 5 → refuse and end.
 
@@ -32,7 +32,7 @@ Pair command — pilih satu:
 ### Step 3a — Start pair flow
 
 ```
-Pair dengan siapa? (mung / akmal / kairu / matnep / ijam — yang bukan kau)
+Pair dengan siapa? (moon / akmal / kairu / matnep / ijam — yang bukan kau)
 ```
 
 If the named partner is the invoker themselves → *"Kau tak boleh pair dengan diri sendiri."* Refuse.

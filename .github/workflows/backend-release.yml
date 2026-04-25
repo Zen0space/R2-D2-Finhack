@@ -67,9 +67,10 @@ jobs:
             set -e
             cd /var/www/R2-D2-Finhack
             git pull origin dev
+            export DUITLATER_DOMAIN=${{ secrets.DUITLATER_DOMAIN }}
             docker compose -f infra/docker-compose.dev.yml -p dev pull app
             docker compose -f infra/docker-compose.dev.yml -p dev up -d app
-            echo "✅ Dev backend deployed"
+            echo "✅ Dev backend deployed — migrations run automatically on container start"
             sleep 5
             docker compose -f infra/docker-compose.dev.yml -p dev logs app --tail 20
 

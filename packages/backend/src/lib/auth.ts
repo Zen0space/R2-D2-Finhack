@@ -20,6 +20,15 @@ if (!SECRET || SECRET.length < 32) {
   );
 }
 
+const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:4000";
+const isProduction = baseURL.startsWith("https://");
+
+// In prod the frontend (dev.duitlater.com) and API (api.dev.duitlater.com)
+// live on different subdomains of the same parent. Setting the cookie
+// domain to the parent + sameSite=lax lets the session cookie ride
+// cross-subdomain navigations while still blocking third-party sites.
+const cookieDomain = process.env.AUTH_COOKIE_DOMAIN; // e.g. ".duitlater.com"
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -58,7 +67,19 @@ export const auth = betterAuth({
   },
   trustedOrigins: process.env.CORS_ORIGIN?.split(",") ?? ["http://localhost:3000"],
   secret: SECRET,
-  baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:4000",
+  baseURL,
+  advanced: {
+    useSecureCookies: isProduction,
+    defaultCookieAttributes: {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax",
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
+    },
+    ...(cookieDomain
+      ? { crossSubDomainCookies: { enabled: true, domain: cookieDomain } }
+      : {}),
+  },
 });
 
 export type Auth = typeof auth;

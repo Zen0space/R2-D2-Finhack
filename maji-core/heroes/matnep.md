@@ -54,12 +54,12 @@ Nusantara craft (songket, tenun, ukiran kayu, batik geometry) distilled into cle
 
 | Phase | Lead | Support |
 |---|---|---|
-| 0 | Mung + Akmal | Kairu gate |
-| 1 | Mung + Akmal | Ijam copy · **MatNep visual** |
-| 2 | Akmal + Mung | **MatNep invite UI** |
-| 3 | Mung | Akmal UI |
-| 4 | Mung + Kairu | — |
-| 5 | Akmal + Mung | — |
+| 0 | Moon + Akmal | Kairu gate |
+| 1 | Moon + Akmal | Ijam copy · **MatNep visual** |
+| 2 | Akmal + Moon | **MatNep invite UI** |
+| 3 | Moon | Akmal UI |
+| 4 | Moon + Kairu | — |
+| 5 | Akmal + Moon | — |
 | 6 | Ijam + **MatNep lead** | Kairu verify |
 
 ---

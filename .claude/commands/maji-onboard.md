@@ -7,7 +7,7 @@ Read `maji-core/commands/onboard.md` and follow its specification exactly. That 
 
 Key reminders:
 
-- **Whitelist strict** — only `ijam`, `mung`, `akmal`, `kairu`, `matnep`. Refuse all other names.
+- **Whitelist strict** — only `ijam`, `moon`, `akmal`, `kairu`, `matnep`. Refuse all other names.
 - **Ask the name BEFORE showing any hero content.**
 - **Write personal memory** to `maji-core/memory/members/<name>.json` on first-time match.
 - **BM-first register** with natural EN code-switch.

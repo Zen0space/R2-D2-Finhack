@@ -161,7 +161,7 @@ This gives one source of truth for: Prisma schema → generated client (used by 
 | `pg` | ^8.13 | backend | Raw driver — only needed because Better Auth uses node-postgres directly |
 
 **Why Prisma over Drizzle for this project:**
-- Single declarative schema file (`schema.prisma`) — easier handoff between Mung, Mahir, Kinetic during 48h crunch
+- Single declarative schema file (`schema.prisma`) — easier handoff between Moon, Mahir, Kinetic during 48h crunch
 - `prisma migrate dev` workflow is more forgiving than hand-edited SQL migrations
 - Prisma Studio gives judges a visible "ledger inspector" during demo
 - Better Auth ships a first-class Prisma adapter (Section 7.2)
@@ -785,7 +785,7 @@ From the DuitLater team roster:
 
 | Hero | Primary stack components |
 |---|---|
-| **Mung** (Backend · Foundation-Keeper) | Hono · Prisma (`packages/db`) · Better Auth · AWS SDK · pino · node-cron · zod · Pool/PoolMember services |
+| **Moon** (Backend · Foundation-Keeper) | Hono · Prisma (`packages/db`) · Better Auth · AWS SDK · pino · node-cron · zod · Pool/PoolMember services |
 | **Akmal** (Frontend · Surface-Weaver) | Next.js · React · TanStack Query · react-hook-form · motion · sonner · lucide-react · **@serwist/next (PWA)** |
 | **MatNep** (Design · Orthodox Eye) | Tailwind v4 · shadcn/ui · typography + grid + heritage motifs |
 | **Reka** (Design System · Rules) | shadcn/ui composition · WCAG audit · token architecture |

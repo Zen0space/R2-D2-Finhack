@@ -21,6 +21,7 @@ import { formatErrorMessage } from "@/lib/api/errors";
 import { pendingSuggestionFilterAtom, pendingSuggestionIdAtom } from "@/store/pools";
 import { InviteQr } from "@/components/duitlater/invite-qr";
 import { PoolSuggestionsPanel } from "@/components/duitlater/pool-suggestions-panel";
+import { BrushHeadline, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -357,7 +358,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                 </Badge>
               </div>
               <div className="grid gap-3">
-                <h1 className="text-5xl sm:text-6xl">{pool.name}</h1>
+                <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
+                  {pool.name}
+                </BrushHeadline>
                 <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
                   {pool.statedNeedText}
                 </p>
@@ -371,14 +374,26 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
           </div>
 
           <div className="mt-8 grid gap-4 lg:grid-cols-4">
-            <div className="rounded-[1.75rem] border border-[color:rgba(122,46,46,0.12)] bg-[linear-gradient(160deg,rgba(122,46,46,0.96),rgba(200,148,31,0.94))] p-5 text-white lg:col-span-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/72">
+            <div
+              className="relative overflow-hidden p-5 text-[var(--dl-zine-paper)] lg:col-span-2"
+              style={{
+                background: "var(--dl-zine-teal)",
+                boxShadow: "5px 5px 0 var(--dl-zine-teal-deep)",
+              }}
+            >
+              <ScribbleCircle
+                color="paper"
+                size={220}
+                variant="loop"
+                className="-right-8 -top-10 opacity-25"
+              />
+              <p className="zine-display relative text-xs uppercase tracking-[0.22em] text-[var(--dl-zine-paper)] opacity-85">
                 {pool.state === "locked" ? "Combined cap" : "Combined cap semasa"}
               </p>
-              <p className="data-figure mt-3 text-5xl font-semibold tracking-[-0.08em] sm:text-6xl">
+              <p className="zine-display relative mt-3 text-5xl tracking-[-0.02em] sm:text-6xl">
                 {formatCurrency(pool.combinedCapCents ?? liveCombinedCapCents)}
               </p>
-              <p className="mt-3 max-w-xl text-sm text-white/78 sm:text-base">
+              <p className="relative mt-3 max-w-xl text-sm text-[var(--dl-zine-paper)] opacity-85 sm:text-base">
                 {pool.state === "voting"
                   ? "Barang sudah dipilih dan undian ahli kini dibuka. Bila majoriti setuju, pool terus masuk ke state approved dan menunggu pengesahan NADI."
                   : pool.state === "approved"

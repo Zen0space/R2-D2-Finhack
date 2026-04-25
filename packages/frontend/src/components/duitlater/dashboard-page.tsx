@@ -9,7 +9,6 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
-  SwatchBook,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,6 +16,7 @@ import { startTransition } from "react";
 import { toast } from "sonner";
 import { poolComposerOpenAtom } from "@/store/pools";
 import { PoolComposerModal } from "@/components/duitlater/pool-composer-modal";
+import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -146,20 +146,28 @@ export function DashboardPage() {
     <>
       <main className="px-4 py-6 sm:px-6 lg:py-10">
         <div className="page-shell grid gap-6">
-          <header className="panel-surface rounded-[2.25rem] px-6 py-7 md:px-8 md:py-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <header className="panel-surface relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
+            <ScribbleCircle
+              color="brick"
+              size={300}
+              variant="loop"
+              className="-right-12 -top-14 opacity-15"
+            />
+            <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="grid gap-4">
-                <div className="flex flex-wrap gap-3">
-                  <Badge tone="gold">Dashboard</Badge>
-                  <Badge tone="forest">Phase 5 frontend</Badge>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Logo width={130} />
+                  <Badge tone="forest">Dashboard · Phase 5</Badge>
                   {isNadiStaff ? <Badge tone="maroon">NADI staff</Badge> : null}
                 </div>
                 <div className="grid gap-3">
-                  <h1 className="text-5xl sm:text-6xl">Selamat datang, {firstName}.</h1>
+                  <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
+                    Selamat datang, {firstName}.
+                  </BrushHeadline>
                   <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
                     {isNadiStaff
                       ? "Portal NADI masih urus penghantaran pool, sementara ahli kampung kini mula nampak catatan bayaran balik dan kesan terus pada skor kepercayaan komuniti."
-                      : "Sekarang anda dah boleh bergerak dari undian ke penghantaran, kemudian pantau bayaran balik bulanan bersama skor kepercayaan kampung anda."}
+                      : "Sekarang kau dah boleh bergerak dari undian ke penghantaran, kemudian pantau bayaran balik bulanan bersama skor kepercayaan kampung kau."}
                   </p>
                 </div>
               </div>
@@ -180,13 +188,6 @@ export function DashboardPage() {
                     Portal NADI
                   </Link>
                 ) : null}
-                <Link
-                  className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
-                  href="/settings"
-                >
-                  <SwatchBook aria-hidden="true" size={16} />
-                  Settings
-                </Link>
                 <Button
                   className="w-full sm:w-auto"
                   variant="outline"
@@ -201,47 +202,59 @@ export function DashboardPage() {
             </div>
 
             <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-              <Card className="overflow-hidden border-transparent bg-[linear-gradient(160deg,rgba(122,46,46,0.96),rgba(200,148,31,0.94))] text-white shadow-none">
-                <CardHeader className="gap-3 border-b border-white/14">
+              <Card
+                className="relative overflow-hidden border-transparent text-[var(--dl-zine-paper)] shadow-none"
+                style={{
+                  background: "var(--dl-zine-teal)",
+                  boxShadow: "6px 6px 0 var(--dl-zine-teal-deep)",
+                }}
+              >
+                <ScribbleCircle
+                  color="paper"
+                  size={260}
+                  variant="loop"
+                  className="-right-10 -top-12 opacity-25"
+                />
+                <CardHeader className="relative gap-3 border-b border-[rgba(245,240,220,0.2)]">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <Badge className="border-white/16 bg-white/10 text-white" tone="neutral">
+                    <span className="zine-display border border-[var(--dl-zine-paper)] px-2 py-0.5 text-xs uppercase tracking-[0.18em]">
                       PayLater Saya
-                    </Badge>
+                    </span>
                     <ShieldCheck aria-hidden="true" size={20} />
                   </div>
-                  <CardDescription className="text-white/75">
+                  <CardDescription className="text-[var(--dl-zine-paper)] opacity-80">
                     {isNadiStaff
-                      ? "Akaun demo NADI ini masih bawa profil kampung yang sama supaya anda boleh semak penghantaran pool untuk komuniti Felda Gedangsa."
-                      : "Allowance peribadi ini akan jadi sumbangan anda bila join atau cipta pool."}
+                      ? "Akaun demo NADI ini masih bawa profil kampung yang sama supaya kau boleh semak penghantaran pool untuk komuniti Felda Gedangsa."
+                      : "Allowance peribadi ini akan jadi sumbangan kau bila join atau cipta pool."}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-4 py-6">
-                  <p className="data-figure text-5xl font-semibold tracking-[-0.08em] sm:text-6xl">
+                <CardContent className="relative grid gap-4 py-6">
+                  <p className="zine-display text-5xl tracking-[-0.02em] sm:text-7xl">
                     {formatCurrency(user.individualPayLaterAllowanceCents)}
                   </p>
-                  <p className="max-w-xl text-sm text-white/78 sm:text-base">
+                  <p className="max-w-xl text-sm text-[var(--dl-zine-paper)] opacity-85 sm:text-base">
                     {isNadiStaff
                       ? `Akaun ini dipautkan ke ${user.kampung.name}. Buka portal NADI untuk tengok pool yang menunggu pengesahan penghantaran.`
-                      : `Anda dari ${user.kampung.name}. Pool kini guna allowance ahli yang dikunci untuk kira share undian, transaksi, dan catatan bayaran balik.`}
+                      : `Kau dari ${user.kampung.name}. Pool kini guna allowance ahli yang dikunci untuk kira share undian, transaksi, dan catatan bayaran balik.`}
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+                    <div className="border border-[rgba(245,240,220,0.25)] bg-[rgba(31,61,56,0.6)] p-4">
+                      <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-zine-paper)] opacity-80">
                         Pool draft
                       </p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{draftCount}</p>
+                      <p className="zine-display mt-2 text-4xl text-[var(--dl-zine-paper)]">{draftCount}</p>
                     </div>
-                    <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+                    <div className="border border-[rgba(245,240,220,0.25)] bg-[rgba(31,61,56,0.6)] p-4">
+                      <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-zine-paper)] opacity-80">
                         Bayaran aktif
                       </p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{activeCount}</p>
+                      <p className="zine-display mt-2 text-4xl text-[var(--dl-zine-paper)]">{activeCount}</p>
                     </div>
-                    <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4 sm:col-span-2">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+                    <div className="border border-[rgba(245,240,220,0.25)] bg-[rgba(31,61,56,0.6)] p-4 sm:col-span-2">
+                      <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-zine-paper)] opacity-80">
                         {isNadiStaff ? "Menunggu NADI" : "Pool selesai"}
                       </p>
-                      <p className="mt-2 text-3xl font-semibold text-white">
+                      <p className="zine-display mt-2 text-4xl text-[var(--dl-zine-paper)]">
                         {isNadiStaff ? approvedCount : completedCount}
                       </p>
                     </div>

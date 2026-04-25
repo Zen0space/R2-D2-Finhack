@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { InstallPromptListener } from "@/components/pwa/install-prompt";
 import { Toaster } from "sonner";
-import { DesignLanguageProvider } from "@/components/providers/design-language-provider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -24,11 +23,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <JotaiProvider>
       <QueryClientProvider client={queryClient}>
-        <DesignLanguageProvider>
-          <InstallPromptListener />
-          {children}
-          <Toaster richColors position="top-center" />
-        </DesignLanguageProvider>
+        <InstallPromptListener />
+        {children}
+        <Toaster richColors position="top-center" />
       </QueryClientProvider>
     </JotaiProvider>
   );

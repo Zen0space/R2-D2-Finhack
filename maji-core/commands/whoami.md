@@ -17,7 +17,7 @@ Run the pre-flight check per [`protocols/preflight.md`](../protocols/preflight.m
 Check if the user has identified themselves in this session already (in message history, or via prior `/maji-onboard`).
 
 If yes → proceed with that identity.
-If no → ask: *"Kau siapa? (mung / akmal / kairu / matnep / ijam)"*.
+If no → ask: *"Kau siapa? (moon / akmal / kairu / matnep / ijam)"*.
 
 ### Step 2 — Verify whitelist
 

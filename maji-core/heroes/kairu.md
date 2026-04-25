@@ -52,12 +52,12 @@ A phase is only ✅ when its testable outcome passes end-to-end on a machine oth
 
 | Phase | Lead | Support |
 |---|---|---|
-| 0 | Mung + Akmal | **Kairu gate** |
-| 1 | Mung + Akmal | **Kairu verify** |
-| 2 | Akmal + Mung | **Kairu verify** |
-| 3 | Mung | **Kairu verify** |
-| 4 | Mung + **Kairu** | Ijam narrative |
-| 5 | Akmal + Mung | **Kairu verify** |
+| 0 | Moon + Akmal | **Kairu gate** |
+| 1 | Moon + Akmal | **Kairu verify** |
+| 2 | Akmal + Moon | **Kairu verify** |
+| 3 | Moon | **Kairu verify** |
+| 4 | Moon + **Kairu** | Ijam narrative |
+| 5 | Akmal + Moon | **Kairu verify** |
 | 6 | Ijam + MatNep | **Kairu verify** |
 
 Kairu does not own any phase as primary lead until Phase 4 (vote tally + simulated TNG approval logic) where state-machine complexity earns his direct hand. For every other phase, Kairu is the gate-holder and verifier — the role the team leans on at phase transitions.

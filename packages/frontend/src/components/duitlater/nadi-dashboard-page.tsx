@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatErrorMessage } from "@/lib/api/errors";
+import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import {
   useNadiDashboardQuery,
   useNadiPoolsQuery,
@@ -165,15 +166,24 @@ export function NadiDashboardPage() {
   return (
     <main className="px-4 py-6 sm:px-6 lg:py-10">
       <div className="page-shell grid gap-6">
-        <header className="panel-surface rounded-[2.25rem] px-6 py-7 md:px-8 md:py-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <header className="panel-surface relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
+          <ScribbleCircle
+            color="forest"
+            size={300}
+            variant="loop"
+            className="-right-12 -top-14 opacity-15"
+          />
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="grid gap-4">
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <Logo width={130} />
                 <Badge tone="gold">Portal NADI</Badge>
                 <Badge tone="forest">{session.user.kampung.name}</Badge>
               </div>
               <div className="grid gap-3">
-                <h1 className="text-5xl sm:text-6xl">Pengesahan penghantaran pool.</h1>
+                <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
+                  Pengesahan penghantaran pool.
+                </BrushHeadline>
                 <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
                   Halaman ini paparkan ringkasan pool di peringkat kampung, termasuk briefing mingguan BM-first untuk staf NADI. Tiada jumlah individu sensitif dipaparkan selain bilangan ahli dan status penghantaran.
                 </p>

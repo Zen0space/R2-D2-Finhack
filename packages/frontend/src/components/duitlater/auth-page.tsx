@@ -5,17 +5,25 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, KeyRound, Landmark, MapPinned, ShieldCheck, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, type ReactNode } from "react";
+import { startTransition, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { formatErrorMessage } from "@/lib/api/errors";
-import { authClient, API_BASE, DEMO_ACCOUNTS, DEMO_CREDENTIALS } from "@/lib/auth/client";
+import {
+  authClient,
+  API_BASE,
+  DEMO_ACCOUNTS,
+  DEMO_CREDENTIALS,
+  requestRegistrationCode,
+  verifyRegistrationCode,
+} from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import type { SignInInput } from "@/types/auth";
 
@@ -30,6 +38,7 @@ const signUpSchema = signInSchema
   .extend({
     name: z.string().min(2, "Nama minimum 2 huruf."),
     kampungName: z.string().min(2, "Masukkan nama kampung."),
+    verificationCode: z.string().optional(),
     confirmPassword: z.string().min(8, "Ulang kata laluan anda."),
   })
   .refine((value) => value.password === value.confirmPassword, {
@@ -89,11 +98,19 @@ function resolveNextPath(value: string | null) {
 
 function AuthStory({ mode }: { mode: AuthMode }) {
   return (
-    <Card className="h-full">
-      <CardHeader className="gap-4 border-b border-[color:rgba(224,216,200,0.72)]">
+    <Card className="relative h-full overflow-hidden">
+      <ScribbleCircle
+        color="brick"
+        size={260}
+        variant="loop"
+        className="-right-12 -top-10 opacity-15"
+      />
+      <CardHeader className="relative gap-4 border-b border-[color:rgba(31,31,26,0.1)]">
         <Badge tone="gold">Phase 1 frontend</Badge>
         <div className="grid gap-3">
-          <CardTitle className="text-5xl sm:text-6xl">{pageCopy[mode].title}</CardTitle>
+          <BrushHeadline color="brick" size="xl" rotate={-2} as="h2">
+            {pageCopy[mode].title}
+          </BrushHeadline>
           <CardDescription className="max-w-xl text-base">
             {pageCopy[mode].description}
           </CardDescription>
@@ -191,12 +208,14 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
 
   return (
     <Card>
-      <CardHeader className="gap-3 border-b border-[color:rgba(224,216,200,0.72)]">
+      <CardHeader className="gap-3 border-b border-[color:rgba(31,31,26,0.1)]">
         <Badge tone="maroon">Sign in</Badge>
         <div className="grid gap-2">
-          <CardTitle>Daftar masuk</CardTitle>
+          <BrushHeadline color="teal" size="lg" rotate={-2}>
+            Daftar masuk
+          </BrushHeadline>
           <CardDescription>
-            Session akan disimpan pada browser ini supaya reload tak buang allowance view anda.
+            Session akan disimpan pada browser ini supaya reload tak buang allowance view kau.
           </CardDescription>
         </div>
       </CardHeader>
@@ -250,6 +269,7 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
 function SignUpFormCard({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [codeSent, setCodeSent] = useState(false);
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     mode: "onBlur",
@@ -257,6 +277,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
       name: "",
       kampungName: "Felda Gedangsa",
       email: "",
+      verificationCode: "",
       password: "",
       confirmPassword: "",
     },
@@ -264,6 +285,25 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
 
   const mutation = useMutation({
     mutationFn: async (values: SignUpFormValues) => {
+      if (!codeSent) {
+        await requestRegistrationCode({
+          email: values.email,
+          name: values.name,
+        });
+
+        return { stage: "code-sent" as const };
+      }
+
+      const code = values.verificationCode?.trim();
+      if (!code) {
+        throw new Error("Masukkan kod pengesahan 6 digit yang dihantar ke e-mel anda.");
+      }
+
+      await verifyRegistrationCode({
+        email: values.email,
+        code,
+      });
+
       // Resolve kampungId from name — default to Felda Gedangsa if not found
       const kampungRes = await fetch(
         `${API_BASE}/api/v1/kampungs?q=${encodeURIComponent(values.kampungName)}&limit=1`,
@@ -285,9 +325,15 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
         kampungId,
       });
       if (result.error) throw new Error(result.error.message ?? "Couldn't create the account.");
-      return result;
+      return { stage: "signed-up" as const };
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (result.stage === "code-sent") {
+        setCodeSent(true);
+        toast.success("Kod pengesahan sudah dihantar. Semak e-mel anda.");
+        return;
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
       toast.success(pageCopy["sign-up"].toast);
       startTransition(() => router.push(nextPath));
@@ -299,10 +345,12 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
 
   return (
     <Card>
-      <CardHeader className="gap-3 border-b border-[color:rgba(224,216,200,0.72)]">
+      <CardHeader className="gap-3 border-b border-[color:rgba(31,31,26,0.1)]">
         <Badge tone="maroon">Sign up</Badge>
         <div className="grid gap-2">
-          <CardTitle>Buka akaun baharu</CardTitle>
+          <BrushHeadline color="teal" size="lg" rotate={-2}>
+            Buka akaun baharu
+          </BrushHeadline>
           <CardDescription>
             Nama kampung dikumpul sekarang supaya dashboard dan Phase 2 pool flow ada konteks dari awal.
           </CardDescription>
@@ -317,6 +365,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.name)}
               autoComplete="name"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-name"
               placeholder="Contoh: Nurul Aisyah"
               {...form.register("name")}
@@ -332,6 +381,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.kampungName)}
               autoComplete="address-level2"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-kampung"
               placeholder="Contoh: Felda Gedangsa"
               {...form.register("kampungName")}
@@ -342,11 +392,42 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.email)}
               autoComplete="email"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-email"
               placeholder="nama@contoh.my"
               {...form.register("email")}
             />
           </Field>
+
+          {codeSent ? (
+            <Field
+              error={form.formState.errors.verificationCode?.message}
+              htmlFor="sign-up-verification-code"
+              label="Kod pengesahan e-mel"
+              required
+            >
+              <Input
+                aria-invalid={Boolean(form.formState.errors.verificationCode)}
+                autoComplete="one-time-code"
+                id="sign-up-verification-code"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="6 digit"
+                {...form.register("verificationCode")}
+              />
+              <button
+                className="mt-2 text-left text-sm font-semibold text-[color:var(--dl-maroon)] underline-offset-4 hover:underline"
+                disabled={mutation.isPending}
+                type="button"
+                onClick={() => {
+                  setCodeSent(false);
+                  form.setValue("verificationCode", "");
+                }}
+              >
+                Tukar e-mel atau hantar semula kod
+              </button>
+            </Field>
+          ) : null}
 
           <Field
             error={form.formState.errors.password?.message}
@@ -357,6 +438,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.password)}
               autoComplete="new-password"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-password"
               placeholder="Minimum 8 aksara"
               type="password"
@@ -373,6 +455,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.confirmPassword)}
               autoComplete="new-password"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-confirm-password"
               placeholder="Ulang kata laluan"
               type="password"
@@ -381,7 +464,13 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
           </Field>
 
           <Button className="mt-2 w-full" size="lg" type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? "Sedang cipta..." : pageCopy["sign-up"].ctaLabel}
+            {mutation.isPending
+              ? codeSent
+                ? "Sedang sahkan..."
+                : "Sedang hantar kod..."
+              : codeSent
+                ? "Sahkan kod dan cipta akaun"
+                : "Hantar kod pengesahan"}
             <ArrowRight aria-hidden="true" size={18} />
           </Button>
         </form>
@@ -402,16 +491,21 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
 function AuthLayout({ children, mode }: { children: ReactNode; mode: AuthMode }) {
   return (
     <main className="px-4 py-6 sm:px-6 lg:py-10">
-      <div className="page-shell grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <AuthStory mode={mode} />
-        <div className="grid gap-4">
-          {children}
-          <Link
-            className={cn(buttonVariants({ variant: "ghost" }), "justify-start rounded-[1.5rem] px-4")}
-            href="/"
-          >
-            Kembali ke ringkasan Phase 1
-          </Link>
+      <div className="page-shell grid gap-6">
+        <Link href="/" className="inline-flex w-fit">
+          <Logo width={150} priority />
+        </Link>
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <AuthStory mode={mode} />
+          <div className="grid gap-4">
+            {children}
+            <Link
+              className={cn(buttonVariants({ variant: "ghost" }), "justify-start px-4")}
+              href="/"
+            >
+              Kembali ke ringkasan Phase 1
+            </Link>
+          </div>
         </div>
       </div>
     </main>
