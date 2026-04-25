@@ -9,12 +9,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { formatErrorMessage } from "@/lib/api/errors";
-import {
-  BrushHeadline,
-  MemeCat,
-  NumberedTab,
-  ScribbleCircle,
-} from "@/components/duitlater/brand/zine";
+import { BrushHeadline, NumberedTab, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
@@ -220,7 +215,6 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
                     .
                   </p>
                 </div>
-                <MemeCat cat="yay" width={120} rotate={6} className="absolute -bottom-4 -right-2" />
               </div>
 
               <div className="zine-card grid gap-3 p-5">

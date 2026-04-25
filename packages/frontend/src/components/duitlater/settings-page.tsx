@@ -1,47 +1,60 @@
 "use client";
 
-import {
-  CheckCircle2,
-  Home,
-  Layers3,
-  Landmark,
-  Sparkles,
-  SwatchBook,
-} from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { InstallAppButton } from "@/components/pwa/install-app-button";
-import { useDesignLanguage } from "@/components/providers/design-language-provider";
+import { Sparkles } from "lucide-react";
 import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { designLanguages } from "@/lib/design-language/config";
-import { cn } from "@/lib/utils";
 
-const languageIconMap = {
-  zine: Sparkles,
-  "neo-nusantara": Landmark,
-  skeu: Layers3,
-} as const;
+const palette = [
+  { name: "Teal", value: "#2A4F4A", role: "Primary surface · trust · NADI" },
+  { name: "Cream paper", value: "#F5F0DC", role: "Body bg · paper grain" },
+  { name: "Brick", value: "#B53028", role: "Brand accent · scribbles · errors" },
+  { name: "Forest", value: "#3F5F3F", role: "Numbered tabs · pool steps" },
+  { name: "Burnt orange", value: "#D85A2C", role: "Highlights · CTAs · selection" },
+  { name: "Ink", value: "#1F1F1A", role: "Borders · body text · shadows" },
+] as const;
 
-const languageToneMap = {
-  zine: "maroon",
-  "neo-nusantara": "maroon",
-  skeu: "gold",
-} as const;
+type FontEntry = {
+  name: string;
+  role: string;
+  sample: string;
+  variant?: "brush" | "mono";
+};
+
+const fonts: FontEntry[] = [
+  { name: "Anton", role: "Display · headlines · zine-display utility", sample: "RM300 DOESN'T BUY A SEWING MACHINE" },
+  {
+    name: "Splatink",
+    role: "Brush · emotional accents · zine-brush utility",
+    sample: "Sendiri tak mampu, ramai-ramai boleh!?",
+    variant: "brush",
+  },
+  { name: "Inter", role: "Body · UI text · forms · descriptions", sample: "Pool kelompok B40 · combine TNG PayLater · AI Penasihat picks from MyKasih." },
+  { name: "JetBrains Mono", role: "Code · data figures · tabular numbers", sample: "RM 1,800.00", variant: "mono" },
+];
+
+const principles = [
+  {
+    title: "Brutalist scaffolding",
+    body: "Square corners (2px), 2px ink borders, hard offset shadows (no blur), flat color blocks. No glass, no gradient.",
+  },
+  {
+    title: "Zine identity",
+    body: "Splatink brush headlines for emotional beats. Hand-drawn red scribble loops as decorative accents. Paper grain bg.",
+  },
+  {
+    title: "SaaS structure",
+    body: "Predictable header · footer · main grid. Dense info hierarchy. Hover/focus states. Accessibility-first.",
+  },
+] as const;
 
 export function SettingsPage() {
-  const { designLanguage, setDesignLanguage } = useDesignLanguage();
-  const activeLanguage =
-    designLanguages.find((item) => item.id === designLanguage) ?? designLanguages[0];
+  const language = designLanguages[0];
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:py-10">
-      <div className="page-shell grid gap-6">
+    <main className="px-4 py-8 sm:px-6 lg:py-12">
+      <div className="page-shell grid gap-8">
         <header className="panel-surface relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
           <ScribbleCircle
             color="brick"
@@ -49,189 +62,121 @@ export function SettingsPage() {
             variant="loop"
             className="-right-12 -top-14 opacity-15"
           />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="grid gap-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <Logo width={130} />
-                <Badge tone="gold">Settings</Badge>
-                <Badge tone="neutral">Surface lab</Badge>
-              </div>
-              <div className="grid gap-3">
-                <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
-                  Pilih design language untuk app ini.
-                </BrushHeadline>
-                <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
-                  Pilihan ini disimpan pada browser semasa dan terus ubah tokens, komponen shared,
-                  serta permukaan utama app untuk tujuan eksperimen visual.
-                </p>
-              </div>
+          <div className="relative grid gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Logo width={140} />
+              <Badge tone="maroon">Brand reference</Badge>
+              <Badge tone="forest">{language.badge}</Badge>
             </div>
-
-            <div className="flex flex-wrap gap-3">
-              <InstallAppButton />
-              <Link className={cn(buttonVariants({ variant: "outline" }))} href="/">
-                <Home aria-hidden="true" size={16} />
-                Landing
-              </Link>
-              <Link className={cn(buttonVariants({ variant: "ghost" }))} href="/dashboard">
-                <SwatchBook aria-hidden="true" size={16} />
-                Dashboard
-              </Link>
-            </div>
+            <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
+              DuitLater design DNA.
+            </BrushHeadline>
+            <p className="max-w-3xl text-base text-[var(--dl-slate)] sm:text-lg">
+              {language.description}
+            </p>
           </div>
         </header>
 
-        <section className="grid gap-4 xl:grid-cols-2">
-          {designLanguages.map((language) => {
-            const Icon = languageIconMap[language.id];
-            const isActive = language.id === designLanguage;
-
-            return (
-              <Card
-                className={cn(
-                  "overflow-hidden",
-                  isActive ? "ring-2 ring-[color:rgba(47,106,63,0.18)]" : null,
-                )}
-                key={language.id}
+        <section className="grid gap-4">
+          <h2 className="zine-display text-2xl tracking-[0.04em] text-[var(--dl-ink)]">Palette</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {palette.map((swatch) => (
+              <div
+                key={swatch.value}
+                className="flex items-stretch border-2 border-[var(--dl-ink)]"
+                style={{ boxShadow: "4px 4px 0 var(--dl-ink)" }}
               >
-                <CardHeader className="gap-4 border-b border-[color:rgba(224,216,200,0.72)]">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="grid gap-3">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge tone={isActive ? "forest" : languageToneMap[language.id]}>
-                          {isActive ? "Aktif" : language.badge}
-                        </Badge>
-                        {language.id === "skeu" ? <Badge tone="neutral">Local-only</Badge> : null}
-                      </div>
-                      <div className="grid gap-2">
-                        <CardTitle className="text-4xl">{language.name}</CardTitle>
-                        <CardDescription className="text-base">{language.description}</CardDescription>
-                      </div>
-                    </div>
+                <div className="w-20 shrink-0" style={{ background: swatch.value }} />
+                <div className="grid gap-1 p-3">
+                  <p className="zine-display text-base tracking-wide">{swatch.name}</p>
+                  <code className="text-xs text-[var(--dl-slate)]">{swatch.value}</code>
+                  <p className="text-xs text-[var(--dl-slate)]">{swatch.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-                    <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.76)] text-[color:var(--dl-maroon)]">
-                      <Icon aria-hidden="true" size={22} />
-                    </div>
+        <section className="grid gap-4">
+          <h2 className="zine-display text-2xl tracking-[0.04em] text-[var(--dl-ink)]">Type stack</h2>
+          <div className="grid gap-4">
+            {fonts.map((font) => (
+              <Card key={font.name}>
+                <CardHeader className="gap-2 border-b-2 border-[var(--dl-ink)] pb-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <CardTitle className="zine-display text-2xl">{font.name}</CardTitle>
+                    <Sparkles size={18} className="text-[var(--dl-burnt)]" />
                   </div>
+                  <CardDescription>{font.role}</CardDescription>
                 </CardHeader>
-
-                <CardContent className="grid gap-4 py-6">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {language.traits.map((trait) => (
-                      <div
-                        className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.68)] p-4 text-sm font-medium text-[color:var(--dl-ink)]"
-                        key={trait}
-                      >
-                        {trait}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/78 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                      Signal
-                    </p>
-                    <p className="mt-2 text-sm text-[color:var(--dl-ink)]">{language.tokens}</p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                      disabled={isActive}
-                      size="lg"
-                      onClick={() => {
-                        setDesignLanguage(language.id);
-                        toast.success(`${language.name} kini aktif untuk browser ini.`);
-                      }}
-                    >
-                      {isActive ? "Sedang aktif" : `Guna ${language.shortName}`}
-                    </Button>
-
-                    {isActive ? (
-                      <span className="inline-flex items-center gap-2 text-sm text-[color:var(--dl-forest)]">
-                        <CheckCircle2 aria-hidden="true" size={16} />
-                        Disimpan untuk browser ini
-                      </span>
-                    ) : null}
-                  </div>
+                <CardContent className="py-5">
+                  <p
+                    className={
+                      font.variant === "brush"
+                        ? "zine-brush text-4xl"
+                        : font.variant === "mono"
+                          ? "data-figure text-3xl tracking-tight"
+                          : "zine-display text-3xl"
+                    }
+                  >
+                    {font.sample}
+                  </p>
                 </CardContent>
               </Card>
-            );
-          })}
+            ))}
+          </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <Card>
-            <CardHeader className="gap-3">
-              <Badge tone="maroon">Aktif sekarang</Badge>
-              <CardTitle className="text-4xl">{activeLanguage.name}</CardTitle>
-              <CardDescription className="text-base">
-                Fokus eksperimen ini ialah shared tokens, komponen, dan surface utama supaya kesan
-                pilihan boleh rasa di seluruh app tanpa fork UI sepenuhnya.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              {activeLanguage.traits.map((trait) => (
-                <div
-                  className="flex items-center gap-3 rounded-[1.4rem] border border-[color:var(--dl-sand)] bg-white/78 p-4"
-                  key={trait}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[1rem] bg-[color:rgba(200,148,31,0.14)] text-[color:var(--dl-gold-dark)]">
-                    <Sparkles aria-hidden="true" size={18} />
-                  </div>
-                  <p className="text-sm text-[color:var(--dl-ink)] sm:text-base">{trait}</p>
+        <section className="grid gap-4">
+          <h2 className="zine-display text-2xl tracking-[0.04em] text-[var(--dl-ink)]">Principles</h2>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {principles.map((p) => (
+              <div
+                key={p.title}
+                className="border-2 border-[var(--dl-ink)] bg-[var(--dl-paper)] p-5"
+                style={{ boxShadow: "4px 4px 0 var(--dl-ink)" }}
+              >
+                <p className="zine-display text-lg tracking-wide text-[var(--dl-brick)]">{p.title}</p>
+                <p className="mt-2 text-sm text-[var(--dl-slate)]">{p.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-4">
+          <h2 className="zine-display text-2xl tracking-[0.04em] text-[var(--dl-ink)]">Component samples</h2>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div
+              className="border-2 border-[var(--dl-ink)] bg-[var(--dl-paper)] p-5"
+              style={{ boxShadow: "4px 4px 0 var(--dl-ink)" }}
+            >
+              <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-brick)]">Stat chip</p>
+              <div className="mt-3 zine-stat">
+                <div className="zine-stat-figure">RM 2,400</div>
+                <div className="zine-stat-caption">Combined cap · 8 ahli</div>
+              </div>
+            </div>
+
+            <div
+              className="border-2 border-[var(--dl-ink)] bg-[var(--dl-paper)] p-5"
+              style={{ boxShadow: "4px 4px 0 var(--dl-ink)" }}
+            >
+              <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-brick)]">Numbered tab</p>
+              <div className="zine-tab mt-3 flex-col items-start">
+                <div className="flex items-baseline gap-3">
+                  <span className="zine-tab-number">1</span>
+                  <span className="text-2xl">Form Pool</span>
                 </div>
-              ))}
-
-              <div className="rounded-[1.4rem] border border-[color:rgba(122,46,46,0.14)] bg-[color:rgba(122,46,46,0.05)] p-4 text-sm text-[color:var(--dl-slate)]">
-                Beberapa surface custom yang sangat spesifik masih kekal ikut layout asal. Untuk
-                eksperimen pertama ini, coverage utama duduk pada background, tokens, buttons, cards,
-                badges, input, dan panel shared.
+                <p className="text-sm font-normal normal-case opacity-90">2–8 members at NADI centre</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="gap-3">
-              <Badge tone="gold">Live preview</Badge>
-              <CardTitle className="text-4xl">Preview komponen semasa</CardTitle>
-              <CardDescription className="text-base">
-                Sampel kecil ini guna primitives yang sama dengan halaman auth, dashboard, dan join flow.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-5">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field hint="Read-only preview" htmlFor="preview-pool" label="Nama pool">
-                  <Input defaultValue="Pool Belian Dapur" id="preview-pool" readOnly />
-                </Field>
-
-                <Field htmlFor="preview-category" label="Kategori">
-                  <Select defaultValue="keperluan-rumah" id="preview-category">
-                    <option value="keperluan-rumah">Keperluan rumah</option>
-                    <option value="jagaan">Penjagaan diri</option>
-                    <option value="jimat-tenaga">Jimat tenaga</option>
-                  </Select>
-                </Field>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Badge tone="maroon">Draft</Badge>
-                <Badge tone="gold">Invite terbuka</Badge>
-                <Badge tone="forest">Ready</Badge>
-                <Badge tone="neutral">Preview only</Badge>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button size="lg">Simpan pilihan</Button>
-                <Button size="lg" variant="secondary">
-                  CTA kedua
-                </Button>
-                <Button size="lg" variant="outline">
-                  Outline action
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </section>
+
+        <p className="text-xs text-[var(--dl-slate)]">
+          DuitLater hybrid design language · Pitch Zine + Neo-Brutalist + SaaS · single source of truth · build-time tokens in
+          <code className="ml-1">globals.css</code>.
+        </p>
       </div>
     </main>
   );

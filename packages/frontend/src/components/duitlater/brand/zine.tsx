@@ -30,7 +30,8 @@ export function Logo({
       width={width}
       height={Math.round(width * (423 / 1224))}
       priority={priority}
-      className={cn("select-none", className)}
+      className={cn("h-auto select-none", className)}
+      style={{ width, height: "auto" }}
     />
   );
 }
@@ -213,46 +214,6 @@ export function StatChip({
       <div className="zine-stat-figure">{figure}</div>
       <div className="zine-stat-caption">{caption}</div>
     </div>
-  );
-}
-
-const catFiles = {
-  shock: { src: "/brand/cats/cat-shock.webp", w: 260, h: 150 },
-  stare: { src: "/brand/cats/cat-stare.webp", w: 260, h: 340 },
-  worry: { src: "/brand/cats/cat-worry.webp", w: 230, h: 180 },
-  yay: { src: "/brand/cats/cat-yay.webp", w: 200, h: 240 },
-  smart: { src: "/brand/cats/cat-smart.webp", w: 180, h: 170 },
-} as const;
-
-export type CatName = keyof typeof catFiles;
-
-export function MemeCat({
-  cat,
-  className,
-  width,
-  rotate = 0,
-  priority = false,
-}: {
-  cat: CatName;
-  className?: string;
-  width?: number;
-  rotate?: number;
-  priority?: boolean;
-}) {
-  const meta = catFiles[cat];
-  const w = width ?? meta.w;
-  const h = Math.round(w * (meta.h / meta.w));
-  return (
-    <Image
-      src={meta.src}
-      alt=""
-      aria-hidden
-      width={w}
-      height={h}
-      priority={priority}
-      className={cn("select-none drop-shadow-[3px_4px_0_rgba(31,31,26,0.25)]", className)}
-      style={{ transform: rotate ? `rotate(${rotate}deg)` : undefined }}
-    />
   );
 }
 

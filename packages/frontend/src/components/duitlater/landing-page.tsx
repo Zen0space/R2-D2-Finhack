@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   BrushHeadline,
   Logo,
-  MemeCat,
   NumberedTab,
   ScribbleCircle,
   StatChip,
@@ -61,10 +60,8 @@ export function LandingPage() {
             </div>
           </header>
 
-          <div className="relative z-10 mt-12 grid gap-8 md:grid-cols-[200px_1fr_220px] md:items-center">
-            <MemeCat cat="shock" width={200} rotate={-4} className="md:mt-12" priority />
-
-            <div className="text-center">
+          <div className="relative z-10 mt-12">
+            <div className="mx-auto max-w-3xl text-center">
               <BrushHeadline
                 color="cream"
                 size="3xl"
@@ -111,8 +108,6 @@ export function LandingPage() {
                 <InstallAppButton />
               </div>
             </div>
-
-            <MemeCat cat="stare" width={220} rotate={4} className="md:-mt-6" priority />
           </div>
 
           <p className="relative z-10 mt-12 text-center text-xs uppercase tracking-[0.3em] text-[var(--dl-zine-paper)] opacity-70">
@@ -157,7 +152,6 @@ export function LandingPage() {
                 className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
               />
             </div>
-            <MemeCat cat="worry" width={260} rotate={3} />
             <p className="zine-brush zine-brush-cream text-2xl leading-tight md:text-3xl">
               The Platform is Missing.
             </p>
@@ -187,10 +181,6 @@ export function LandingPage() {
                 {step.desc}
               </NumberedTab>
             ))}
-
-            <div className="absolute -right-6 -top-10 hidden md:block">
-              <MemeCat cat="yay" width={200} rotate={-6} />
-            </div>
           </div>
 
           <div className="mt-16 flex items-end justify-center gap-6">
@@ -230,15 +220,12 @@ export function LandingPage() {
                 <div className="zine-display text-xs uppercase tracking-[0.32em] text-[var(--dl-zine-brick)]">
                   Selangor · Hulu Selangor
                 </div>
-                <MemeCat cat="smart" width={240} rotate={-2} />
                 <p className="text-center text-sm text-[var(--dl-slate)]">
                   Real institutions. Real settlement. Real B40 household pool dynamics —
                   not synthetic.
                 </p>
               </div>
             </TornCard>
-
-            <MemeCat cat="yay" width={180} rotate={6} className="self-end" />
           </div>
         </div>
       </ZineSection>

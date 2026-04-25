@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Anton, Geist_Mono, Inter, JetBrains_Mono, Permanent_Marker } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/components/providers/app-providers";
-import { defaultDesignLanguage } from "@/lib/design-language/config";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
 import "./globals.css";
 
 const appName = "DuitLater";
@@ -78,11 +79,24 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html data-design-language={defaultDesignLanguage} lang="ms">
+    <html lang="ms">
+      <head>
+        <link
+          rel="preload"
+          href="/brand/fonts/Splatink.otf"
+          as="font"
+          type="font/otf"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body
-        className={`${display.variable} ${sans.variable} ${mono.variable} ${landingMono.variable} ${brushFallback.variable}`}
+        className={`${display.variable} ${sans.variable} ${mono.variable} ${landingMono.variable} ${brushFallback.variable} flex min-h-screen flex-col`}
       >
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <SiteHeader />
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+        </AppProviders>
       </body>
     </html>
   );
