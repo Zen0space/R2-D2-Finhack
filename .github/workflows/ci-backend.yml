@@ -41,6 +41,9 @@ jobs:
       - name: Typecheck backend
         run: pnpm --filter backend typecheck
 
+      - name: Audit production dependencies (high+ severity)
+        run: pnpm audit --prod --audit-level=high
+
   docker-build-check:
     name: Docker build check (release dry-run)
     runs-on: ubuntu-latest
