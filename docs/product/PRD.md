@@ -440,32 +440,57 @@ Single EC2 t3.medium · ap-southeast-1 · 4-container Docker spine. Same-domain 
         [ TNG PayLater sandbox ] · [ Claude API ] · [ MyKasih catalogue (seeded) ]
 ```
 
-Full diagrams: [ARCHITECTURE.md](./ARCHITECTURE.md). Tech stack inventory: [TECH-STACK.md](./TECH-STACK.md).
+### Repository layout — pnpm workspace monorepo
+
+Single repo, three workspace packages, single lockfile. Backend and frontend both consume types and Prisma client from the shared `db` package via `workspace:*` protocol.
+
+```
+R2-D2-Finhack/
+├── packages/
+│   ├── backend/           # Hono API (Node 22) · port 4000
+│   ├── frontend/          # Next.js 15 App Router + PWA · port 3000
+│   └── db/                # Prisma schema · migrations · generated client
+├── docs/
+│   ├── product/  tech/  team/  process/  pitch/
+├── maji-core/             # Team protocols, heroes, slash commands
+├── infra/                 # Caddyfile + infra docs
+├── scripts/               # setup.sh · kill-ports.sh
+├── docker-compose.yml
+├── pnpm-workspace.yaml
+└── package.json           # root workspace (private, scripts only)
+```
+
+Full diagrams: [ARCHITECTURE.md](../tech/ARCHITECTURE.md). Tech stack inventory: [TECH-STACK.md](../tech/TECH-STACK.md). Full 67-item inventory: [tech-stack-manifest.md](../tech/tech-stack-manifest.md).
 
 ---
 
 ## 12. Data Model (Summary)
 
+ORM: **Prisma 6** · single source of truth at `packages/db/prisma/schema.prisma`.
+Schema generates the typed Prisma client; both backend and frontend import types via the `db` workspace package.
+
 ### Core tables
 
-`users` · `sessions` · `kampungs` · `pools` · `pool_members` · `mykasih_catalogue` · `pool_suggestions` · `pool_votes` · `pool_transactions` · `paylater_obligations` · `repayments` · `kampung_trust_scores`
+`User` · `Session` · `Kampung` · `Pool` · `PoolMember` · `MykasihProduct` · `PoolSuggestion` · `PoolVote` · `PoolTransaction` · `PaylaterObligation` · `Repayment` · `KampungTrustScore`
+
+(Already shipped: `MykasihProduct` model + 94 seeded products in the catalogue.)
 
 ### Key invariants
 
 - Money columns are integer cents (never float)
-- `paylater_obligations` rows append-only after creation
-- `repayments` append-only; corrections via compensating rows
-- A `pool` can only transition forward (`draft → locked → … → completed`)
-- `pool.combined_cap` is computed at lock time; never recalculated
-- `kampung_trust_scores` recalculated on every pool completion or payment event
+- `PaylaterObligation` rows append-only after creation
+- `Repayment` append-only; corrections via compensating rows
+- A `Pool` can only transition forward (`DRAFT → LOCKED → … → COMPLETED`)
+- `Pool.combinedCap` is computed at lock time; never recalculated
+- `KampungTrustScore` recalculated on every pool completion or payment event
 
-Full ER diagram: [ARCHITECTURE.md](./ARCHITECTURE.md) → Data Model section.
+Full ER diagram: [ARCHITECTURE.md](../tech/ARCHITECTURE.md) → Data Model section.
 
 ---
 
 ## 13. Build Phases & Timeline
 
-7 phases (0–6). Phase definitions, testable outcomes, and ownership: [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md).
+7 phases (0–6). Phase definitions, testable outcomes, and ownership: [DEVELOPMENT-PLAN.md](../process/DEVELOPMENT-PLAN.md).
 
 | Window | Phases targeted |
 |---|---|
@@ -478,7 +503,7 @@ Full ER diagram: [ARCHITECTURE.md](./ARCHITECTURE.md) → Data Model section.
 | Sun 14:00–19:00 | Phase 6 (NADI portal + pitch polish, parallel) |
 | Sun 20:00 | Judging |
 
-Phase advancement gated by `/maji-gate`. See [maji-core/protocols/phase-gate.md](./maji-core/protocols/phase-gate.md).
+Phase advancement gated by `/maji-gate`. See [maji-core/protocols/phase-gate.md](../../maji-core/protocols/phase-gate.md).
 
 ---
 
@@ -537,12 +562,12 @@ Phase advancement gated by `/maji-gate`. See [maji-core/protocols/phase-gate.md]
 | Member | Role | Codename | Domain |
 |---|---|---|---|
 | **Ijam** (Zarul Izham) | Business Pitch Lead · Product Owner | *Narrative Spine* | Pitch · positioning · stakeholder framing |
-| **Mung** | Backend Lead | *Foundation-Keeper* | Hono · Drizzle · Postgres · Better Auth · TNG simulated · MyKasih catalogue |
-| **Akmal** | Frontend Lead | *Surface-Weaver* | Next.js · Tailwind · shadcn/ui · TanStack Query · pool UI · NADI portal |
+| **Mung** | Backend Lead | *Foundation-Keeper* | Hono · Prisma · Postgres · Better Auth · TNG simulated · MyKasih catalogue |
+| **Akmal** | Frontend Lead | *Surface-Weaver* | Next.js 15 · Tailwind v4 · shadcn/ui · TanStack Query · Jotai · pool UI · NADI portal |
 | **Kairu** | Product Manager | *Ladder-Keeper* | Phase plan · testable outcomes · scope guard |
 | **MatNep** | Classical Designer | *Orthodox Eye* | BRAND · pitch deck · typography · accessibility |
 
-Per-member role cards: [maji-core/heroes/](./maji-core/heroes/).
+Per-member role cards: [maji-core/heroes/](../../maji-core/heroes/).
 
 ### External stakeholders (post-hackathon roadmap)
 
@@ -566,16 +591,21 @@ Per-member role cards: [maji-core/heroes/](./maji-core/heroes/).
 
 ### 18.1 Reference reading
 
-- [README.md](./README.md) — repo entry point + quickstart
+- [README.md](../../README.md) — repo entry point + quickstart
+- [CLAUDE.md](../../CLAUDE.md) — Claude Code project instructions + ownership table
 - [WORLD.md](./WORLD.md) — manifesto · cultural anchor · institutional package narrative
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — system architecture · sequence diagrams · ER diagram
-- [TECH-STACK.md](./TECH-STACK.md) — stack inventory · install commands · version locks
 - [BRAND.md](./BRAND.md) — visual identity · palette · typography · iconography · voice
-- [TEAM.md](./TEAM.md) — roster · phase ownership · norms
-- [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md) — 7-phase build plan · cut-line strategy
-- [QUICKSTART.md](./QUICKSTART.md) — 10-minute bootstrap
-- [docs/pitch-deck.md](./docs/pitch-deck.md) — 8-slide deck content
-- [docs/pitch-narration.md](./docs/pitch-narration.md) — 4-minute on-stage script
+- [ARCHITECTURE.md](../tech/ARCHITECTURE.md) — system architecture · sequence diagrams · ER diagram
+- [TECH-STACK.md](../tech/TECH-STACK.md) — stack inventory · install commands · version locks
+- [tech-stack-manifest.md](../tech/tech-stack-manifest.md) — full 67-item stack inventory
+- [TEAM.md](../team/TEAM.md) — roster · phase ownership · norms
+- [AGENTS.md](../team/AGENTS.md) — AI assistant onboarding spec
+- [ONBOARDING.md](../team/ONBOARDING.md) — Claude Code team onboarding guide
+- [DEVELOPMENT-PLAN.md](../process/DEVELOPMENT-PLAN.md) — 7-phase build plan · cut-line strategy
+- [QUICKSTART.md](../process/QUICKSTART.md) — 10-minute bootstrap
+- [pitch-deck.md](../pitch/pitch-deck.md) — 8-slide deck content
+- [pitch-narration.md](../pitch/pitch-narration.md) — 4-minute on-stage script
+- [product-manifest.md](../pitch/product-manifest.md) — product manifest with visual flows
 
 ### 18.2 Institutional partner references (verified)
 
