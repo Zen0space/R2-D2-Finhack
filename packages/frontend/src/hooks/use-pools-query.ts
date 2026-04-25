@@ -38,3 +38,12 @@ export function useNadiPoolsQuery(user: MemberProfile | null) {
     refetchInterval: 2_000,
   });
 }
+
+export function useKampungTrustQuery(kampungId: string | null) {
+  return useQuery({
+    queryKey: ["kampung", "trust", kampungId],
+    queryFn: () => poolsClient.getKampungTrust(kampungId ?? ""),
+    enabled: kampungId !== null,
+    refetchInterval: 5_000,
+  });
+}

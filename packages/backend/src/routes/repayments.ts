@@ -44,7 +44,7 @@ repaymentsRouter.post("/pay", zValidator("json", paySchema), async (c) => {
   const obligation = await prisma.paylaterObligation.findUnique({
     where: { id: obligationId },
     include: {
-      transaction: { include: { pool: { select: { kampungId: true } } } },
+      transaction: { include: { pool: { select: { id: true, kampungId: true } } } },
     },
   });
 
@@ -84,7 +84,22 @@ repaymentsRouter.post("/pay", zValidator("json", paySchema), async (c) => {
       data: { cyclesPaid: { increment: 1 } },
     });
 
-    return { payment, updatedObligation };
+    const siblingObligations = await tx.paylaterObligation.findMany({
+      where: { transactionId: obligation.transactionId },
+      select: { cyclesPaid: true, totalCycles: true },
+    });
+    const poolCompleted =
+      siblingObligations.length > 0 &&
+      siblingObligations.every((entry) => entry.cyclesPaid >= entry.totalCycles);
+
+    if (poolCompleted) {
+      await tx.pool.update({
+        where: { id: obligation.transaction.pool.id },
+        data: { state: "COMPLETED" },
+      });
+    }
+
+    return { payment, poolCompleted, updatedObligation };
   });
 
   // Recalculate kampung trust score (post-transaction so it sees latest data)
@@ -108,6 +123,7 @@ repaymentsRouter.post("/pay", zValidator("json", paySchema), async (c) => {
           (result.updatedObligation.cyclesPaid / result.updatedObligation.totalCycles) * 100,
         ),
       },
+      poolCompleted: result.poolCompleted,
     }),
   );
 });

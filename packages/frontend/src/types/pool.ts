@@ -97,6 +97,36 @@ export type PoolTransactionRecord = {
   totalAmountCents: number;
 };
 
+export type PoolRepaymentCycleStatus = "PAID" | "DUE" | "PENDING";
+
+export type PoolRepaymentCycleRecord = {
+  amountCents: number;
+  cycleNumber: number;
+  paidAt: string | null;
+  status: PoolRepaymentCycleStatus;
+  tngReference: string | null;
+};
+
+export type PoolRepaymentLedgerEntry = {
+  cycles: PoolRepaymentCycleRecord[];
+  cyclesPaid: number;
+  monthlyAmountCents: number;
+  obligationId: string;
+  outstandingAmountCents: number;
+  progressPct: number;
+  shareAmountCents: number;
+  sharePct: number;
+  totalCycles: number;
+  userId: string;
+  userName: string;
+};
+
+export type PoolRepaymentSummary = {
+  cyclesPaid: number;
+  cyclesTotal: number;
+  memberCount: number;
+};
+
 export type PoolVotingState = {
   hasMajorityApproval: boolean;
   majorityThreshold: number;
@@ -129,9 +159,23 @@ export type PoolRecord = {
   suggestionFilter: PoolSuggestionFilter;
   suggestions: PoolSuggestionRecord[];
   targetBudgetCents: number;
+  repaymentLedger?: PoolRepaymentLedgerEntry[];
+  repaymentSummary?: PoolRepaymentSummary | null;
   transaction: PoolTransactionRecord | null;
   votingStartedAt: string | null;
   votes: PoolVoteRecord[];
+};
+
+export type KampungTrustRecord = {
+  completionRatePct: number;
+  kampungId: string;
+  kampungName: string;
+  labelBm: string;
+  poolCount: number;
+  score: number;
+  signalCount: number;
+  totalCycles: number;
+  totalPaid: number;
 };
 
 export type CreatePoolInput = {

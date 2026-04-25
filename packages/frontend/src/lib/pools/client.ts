@@ -5,9 +5,13 @@ import type { MemberProfile } from "@/types/auth";
 import type {
   CatalogueProduct,
   CreatePoolInput,
+  KampungTrustRecord,
   PoolListItem,
   PoolNeedCategory,
   PoolObligationRecord,
+  PoolRepaymentCycleStatus,
+  PoolRepaymentLedgerEntry,
+  PoolRepaymentSummary,
   PoolRecord,
   PoolState,
   PoolSuggestionFilter,
@@ -122,6 +126,37 @@ type BackendLedger = {
     memberCount: number;
     cyclesPaid: number;
     cyclesTotal: number;
+  };
+};
+
+type BackendRepaymentResult = {
+  obligation: {
+    id: string;
+    cyclesPaid: number;
+    progressPct: number;
+    shareAmountCents: number;
+    totalCycles: number;
+  };
+  repayment: {
+    amountCents: number;
+    cycleNumber: number;
+    id: string;
+    paidAt: string;
+    tngReference: string;
+  };
+};
+
+type BackendKampungTrust = {
+  kampungId: string;
+  kampungName: string;
+  label_bm: string;
+  score: number;
+  signalCount?: number;
+  signals: {
+    completionRatePct: number;
+    poolCount: number;
+    totalCycles: number;
+    totalPaid: number;
   };
 };
 
@@ -289,6 +324,8 @@ function mapBackendPool(basePool: BackendPool): PoolRecord {
     suggestionFilter: "semua",
     suggestions: [],
     targetBudgetCents: basePool.targetBudgetCents,
+    repaymentLedger: [],
+    repaymentSummary: null,
     transaction: null,
     votingStartedAt: null,
     votes: [],
@@ -333,6 +370,62 @@ function buildTransactionFromLedger(
     obligations,
     suggestionId: pool.selectedSuggestionId ?? `suggestion-${pool.id}`,
     totalAmountCents: obligations.reduce((sum, obligation) => sum + obligation.shareAmountCents, 0),
+  };
+}
+
+function mapRepaymentStatus(status: string): PoolRepaymentCycleStatus {
+  if (status === "PAID" || status === "DUE" || status === "PENDING") {
+    return status;
+  }
+
+  return "PENDING";
+}
+
+function mapLedgerEntry(entry: BackendLedgerEntry): PoolRepaymentLedgerEntry {
+  const cycles = entry.cycles.map((cycle) => ({
+    amountCents: cycle.amountCents,
+    cycleNumber: cycle.cycleNumber,
+    paidAt: cycle.paidAt,
+    status: mapRepaymentStatus(cycle.status),
+    tngReference: cycle.tngReference,
+  }));
+
+  return {
+    cycles,
+    cyclesPaid: entry.cyclesPaid,
+    monthlyAmountCents: entry.perCycleCents,
+    obligationId: entry.obligationId,
+    outstandingAmountCents: cycles
+      .filter((cycle) => cycle.status !== "PAID")
+      .reduce((sum, cycle) => sum + cycle.amountCents, 0),
+    progressPct: entry.progressPct,
+    shareAmountCents: entry.shareAmountCents,
+    sharePct: entry.sharePct,
+    totalCycles: entry.totalCycles,
+    userId: entry.member.id,
+    userName: entry.member.name,
+  };
+}
+
+function mapRepaymentSummary(totals: BackendLedger["totals"]): PoolRepaymentSummary {
+  return {
+    cyclesPaid: totals.cyclesPaid,
+    cyclesTotal: totals.cyclesTotal,
+    memberCount: totals.memberCount,
+  };
+}
+
+function mapKampungTrust(trust: BackendKampungTrust): KampungTrustRecord {
+  return {
+    completionRatePct: trust.signals.completionRatePct,
+    kampungId: trust.kampungId,
+    kampungName: trust.kampungName,
+    labelBm: trust.label_bm,
+    poolCount: trust.signals.poolCount,
+    score: trust.score,
+    signalCount: trust.signalCount ?? trust.signals.totalPaid,
+    totalCycles: trust.signals.totalCycles,
+    totalPaid: trust.signals.totalPaid,
   };
 }
 
@@ -476,7 +569,7 @@ async function hydratePoolRecord(basePool: BackendPool): Promise<PoolRecord> {
     }
   }
 
-  if (pool.selectedSuggestionId && ["approved", "active"].includes(pool.state)) {
+  if (pool.selectedSuggestionId && ["approved", "active", "completed"].includes(pool.state)) {
     const ledger = await apiFetch<BackendLedger>(`/api/v1/pools/${pool.id}/ledger`).catch((error) => {
       if (error instanceof ApiRequestError && error.status === 400) {
         return null;
@@ -494,9 +587,14 @@ async function hydratePoolRecord(basePool: BackendPool): Promise<PoolRecord> {
         product?.nameMs ??
         product?.name ??
         "Item pool";
+      const repaymentLedger = ledger.data.ledger.map((entry) => mapLedgerEntry(entry));
+      const repaymentSummary = mapRepaymentSummary(ledger.data.totals);
+      const isRepaymentVisible = pool.state === "active" || pool.state === "completed";
 
       pool = {
         ...pool,
+        repaymentLedger: isRepaymentVisible ? repaymentLedger : [],
+        repaymentSummary: isRepaymentVisible ? repaymentSummary : null,
         transaction: buildTransactionFromLedger(pool, ledger.data.ledger, itemNameBm),
       };
     }
@@ -729,6 +827,33 @@ export const poolsClient = {
     }
 
     return pool;
+  },
+
+  async payRepayment(
+    poolId: string,
+    obligationId: string,
+    cycleNumber: number,
+  ): Promise<{ pool: PoolRecord; repayment: BackendRepaymentResult["repayment"] }> {
+    const response = await apiFetch<BackendRepaymentResult>("/api/v1/repayments/pay", {
+      method: "POST",
+      body: JSON.stringify({ obligationId, cycleNumber }),
+    });
+
+    const pool = await fetchPoolRecord(poolId);
+
+    if (!pool) {
+      throw new Error("Pool tak ditemui selepas bayaran dihantar.");
+    }
+
+    return {
+      pool,
+      repayment: response.data.repayment,
+    };
+  },
+
+  async getKampungTrust(kampungId: string): Promise<KampungTrustRecord> {
+    const response = await apiFetch<BackendKampungTrust>(`/api/v1/kampungs/${kampungId}/trust`);
+    return mapKampungTrust(response.data);
   },
 
   async listCatalogue(filter?: PoolSuggestionFilter): Promise<CatalogueProduct[]> {
