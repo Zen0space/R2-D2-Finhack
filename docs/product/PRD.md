@@ -219,6 +219,16 @@ Innovation and Security tracks were considered. Innovation would have required A
 - Solution within track scope (no out-of-track features submitted)
 - Per-track judging respected
 
+### 7.4 Judging criteria fit (5 official criteria · same for preliminary + grand final)
+
+| Criterion (verbatim) | DuitLater fit |
+|---|---|
+| **AI & Intelligent Systems** — *Effective and meaningful integration of AI to address the problem statements* | **Three layers across the project lifecycle.** Layer 1 (pre-product): ~2,400 lines of planning artifacts generated through multi-agent AI orchestration before product code began. Layer 2 (process): [`maji-core/`](../../maji-core/) team coordinator — 6 slash commands, phase gates, schema-locked persistent memory, Akal coding discipline, Jimat register. Layer 3 (in-product): Penasihat catalogue suggester (Claude API, structured BM output) + NADI weekly summary with anomaly detection. Full 3-layer story: [`docs/ai-methodology.md`](../ai-methodology.md). |
+| **Technical Implementation** — *Scalability, robustness, security or prototype* | Append-only ledger · HMAC-verified webhooks · argon2 hashing · role-based NADI portal scoping · TypeScript strict end-to-end · explicit production scale path documented (read replica → ASG → Aurora multi-AZ) · rate limiting via `hono-rate-limiter` · full security posture in [ARCHITECTURE.md](../tech/ARCHITECTURE.md). |
+| **Multi-Cloud Service Usage** — *Effective and purposeful use of at least two or more cloud platforms* | **AWS + Anthropic Cloud** — AWS hosts main backend (EC2 + Postgres). Anthropic Claude API (separate cloud platform) hosts AI inference for Penasihat suggester and NADI weekly summary. Both are production-grade cloud services with distinct SLAs, billing, and failure domains. |
+| **Impact & Feasibility** — *Real-world use case relevance, sustainability and potential adoption* | Test bed: **NADI Felda Gedangsa, Hulu Selangor** — real Felda smallholder community with existing MCMC-run NADI centre. Real institutional package: TNG (Gold sponsor · 23M users) + NADI/MCMC (188 centres nationally · 84 in Selangor) + MyKasih (3.7M monthly SARA recipients · 10,000+ merchant network). 2.9M B40 households nationally. No new welfare programme invented — DuitLater composes existing rails. No new credit instrument — uses TNG's existing PayLater risk model. |
+| **Presentation & Teamwork** — *Clarity in project demo and pitch, teamwork, documentation quality* | 4-min on-stage script in [pitch-narration.md](../pitch/pitch-narration.md) with recovery phrases per slide. 8-slide deck in [pitch-deck.md](../pitch/pitch-deck.md). Documentation quality: 600+ line PRD, ARCHITECTURE with 8 mermaid diagrams, WORLD manifesto, BRAND visual identity guide, DEVELOPMENT-PLAN with phase-by-phase testable outcomes. maji-core team coordinator with 6 slash commands, phase-gate enforcement, committed personal memory for cross-team visibility. |
+
 ---
 
 ## 8. User Stories
@@ -322,14 +332,23 @@ Innovation and Security tracks were considered. Innovation would have required A
 - **F-AI4** Claude API call with locked system prompt + structured output schema: `{ items: [{ id, name, price, category, allocation_pct, reasoning_bm, reasoning_en }] }`
 - **F-AI5** Response cached per pool for 30 min (avoid re-spending API quota on UI re-renders)
 
-### 9.5 Vote
+### 9.5 AI NADI Weekly Summary
+
+- **F-NS1** `POST /api/nadi/summary`: body `{ kampungId, weekStart }`, requires `nadi_staff` role
+- **F-NS2** Backend assembles weekly context: pools formed, top-requested items, kampung trust score Δ, late-payment events
+- **F-NS3** Claude API call with structured output: `{ headline_bm, observations_bm: string[], anomalies_bm: string[], suggestion_bm }`
+- **F-NS4** Surfaces on `/nadi/dashboard` as the weekly briefing card
+- **F-NS5** Anomaly detection: clusters of 3+ late payments same week flagged as kampung-distress signal
+- **F-NS6** Audit-friendly — all summaries logged with generation timestamp
+
+### 9.6 Vote
 
 - **F-V1** `POST /api/pools/:id/vote`: body `{ memberId, vote: 'yes' | 'no' }`, one vote per member per item suggestion
 - **F-V2** Vote tally reaches majority → pool transitions `voting → approved`
 - **F-V3** Tied vote: pool stays in `voting`; initiator can re-call vote after 24h delay
 - **F-V4** Vote outcomes append-only logged
 
-### 9.6 Purchase + delivery
+### 9.7 Purchase + delivery
 
 - **F-D1** On `voting → approved`: backend creates `pool_transactions` row with amount, members list, proportional shares
 - **F-D2** Simulated TNG PayLater call per member (demo: always succeeds; production: real sandbox)
@@ -337,7 +356,7 @@ Innovation and Security tracks were considered. Innovation would have required A
 - **F-D4** NADI portal action: confirm delivery → pool transitions `approved → active`
 - **F-D5** Repayment cycle begins from next month
 
-### 9.7 Repayment
+### 9.8 Repayment
 
 - **F-R1** Monthly cycle: each member sees `Bayar bulan ni` button if their share for the current cycle is unpaid
 - **F-R2** Click → TNG sandbox payment → on confirm, `repayments` row added with `member_id, pool_id, cycle_number, amount_cents, paid_at`
@@ -345,7 +364,7 @@ Innovation and Security tracks were considered. Innovation would have required A
 - **F-R4** All members repaid for cycle N → cycle N marked complete; cycle N+1 begins
 - **F-R5** All cycles repaid → pool transitions `active → completed`
 
-### 9.8 Kampung trust score
+### 9.9 Kampung trust score
 
 - **F-T1** Trust score = weighted average of (kampung's pool completion rate · 0.6) + (kampung's average on-time payment rate · 0.4)
 - **F-T2** Score range 0–100; new kampung starts at 60 (neutral)
@@ -353,7 +372,7 @@ Innovation and Security tracks were considered. Innovation would have required A
 - **F-T4** Visible to all kampung members
 - **F-T5** Affects future pool capacity ceiling: high-trust kampung can unlock NADI-tier multipliers (production roadmap; demo: just display)
 
-### 9.9 NADI portal
+### 9.10 NADI portal
 
 - **F-N1** Separate auth role `nadi_staff`
 - **F-N2** `/nadi/dashboard` route protected by role
@@ -361,7 +380,7 @@ Innovation and Security tracks were considered. Innovation would have required A
 - **F-N4** Action: confirm delivery (per F-D4)
 - **F-N5** No individual member PII beyond pool member count
 
-### 9.10 Brand & visual surface
+### 9.11 Brand & visual surface
 
 - **F-B1** Cormorant Garamond for display + headings
 - **F-B2** Inter for body
