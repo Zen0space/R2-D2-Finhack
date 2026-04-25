@@ -20,6 +20,7 @@ RUN pnpm --filter db generate
 ENV NODE_ENV=production
 EXPOSE 4000
 
-# tsx loader resolves TypeScript workspace imports at runtime.
-# db package main points to .ts — no separate compile step needed.
-CMD ["node", "--import", "tsx/esm", "packages/backend/src/index.ts"]
+# Run from the backend package dir so Node resolves tsx from its local
+# node_modules (packages/backend/node_modules/tsx) rather than the workspace root.
+WORKDIR /app/packages/backend
+CMD ["node", "--import", "tsx/esm", "src/index.ts"]
