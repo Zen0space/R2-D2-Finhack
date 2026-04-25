@@ -34,9 +34,9 @@ frontend/
     │   │   ├── sign-in/page.tsx
     │   │   └── sign-up/page.tsx
     │   ├── dashboard/
-    │   │   └── page.tsx         # User's tabung list
-    │   ├── tabung/
-    │   │   ├── new/page.tsx     # Create tabung
+    │   │   └── page.tsx         # User's pool list
+    │   ├── pools/
+    │   │   ├── new/page.tsx     # Create pool
     │   │   └── [id]/
     │   │       ├── page.tsx     # Detail · ledger · members
     │   │       └── invite/page.tsx
@@ -48,7 +48,7 @@ frontend/
     │       └── (proxy if any — usually we hit /api/* via Caddy)
     ├── components/
     │   ├── ui/                  # shadcn primitives (auto-generated)
-    │   ├── tabung/
+    │   ├── pools/
     │   │   ├── TabungCard.tsx
     │   │   ├── TabungForm.tsx
     │   │   ├── MemberList.tsx
@@ -65,7 +65,7 @@ frontend/
     │   ├── format.ts            # money formatter (cents → RM)
     │   └── utils.ts             # cn, clsx
     ├── schemas/
-    │   ├── tabung.ts            # zod schemas (shared with backend by copy)
+    │   ├── pools.ts             # zod schemas (shared with backend by copy)
     │   ├── contribution.ts
     │   └── user.ts
     └── hooks/

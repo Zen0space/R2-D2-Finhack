@@ -36,15 +36,13 @@ If REFUSE, name the specific thing still pending.
 
 | Phase | Testable outcome (must pass end-to-end, second person verifies) |
 |---|---|
-| 0 | `curl http://localhost:4000/health` returns `{"ok":true}` AND frontend renders at `http://localhost:3000` |
-| 1 | Register via UI → create tabung → reload → tabung still listed |
-| 2 | Creator generates invite code · copies link · incognito browser registers second account · accepts invite · creator's view shows two members |
-| 3 | Member clicks "Contribute" · TNG sandbox flow completes · webhook fires · ledger entry appears green · trust score +1 · reload persists |
-| 4 | All members contribute for cycle 1 · admin triggers rotation · scheduled recipient sees payout · timeline updates · cycle 2 begins |
-| 5a | Open `/penasihat` · type "bila next payout aku?" in BM · receive streamed BM reply citing real rotation date from user's tabung |
-| 5b | Member with at least one completed cycle opens `/penasihat/cadang` · completes 5-question risk questionnaire · receives 3 recommendation cards (conservative · balanced · growth) in BM citing real instruments + allocation% + expected return · clicks one to log demo stub |
-| 5c | User attempts transfer of RM 800 to a seeded flagged recipient · Pengawal modal appears in BM with concrete red flags · user can choose Batal (cancel) or Teruskan (override · logged to audit) |
-| 6 | Live URL accessible from any laptop · 4-min demo runs across all 3 pillars without breakage · deck exported to PDF · demo video uploaded · FINHACK portal submission complete |
+| 0 | `curl http://localhost:4000/health` returns `{"ok":true}` AND DuitLater frontend renders at `http://localhost:3000` |
+| 1 | Register via UI · land on `/dashboard` · see "PayLater Saya: RM <amount>" · reload page · still authenticated, still see same allowance |
+| 2 | User A creates pool · gets invite code · User B (incognito browser) registers + joins via code · pool shows 2 members with combined cap = sum of A + B allowances · A clicks Lock · pool transitions to `locked` |
+| 3 | Locked pool with combined cap RM 1,800 · click "Cadangkan barang" · within 6 seconds receive 5 ranked BM suggestions each citing reasoning + allocation% · pool transitions to `voting` after item selected |
+| 4 | 4-member pool in `voting` state · 3 of 4 vote yes · pool transitions to `approved` · `pool_transactions` + `paylater_obligations` rows created with correct proportional shares · NADI staff (separate login) opens `/nadi/dashboard` · clicks "Sahkan dah hantar" · pool transitions to `active` |
+| 5 | Active pool with 4 members · cycle 1 begins · all 4 members click "Bayar bulan ni" · all 4 repayments recorded in ledger · cycle 1 complete · cycle 2 initialized · kampung trust score updates · visible on member dashboards |
+| 6 | Live URL accessible from any laptop · 4-min demo runs end-to-end (sign-up → pool → suggestion → vote → NADI confirm → repayment → trust score) without breakage · deck exported to PDF · demo video uploaded · FINHACK portal submission complete |
 
 If a phase wants to claim ✅ but its testable outcome line above does NOT pass, the gate refuses.
 
@@ -60,11 +58,9 @@ If a phase wants to claim ✅ but its testable outcome line above does NOT pass,
 | 0 | Mung + Akmal | Kairu |
 | 1 | Mung + Akmal | Kairu |
 | 2 | Akmal + Mung | Kairu |
-| 3 | Mung | Akmal |
+| 3 | Mung + Akmal | Ijam |
 | 4 | Mung + Kairu | Ijam |
-| 5a | Akmal + Mung | Ijam |
-| 5b | Mung + Akmal | Ijam |
-| 5c | Mung + Akmal | Kairu |
+| 5 | Mung + Akmal | Kairu |
 | 6 | Ijam + MatNep | Kairu |
 
 The verifier runs the testable outcome on their own machine. If it works, they mark the phase ✅. If it does not work, they log the specific failure in `team-ledger.md` and the phase stays 🟡.

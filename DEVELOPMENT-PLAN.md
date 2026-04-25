@@ -1,4 +1,4 @@
-# Development Plan — Kutu Digitizer
+# Development Plan — DuitLater
 
 **Phase-by-phase build · vertical-slice discipline · testable outcome per phase**
 
@@ -20,7 +20,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Frontend**
 - `npx create-next-app` per [TECH-STACK.md](./TECH-STACK.md) Section 11
 - `npx shadcn init`
-- Single landing page renders
+- Single landing page renders (DuitLater branded)
 
 **Infra**
 - `Dockerfile` for backend
@@ -29,214 +29,181 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 - `Caddyfile` placeholder
 
 **Testable outcome:**
-> Run `docker compose -f docker-compose.dev.yml up -d` → run `npm run dev` in both repos → open `http://localhost:3000` (frontend renders) and `curl http://localhost:4000/health` returns `{"ok": true}`.
+> Run `docker compose -f docker-compose.dev.yml up -d` → run `npm run dev` in both repos → open `http://localhost:3000` (DuitLater landing renders) and `curl http://localhost:4000/health` returns `{"ok": true}`.
 
-**Time estimate:** 60-90 minutes (Saturday 09:00 → 10:30)
+**Time estimate:** 60–90 minutes (Saturday 09:00 → 10:30) — pre-scaffolded; team verifies.
 
 ---
 
-## Phase 1 — Auth + First Tabung
+## Phase 1 — Auth + Individual PayLater
 
-**Goal:** A signed-in user can create a tabung and see it persisted.
+**Goal:** A signed-in user sees their individual TNG PayLater allowance.
 
 **Backend**
-- Drizzle schema: `users`, `sessions` (Better Auth), `tabung`, `tabung_members`
+- Drizzle schema: `users`, `sessions` (Better Auth), `kampungs`
+- `users` table includes: `kampung_id` (FK), `individual_paylater_allowance_cents` (int, seeded per-user for demo), `role` (`member` | `nadi_staff`)
 - Migration applied
 - Better Auth configured with Postgres adapter
 - Routes:
-  - `POST /api/auth/sign-up`, `POST /api/auth/sign-in`, `POST /api/auth/sign-out` (Better Auth handles)
-  - `POST /api/tabung` — create
-  - `GET /api/tabung` — list user's tabung
+  - Better Auth handles sign-up / sign-in / sign-out
+  - `GET /api/me` — returns current user + kampung + individual PayLater allowance
 
 **Frontend**
 - `/sign-up` and `/sign-in` pages with shadcn `Form` + `react-hook-form` + zod
-- `/dashboard` — list of user's tabung (TanStack Query fetching `GET /api/tabung`)
-- Modal: "Create Tabung" form (name · monthly amount · duration months)
-- After creation → invalidate query → list re-renders
+- `/dashboard` — landing for member role:
+  - Member name + kampung
+  - Individual PayLater allowance card (large, prominent — JetBrains Mono for the figure)
+  - Empty pool list ("Belum ada pool. Cipta atau sertai.")
+- Better Auth client hooks for session
 
 **Testable outcome:**
-> Open `https://kutu.domain.com` → register with email + password → land on dashboard (empty) → click "Create Tabung" → fill form → submit → tabung appears in list → reload page → tabung still there.
+> Open the app → register with email + password → land on dashboard → see "PayLater Saya: RM 300" (or whatever seeded amount) → reload page → still authenticated, still see same allowance.
 
-**Time estimate:** 3-4 hours (Saturday 10:30 → 14:30)
+**Time estimate:** 3–4 hours (Saturday 10:30 → 14:30)
+
+**Owner:** Mung (backend) · Akmal (frontend) · Kairu (gate)
 
 ---
 
-## Phase 2 — Member Invite + Join
+## Phase 2 — Pool Formation + Invite + Lock
 
-**Goal:** A tabung creator can invite others; invitees can accept and appear on the roster.
+**Goal:** A user can create a pool, invite 1–7 others, and lock the pool to compute combined cap.
 
 **Backend**
-- Schema additions: invite codes (`nanoid`-generated 8-char codes)
+- Schema additions: `pools` (id, name, kampung_id, stated_need_text, stated_need_category, target_budget_cents, combined_cap_cents, state)
+- Schema additions: `pool_members` (pool_id, user_id, joined_at, individual_allowance_at_lock_cents)
 - Routes:
-  - `POST /api/tabung/:id/invite` — generate invite code (creator only)
-  - `POST /api/tabung/join` — accept invite code (must be authed user)
-  - `GET /api/tabung/:id/members` — list members
+  - `POST /api/pools` — create pool (initiator becomes member 1)
+  - `POST /api/pools/:id/invite` — generate 8-char code (nanoid), valid until pool full or initiator closes
+  - `POST /api/pools/join` — accept code (auth required), join if pool not locked + capacity available
+  - `POST /api/pools/:id/lock` — initiator-only; freezes roster; computes `combined_cap_cents = sum(member allowances)`
+  - `GET /api/pools/:id` — pool details + members
+  - `GET /api/pools/mine` — list pools user is in
+- Pool state machine: `draft → locked → suggesting → voting → approved → active → completed | dissolved`
 
 **Frontend**
-- Tabung detail page: members list + "Invite Member" button
-- Invite modal: shows generated code + QR (`react-qr-code`) + shareable link
-- `/join/:code` page: pre-fills code, "Join Tabung" button → success → redirect to tabung detail
+- "Cipta pool" button on dashboard → modal with name + stated need text + category dropdown + target budget
+- Pool detail page: members list, combined cap (live updates as members join), invite section (code + QR + shareable link), "Lock pool" button (initiator)
+- `/join/:code` page: shows pool preview, "Sertai pool" button → success → redirect to pool detail
+- After lock: pool detail shows "Pool dah dikunci. Combined cap: RM X,XXX. Cadangkan barang."
 
 **Testable outcome:**
-> Creator generates invite code · copies link · opens in incognito browser · registers second account · accepts invite · roster on creator's view shows two members.
+> User A creates pool · invites code · opens incognito · User B registers + joins via code · pool shows 2 members · A clicks Lock · combined cap = sum of A + B's allowances · pool transitions `draft → locked`.
 
-**Time estimate:** 2-3 hours (Saturday 14:30 → 17:30)
+**Time estimate:** 3 hours (Saturday 14:30 → 17:30)
+
+**Owner:** Akmal (frontend lead) · Mung (backend) · Kairu (gate)
 
 ---
 
-## Phase 3 — Contribution Flow
+## Phase 3 — AI Penasihat + MyKasih Catalogue Browse
 
-**Goal:** Members contribute monthly via TNG eWallet sandbox; ledger reflects.
+**Goal:** A locked pool gets ranked item suggestions from the MyKasih catalogue, in BM, grounded in the pool's combined cap and stated need.
 
 **Backend**
-- Schema: `contributions` table (member_id, tabung_id, amount, paid_at, tng_reference)
-- TNG sandbox integration:
-  - `POST /api/contributions/initiate` — create pending contribution, return TNG payment URL/QR
-  - `POST /api/webhooks/tng` — receive callback, mark contribution as paid, update trust_score
-- Idempotency keys on TNG webhook (don't double-process)
+- Schema additions: `mykasih_catalogue` (id, name_bm, name_en, category, price_cents, image_url, description_bm) — seeded with ~30 items (rice 100kg, cooking oil 12L, generator 2.5kVA, sewing machine, school supply pack, agricultural sprayer, water filter, basic stove, knapsack sprayer, chainsaw, etc.)
+- Schema additions: `pool_suggestions` (pool_id, suggested_at, items_json — array of suggestion objects)
+- Migration: seed catalogue from a seed file
+- Routes:
+  - `GET /api/catalogue` — list catalogue items (with category filter)
+  - `POST /api/penasihat/suggest` — body `{ poolId }`; backend assembles pool context (cap, stated need, current month for seasonal); calls Claude API with structured-output prompt; returns top 5 items with BM reasoning + allocation%; caches result on `pool_suggestions` for 30 min
 
 **Frontend**
-- Tabung detail: per-member ledger row with "Contribute" button (only enabled if user is the member + month not yet paid)
-- Click → open TNG sandbox flow → return → ledger entry appears with green checkmark
-- Trust score badge updates next to member name
+- On locked pool detail: "Cadangkan barang" button → calls suggest endpoint
+- Display: 5 suggestion cards (shadcn `Card`) showing item image (placeholder if missing), name, price, allocation% of pool cap, BM reasoning, category chip
+- Category filter chips above suggestions ("Semua · Makanan · Alat sekolah · Peralatan · Elektrik")
+- "Pilih barang ini" button per card → moves pool state to `voting`
 
 **Testable outcome:**
-> Member clicks "Contribute RM 100" · TNG sandbox flow completes · webhook fires · ledger row turns green · trust score ticks +1 · refresh persists state.
+> Locked pool with combined cap RM 1,800 · click Cadangkan barang · within 6 seconds see 5 ranked suggestions in BM each citing reasoning · select one · pool state transitions to `voting`.
 
-**Time estimate:** 4-5 hours (Saturday 17:30 → 22:30)
+**Time estimate:** 4 hours (Saturday 17:30 → 22:30)
+
+**Owner:** Mung (Penasihat backend + catalogue) · Akmal (suggestion UI) · Ijam (catalogue curation + Penasihat prompt review)
 
 ---
 
-## Phase 4 — Rotation Payout
+## Phase 4 — Pool Vote + Simulated TNG Approval + Purchase
 
-**Goal:** When a cycle completes, the scheduled recipient receives the pool. Trigger via cron OR manual demo button.
+**Goal:** Pool members vote on the suggested item; majority triggers simulated TNG PayLater approval; purchase commits.
 
 **Backend**
-- Schema: `rotations`, `payouts`
-- Logic: when all members have contributed for the cycle, generate a `rotation` record with `recipient_member_id` and `cycle_number`
-- Cron job (or manual admin endpoint for demo): `POST /api/admin/process-rotations` — finds completed cycles · creates payout record · marks rotation as paid · (in production: triggers TNG transfer to recipient)
-- For demo: skip actual TNG transfer — generate `payout` record with mock TNG reference + show "Paid" status
+- Schema additions: `pool_votes` (pool_id, user_id, suggestion_item_id, vote `yes | no`, voted_at)
+- Schema additions: `pool_transactions` (id, pool_id, item_id, total_amount_cents, approved_at, delivered_at)
+- Schema additions: `paylater_obligations` (id, transaction_id, user_id, share_amount_cents, share_pct)
+- Routes:
+  - `POST /api/pools/:id/vote` — body `{ vote }`; one vote per member per voting cycle
+  - On all members voted (or majority reached + 24h elapsed): backend tallies; if majority yes, transitions pool to `approved`, creates `pool_transactions` + `paylater_obligations` rows
+  - Simulated TNG PayLater call (demo: always succeeds; logs to console; production: TNG sandbox)
+  - `POST /api/pools/:id/confirm-delivery` — NADI staff role only; transitions pool `approved → active`
+  - `GET /api/pools/:id/voting-state` — show vote tally + members not yet voted
 
 **Frontend**
-- Rotation timeline view on tabung detail page (visual: who's next, who's received)
-- Payout notification toast when current user is the recipient
-- "Trigger rotation" admin button (demo-only) for judges
+- On `voting` state: each member sees vote modal on next page load — item details + their proportional share + monthly amount; buttons "Setuju" / "Tak setuju"
+- Real-time vote tally on pool detail page (poll every 10s)
+- On `approved`: show transaction summary, members' shares, "Menunggu pengesahan dari NADI"
+- NADI portal `/nadi/dashboard`: list of approved-but-not-delivered pools; "Sahkan dah hantar" button per pool
 
 **Testable outcome:**
-> All members contribute for cycle 1 · admin clicks "Trigger rotation" · scheduled recipient sees payout notification · timeline updates · cycle 2 begins.
+> 4-member pool in `voting` state · 3 of 4 vote yes · majority → pool `approved` · pool transactions + obligations created with correct proportional shares · NADI staff (separate login) opens NADI portal · sees pending delivery · clicks Confirm → pool `active`.
 
-**Time estimate:** 3-4 hours (Sunday 09:00 → 13:00)
+**Time estimate:** 4 hours (Sunday 09:00 → 13:00)
 
----
+**Owner:** Mung (vote tally + transaction logic) · Akmal (vote UI + NADI portal) · Kairu (gate · cut-line aware)
 
-## Phase 5 — Innovation + Security pillars (split into 5a / 5b / 5c)
-
-This is the heaviest phase — three sub-features that together prove the Innovation umbrella pitch. Owners are paired across sub-phases. Cut-line awareness: if 5a ships clean, prioritise 5b stub before chasing full 5c polish.
+**Cut-line:** if running long, replace simulated TNG approval with hardcoded success (skip the simulated call entirely). Reduce voting from real-time poll to manual refresh. NADI portal can be cut to a single-page read-only summary if Phase 6 has parallel Akmal time.
 
 ---
 
-### Phase 5a — Penasihat Chat (BM-grounded conversational mode)
+## Phase 5 — Repayment Ledger + Kampung Trust Score
 
-**Goal:** Bilingual BM-first chat grounded in the user's actual tabung state.
+**Goal:** Members repay their monthly share; ledger reflects; kampung trust score updates.
 
 **Backend**
-- Route: `POST /api/penasihat/chat` — receives message, fetches user's tabung context, calls Claude API with system prompt + context, streams response back via SSE
-- System prompt: *"You are Penasihat, a bilingual financial advisor. Default BM. Use the user's tabung state below. Cite specific numbers. Never recommend leaving a tabung mid-cycle."*
+- Schema additions: `repayments` (id, obligation_id, user_id, cycle_number, amount_cents, paid_at, tng_reference)
+- Schema additions: `kampung_trust_scores` (kampung_id, score, last_updated_at, signal_count)
+- Routes:
+  - `POST /api/repayments/pay` — body `{ obligationId, cycleNumber }`; simulates TNG payment; creates repayments row; recalculates kampung trust
+  - `GET /api/pools/:id/ledger` — append-only repayment log (pool members + cycles + status)
+  - `GET /api/kampungs/:id/trust` — kampung trust score + recent signal count
+- Trust score formula:
+  ```
+  score = (completion_rate × 0.6 + on_time_rate × 0.4) × 100
+  signal_count = total repayment events for kampung
+  ```
 
 **Frontend**
-- `/penasihat` page with chat UI (shadcn `Dialog` or full-page)
-- Streaming display via fetch + ReadableStream
-- Quick-prompt chips: *"Patut ke aku join tabung lagi?"* · *"Apa jadi kalau aku miss bulan ni?"* · *"Bila next payout aku?"*
+- Pool detail (active state): repayment ledger table — rows: member · cycle · status (paid · pending · overdue) · amount · paid_at
+- "Bayar bulan ni" button per member's own row (only enabled if their share for current cycle is unpaid)
+- Click → simulated TNG flow → ledger row updates green
+- Kampung trust score widget on dashboard (collectivist messaging: "Skor kepercayaan kampung anda: 87 — sangat baik")
 
-**Testable outcome (5a):**
-> Open `/penasihat` · type *"Bila next payout aku?"* · receive streamed BM reply citing the actual rotation date from the user's tabung.
+**Testable outcome:**
+> Active pool with 4 members · cycle 1 begins · all 4 click "Bayar" · all 4 repayments recorded · ledger shows all paid for cycle 1 · cycle 2 begins automatically (or by month tick — for demo, by manual button) · kampung trust score updates → visible on member dashboards.
 
-**Time estimate:** 2.5–3 hours
+**Time estimate:** 4 hours (Sunday 13:00 → 17:00)
 
----
-
-### Phase 5b — Penasihat Robo-Advisor (Innovation pillar)
-
-**Goal:** Risk-tuned investment recommendations for surplus capital, BM-first, grounded in completed-cycle history.
-
-**Backend**
-- Route: `POST /api/penasihat/recommend` — accepts `{userId, riskProfile, surplusAmount}` → returns three recommendations (conservative · balanced · growth) with BM-first reasoning
-- Hardcoded portfolio options for demo (ASNB · money-market · low-cost ETF mix · ASN equity)
-- Claude API call with structured output: `{instrument, allocation%, reasoning_bm, reasoning_en, expected_return_pct, risk_band}`
-- Risk profile derived from a 5-question questionnaire stored in `user_risk_profiles` table
-
-**Frontend**
-- `/penasihat/cadang` page (or modal in dashboard)
-- Risk profile questionnaire (5 short questions · radio + slider) on first use
-- Recommendation cards (3 across, shadcn `Card`) — each showing instrument, allocation, BM reasoning, expected return, risk band
-- "Cadang" button per card — demo stub, logs the recommendation, no real broker integration
-
-**Testable outcome (5b):**
-> Member with at least one completed cycle opens *Cadang* · completes risk questionnaire · receives three recommendation cards in BM with cited instruments + allocation% + expected return · clicks one to log the demo stub.
-
-**Time estimate:** 3.5–4 hours
+**Owner:** Mung (ledger + trust calc) · Akmal (ledger UI + trust widget) · Kairu (gate)
 
 ---
 
-### Phase 5c — Pengawal Scam Sentinel (Security pillar)
+## Phase 6 — NADI Portal + Pitch Polish
 
-**Goal:** AI scam sentinel that warns the user before a TNG payment to a flagged or anomalous recipient is confirmed.
-
-**Backend**
-- Route: `POST /api/pengawal/check` — accepts `{senderUserId, recipientHandle, amount, messageContext}` → returns `{riskScore: 0–100, flags: string[], recommendation: 'allow' | 'warn' | 'block'}`
-- Three-stage check:
-  1. **Recipient reputation** — query a community-fed `flagged_recipients` table (seeded for demo)
-  2. **Pattern match** — Claude API call with system prompt that scans message context for known scam phrasing in BM, EN, Mandarin (urgent help · investment guarantee · authority impersonation · romance bait · lottery winner)
-  3. **Behavioural anomaly** — amount > 3× user median · time in unusual band · first-time recipient outside tabung circle
-- New tables: `flagged_recipients` (community-fed seed), `pengawal_checks` (audit log)
-
-**Frontend**
-- Pengawal warning modal — shadcn `Dialog`, BM-first
-- Triggered in:
-  1. Free-form transfer surface (new — minimal UI for demo, no full transfer feature)
-  2. Optional: when contributing to a tabung that includes a member with a flagged history (demo only)
-- Modal shows risk score, flags as bullet points, two buttons: *"Batal"* (default focused) and *"Teruskan, aku faham risiko"*
-- An overridden warning logs to `pengawal_checks` for audit
-
-**Testable outcome (5c):**
-> User attempts to transfer RM 800 to a seeded flagged recipient · Pengawal modal appears in BM with concrete red flags · user can override but the override is logged.
-
-**Time estimate:** 3.5–4 hours
-
----
-
-### Phase 5 totals
-
-- **Combined estimate:** ~10–11 hours (5a + 5b + 5c)
-- **Hard requirement:** 5a (Penasihat chat) — without it, the AI brand has no anchor
-- **Pitch requirement:** 5b (robo-advisor) + 5c (Pengawal) — without these, the Innovation umbrella is a single-pillar pitch
-- **Order to ship:** 5a → 5c → 5b. Pengawal demo lands before Robo-Advisor because Pengawal has fewer dependencies (no questionnaire flow) and pitch slide 5 sequences Penasihat-chat → Penasihat-robo → Pengawal anyway.
-
-**Cut-lines for Phase 5:**
-
-If Phase 4 cut to manual button → Phase 5 has full Sunday morning + early afternoon → ship all three.
-
-If Phase 4 ate Sunday morning → ship 5a + 5c only. 5b becomes "demoed in repo, not on stage". Pitch deck slide 5 grid drops Robo-Advisor screenshot to 5×1 layout.
-
-If Phase 5a + 5c stable but 5b not started by Sunday 14:00 → cut 5b entirely. Pitch reframes Innovation pillar around Penasihat-chat as the AI-driven advisor (still valid Innovation framing, narrower scope).
-
----
-
-## Phase 6 — Pitch Polish
-
-**Goal:** Demo deck + video + on-stage rehearsal.
+**Goal:** NADI staff dashboard polished + pitch deck + demo video + on-stage rehearsal.
 
 **Tasks (parallel)**
-- **Ijam:** finalize 8-slide pitch deck · script the 4-min narration · rehearse twice
-- **MatNep:** apply brand polish · typography hierarchy · slide composition
-- **Akmal:** UI polish · loading states · error states · empty states · final animations
-- **Mung:** deploy to EC2 · run final migrations · seed demo data · smoke-test all flows
-- **Kairu:** verify all 6 phases gates passed · cut scope ruthlessly if anything wobbly
+- **Akmal:** Polish NADI portal — kampung-level aggregate stats, no individual PII, pending deliveries, kampung trust score tile
+- **Mung:** Deploy to EC2 · run final migrations · seed demo data (NADI Felda Gedangsa kampung + 4-5 demo members + seeded pools at various states)
+- **Ijam:** Finalise 8-slide pitch deck · script the 4-min narration · rehearse twice
+- **MatNep:** Apply brand polish · typography hierarchy · slide composition · ensure DuitLater visual coherence
+- **Kairu:** Verify all 6 phases gates passed · cut scope ruthlessly if anything wobbly
 
 **Testable outcome:**
-> Live URL accessible from any laptop · 4-min demo runs without breakage · pitch deck exported to PDF · demo video uploaded · all submission fields complete on FINHACK portal.
+> Live URL accessible from any laptop · 4-min demo runs without breakage covering pool formation → suggestion → vote → approval → NADI confirmation → repayment → trust score · pitch deck exported to PDF · demo video uploaded · all submission fields complete on FINHACK portal.
 
-**Time estimate:** 3-4 hours (Sunday 16:00 → 19:30, judging at 20:00)
+**Time estimate:** 4 hours (Sunday 14:00 → 19:00, parallel with Phase 5 tail; judging at 20:00)
+
+**Owner:** Ijam · MatNep · all hands
 
 ---
 
@@ -244,15 +211,21 @@ If Phase 5a + 5c stable but 5b not started by Sunday 14:00 → cut 5b entirely. 
 
 If by Saturday evening Phase 3 isn't done:
 
-1. **Cut Phase 5 (AI Penasihat)** first. Tabung lifecycle without AI is still a complete demo.
-2. **Cut Phase 4 (Rotation auto-trigger)** second. Manual admin button + clearly labeled "Demo: trigger cycle" is acceptable.
-3. **Phases 1-3** are non-negotiable — they ARE the product.
+1. **Cut category filter chips** in Phase 3 — keep just "Semua" view of suggestions.
+2. **Cut Phase 5 (repayment + trust score)** features second — pitch around "ledger + trust score in production roadmap" and demo just one cycle of repayment.
+3. **Phases 1–4 are non-negotiable** — they ARE the product (auth → pool → suggest → vote/approve).
 
 If by Sunday morning Phase 4 isn't done:
 
-1. Hardcode rotation payout as a stub function returning success.
-2. Show the timeline visualization as if cycles are running.
-3. Pitch around "auto-rotation engine" without proving it live — show the schedule visually instead.
+1. Hardcode TNG PayLater approval as immediate success (no simulated delay).
+2. Cut Phase 6 NADI portal to read-only summary screen.
+3. Pitch around "auto-approval after vote majority" without demonstrating the simulation latency.
+
+If by Sunday 14:00 Phase 5 isn't done:
+
+1. Stub the kampung trust score with a seeded "high trust" value for demo.
+2. Manual single-payment demo for each member; skip cycle progression.
+3. Pitch deck slide 5 demo grid drops the trust score tile.
 
 ---
 
@@ -266,6 +239,7 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 - "We'll add migrations later"
 - "Just disable Better Auth for now to ship"
 - "We'll handle errors in Phase 7"
+- "I'll skip pool state machine and just use a boolean" (state machine is correctness — not optional)
 - Any phase without a Testable Outcome line
 - Any commit message that doesn't describe what shipped
 
@@ -276,15 +250,13 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 | Phase | Status | Started | Completed | Tested by |
 |---|---|---|---|---|
 | 0 — Stack Activation | 🟡 Scaffolded (needs `npm install` + verify) | 2026-04-25 ~06:30 | — | — |
-| 1 — Auth + First Tabung | ⏳ Pending | — | — | — |
-| 2 — Member Invite + Join | ⏳ Pending | — | — | — |
-| 3 — Contribution Flow | ⏳ Pending | — | — | — |
-| 4 — Rotation Payout | ⏳ Pending | — | — | — |
-| 5a — Penasihat Chat | ⏳ Pending | — | — | — |
-| 5b — Penasihat Robo-Advisor | ⏳ Pending | — | — | — |
-| 5c — Pengawal Scam Sentinel | ⏳ Pending | — | — | — |
-| 6 — Pitch Polish | ⏳ Pending | — | — | — |
-
-Phase 0 pre-scaffold details live in [QUICKSTART.md](./QUICKSTART.md). Team runs `npm install` in both repos + `docker compose -f docker-compose.dev.yml up -d` to reach the testable outcome.
+| 1 — Auth + Individual PayLater | ⏳ Pending | — | — | — |
+| 2 — Pool Formation + Lock | ⏳ Pending | — | — | — |
+| 3 — Penasihat + Catalogue | ⏳ Pending | — | — | — |
+| 4 — Vote + TNG Approval + Purchase | ⏳ Pending | — | — | — |
+| 5 — Repayment + Kampung Trust | ⏳ Pending | — | — | — |
+| 6 — NADI Portal + Pitch Polish | ⏳ Pending | — | — | — |
 
 Update this table as phases complete. Symbols: ⏳ pending · 🟡 in progress · ✅ done · ⚠️ blocked.
+
+Phase advancement gated by `/maji-gate` (Kairu's ladder). Testable outcome must pass on a machine other than the author's. See [maji-core/protocols/phase-gate.md](./maji-core/protocols/phase-gate.md).

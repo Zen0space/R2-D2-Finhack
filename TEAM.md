@@ -1,6 +1,6 @@
 # Team
 
-**TNG FINHACK 2026 · Kutu Digitizer**
+**TNG FINHACK 2026 · DuitLater · Financial Inclusion Track**
 
 ---
 
@@ -29,17 +29,15 @@
 
 Mapped to Kairu's vertical-slice discipline (every phase = backend + frontend + testable outcome together):
 
-| Phase | Pillar | Goal | Lead | Support |
-|---|---|---|---|---|
-| **0 — Stack Activation** | foundation | Repo init · Docker compose up · first migration | Mung · Akmal | Kairu (gate) |
-| **1 — Auth + First Tabung** | Kutu | Register · login · create tabung · persist · render | Mung · Akmal | Ijam (copy) · MatNep (visual) |
-| **2 — Member Invite + Join** | Kutu | Invite link · QR · accept · roster appears | Akmal · Mung | MatNep (invite UI) |
-| **3 — Contribution Flow** | Kutu | TNG sandbox auto-deduct · ledger entry · trust score tick | Mung | Akmal (UI) |
-| **4 — Rotation Payout** | Kutu | Scheduled cycle · auto-payout to recipient · ledger update | Mung · Kairu | Ijam (logic narrative) |
-| **5a — Penasihat Chat** | Innovation | BM chat grounded in tabung state · streaming reply | Akmal · Mung | Ijam (prompt framing) |
-| **5b — Penasihat Robo-Advisor** | Innovation | Risk-tuned investment recommendations · BM-first reasoning | Mung · Akmal | Ijam (instrument list curation) · MatNep (recommendation card design) |
-| **5c — Pengawal Scam Sentinel** | Security | AI scam pattern detection · BM-first warning modal · community-fed reputation | Mung · Akmal | Ijam (scam-pattern seed list) · MatNep (warning modal) |
-| **6 — Pitch Polish** | all | Demo script · video record · deck finalize · Innovation umbrella narrative | Ijam · MatNep | All hands |
+| Phase | Goal | Lead | Support |
+|---|---|---|---|
+| **0 — Stack Activation** | Repo init · Docker compose up · first migration · DuitLater landing renders | Mung · Akmal | Kairu (gate) |
+| **1 — Auth + Individual PayLater** | Register · login · dashboard shows my individual TNG PayLater allowance | Mung · Akmal | Ijam (copy) · MatNep (dashboard visual) |
+| **2 — Pool Formation + Lock** | Create pool · invite 1–7 members · lock roster · combined cap computed | Akmal · Mung | MatNep (invite UI) |
+| **3 — Penasihat + Catalogue** | Locked pool gets top-5 BM-first item suggestions from MyKasih catalogue | Mung · Akmal | Ijam (catalogue curation + Penasihat prompt review) |
+| **4 — Vote + TNG Approval + Purchase** | Members vote · majority triggers simulated TNG approval · purchase commits · NADI confirms delivery | Mung · Kairu | Akmal (vote UI + NADI portal v1) · Ijam (logic narrative) |
+| **5 — Repayment + Kampung Trust** | Monthly repayment ledger · kampung trust score updates collectively | Mung · Akmal | Kairu (gate) · MatNep (trust widget visual) |
+| **6 — NADI Portal + Pitch Polish** | NADI staff dashboard polished · pitch deck finalised · demo video · on-stage rehearsal | Ijam · MatNep | All hands |
 
 ---
 
@@ -51,6 +49,7 @@ Add new decisions as bullet items below as the build progresses. Each entry: dat
 - **2026-04-25 (pre-hackathon)** · Deployment target: single EC2 t3.medium with Docker (caddy + frontend + app + postgres) · Pattern A (same-domain path-routing) selected for zero-CORS dev velocity · Ijam decision · See [ARCHITECTURE.md](./ARCHITECTURE.md)
 - **2026-04-25** · MatNep added as designer · classical direction + brand identity · External addition (not on original FINHACK roster) · Ijam decision
 - **2026-04-25** · Track switch from Financial Inclusion to **Innovation** with three-pillar umbrella (Kutu · Penasihat · Pengawal) · rationale: Innovation brief covers the full platform; Financial Inclusion would have been a single-pillar pitch. Phase 5 split into 5a (Penasihat chat) · 5b (Penasihat Robo-Advisor) · 5c (Pengawal scam sentinel). Adam removed from team; R2-D2 final at 5: Ijam, Mung, Akmal, Kairu, MatNep · Ijam decision
+- **2026-04-25** · **Pivot to DuitLater · Shared Pool Pay Later · back to Financial Inclusion track** · rationale: stronger institutional fit (TNG + NADI + MyKasih · all real Malaysian institutions with B40 mandate) · cleaner product story (one mechanic, not three pillars) · stronger track-brief alignment (Financial Inclusion explicitly targets B40 underserved) · test bed: NADI Felda Gedangsa, Hulu Selangor. Repo renamed kutu-digitizer → duitlater. Penasihat repurposed as item-suggestion advisor. Pengawal dropped. Phase 5 redesigned around pool + repayment instead of three sub-pillars · Ijam decision
 
 ---
 

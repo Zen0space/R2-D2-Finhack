@@ -45,7 +45,7 @@ Nusantara craft (songket, tenun, ukiran kayu, batik geometry) distilled into cle
 - [BRAND.md](../../BRAND.md) — voice · palette · typography · iconography · layout
 - `frontend/src/app/globals.css` — brand token theme (co-owned with Akmal)
 - Pitch deck visual design — `docs/pitch-deck.pdf` (Phase 6)
-- Custom heritage glyphs — tabung mark · trust seal · kongsi mark · Penasihat icon
+- Custom heritage glyphs — pool mark · trust seal · kampung crest · Penasihat icon · NADI tile
 - Brand identity sign-off on every external-facing surface
 
 ---

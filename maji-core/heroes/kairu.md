@@ -60,7 +60,7 @@ A phase is only ✅ when its testable outcome passes end-to-end on a machine oth
 | 5 | Akmal + Mung | **Kairu verify** |
 | 6 | Ijam + MatNep | **Kairu verify** |
 
-Kairu does not own any phase as primary lead until Phase 4 (rotation engine) where logic complexity earns his direct hand. For every other phase, Kairu is the gate-holder and verifier — the role the team leans on at phase transitions.
+Kairu does not own any phase as primary lead until Phase 4 (vote tally + simulated TNG approval logic) where state-machine complexity earns his direct hand. For every other phase, Kairu is the gate-holder and verifier — the role the team leans on at phase transitions.
 
 ---
 

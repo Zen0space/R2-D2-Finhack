@@ -44,7 +44,7 @@ Contribution and payout rows never mutate once `paid`. Corrections happen as com
 - `backend/src/db/schema.ts` — tables
 - `backend/src/db/migrations/**` — all migrations
 - `backend/src/routes/**` — API endpoints
-- `backend/src/services/**` — TNG client, S3 client, rotation engine
+- `backend/src/services/**` — TNG PayLater client (simulated), Claude client, MyKasih catalogue seeding
 - `backend/src/webhooks/tng.ts` — payment callback handler
 - `backend/drizzle.config.ts`
 - `docker-compose.dev.yml` + `docker-compose.prod.yml` (Postgres stanza)

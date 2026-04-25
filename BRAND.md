@@ -1,10 +1,12 @@
-# Brand & Visual Identity — Kutu Digitizer
+# Brand & Visual Identity — DuitLater
 
 **Designed under MatNep's classical direction · executed by Akmal · system anchored by Reka's rules**
 
 **Aesthetic anchor:** **Neo Nusantara** — traditional Malay/Nusantara craft (songket, tenun, ukiran kayu, batik geometry) elevated to modern editorial form. Heritage is not decoration; it is structure.
 
 **Design doctrine (MatNep):** *"Classic bukan membosankan. Classic sebab dia kekal lawa bila trend mati."* Typography and grid take precedence over illustration. Rules before flair.
+
+**Product positioning:** DuitLater serves B40 households on TNG eWallet rails, with NADI as community facilitator. The visual register must read as institutional + warm + dignified — not "fintech for the poor" caricature, not luxury-coded exclusion, but the quiet seriousness of a real Malaysian institutional product.
 
 ---
 
@@ -14,7 +16,7 @@
 
 **Tone:**
 - Quietly confident, not loud
-- Respectful of practice (kutu is older than us; we serve, not save)
+- Respectful of communal practice (Felda settlements, kampung pooling, kutu — older than us; we serve, not save)
 - Direct without being curt
 - No corporate finance jargon
 - No mystical "fintech revolution" language
@@ -27,7 +29,7 @@
 - Generic English fintech vocabulary
 
 **Words we use:**
-- *Tabung* (the fund), *Kutu* (the practice), *Ahli* (member), *Pusingan* (cycle/rotation), *Kepercayaan* (trust), *Catatan* (record)
+- *Pool* (the shared cap), *Ahli* (member), *Sumbangan* (contribution), *Bayaran balik* (repayment), *Kepercayaan* (trust), *Catatan* (record), *Kampung* (community), *Cadangan* (suggestion · what Penasihat returns)
 - "Honour the cycle" (from cultural register)
 - "Visible record"
 - "Auto-deduct" (functional, not euphemized)
@@ -187,8 +189,8 @@ A circular brand mark referencing the rotation cycle — eight interlocking arro
 ### Wordmark
 
 Cormorant Garamond · weight 600 · letter-spacing -0.02em
-- **Tabung Digitizer** OR
-- **Kutu** (single word — short demo brand)
+- **DuitLater** (primary brand · single word · code-switched register)
+- **DuitLater · pool PayLater** (descriptive subtitle when more context is needed)
 
 **Final brand decision:** TBD between Ijam & MatNep · before Sunday morning.
 
@@ -208,7 +210,7 @@ Cormorant Garamond · weight 600 · letter-spacing -0.02em
 | Bad | Good |
 |---|---|
 | "Welcome to your financial future" | "Selamat datang. Tabung kau di sini." |
-| "Empowering communities through technology" | "Kutu kau, dalam satu tempat." |
+| "Empowering communities through technology" | "Sendiri tak mampu, ramai-ramai boleh." |
 | "Auto-pay activated successfully!" | "Bayaran auto. Bulan ni dah selesai." |
 | "Failed to process payment. Please try again." | "Bayaran tak masuk. Cuba lagi atau check TNG kau." |
 | "Loading your dashboard..." | "Sebentar..." |
@@ -225,8 +227,8 @@ Cormorant Garamond · weight 600 · letter-spacing -0.02em
 
 | Slide | Content |
 |---|---|
-| 1 | Title — Kutu Digitizer · subtitle in Cormorant Garamond italic |
-| 2 | The Practice — visual: traditional kutu scene (illustration or photo) |
+| 1 | Title — DuitLater · subtitle in Cormorant Garamond italic |
+| 2 | Practice + Gap — visual: Felda settler / kampung B40 household scene with TNG context |
 | 3 | The Gap — single bold statistic (15% unbanked) + supporting context |
 | 4 | The Solution — three-pillar layout (Rails · Ledger · Trust) |
 | 5 | The Demo — screenshot grid (4 key screens) |
@@ -241,7 +243,7 @@ Visual restraint: no animations in deck (PDF export). Type-driven hierarchy. Hea
 ## Domain & Brand Continuity Post-Hackathon
 
 If the project continues:
-- Domain: `kutu.my` or `tabung.app` or similar (decide post-pitch based on availability)
+- Domain: `duitlater.my` or `duit-later.com.my` or similar (decide post-pitch based on availability)
 - Logo: full SVG kit + brand guidelines doc
 - Open-source consideration: MIT license · invitation to community contribution
 - Commercial path: UjiVibe / Strategeist licensing route

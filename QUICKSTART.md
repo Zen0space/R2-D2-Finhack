@@ -1,4 +1,4 @@
-# Quickstart — Kutu Digitizer
+# Quickstart — DuitLater
 
 **For the team arriving Saturday morning at Bangsar South CCEC.**
 
@@ -28,8 +28,8 @@ If your IDE doesn't autocomplete `/maji-onboard`, just type it in chat anyway �
 
 ```bash
 # 1. Clone the repo
-git clone <repo-url> kutu-digitizer
-cd kutu-digitizer
+git clone <repo-url> duitlater
+cd duitlater
 
 # 2. Backend
 cd backend
@@ -69,22 +69,22 @@ npm run dev
 ## Phase 0 testable outcome
 
 - Frontend renders at <http://localhost:3000>
-- `curl http://localhost:4000/health` → `{"ok":true,"service":"kutu-backend","env":"development"}`
+- `curl http://localhost:4000/health` → `{"ok":true,"service":"duitlater-backend","env":"development"}`
 
 If both pass: Phase 0 complete. Kairu's Tangga Hidup is ready to bear Phase 1.
 
 ---
 
-## Phase 1 (Auth + First Tabung) kickoff
+## Phase 1 (Auth + Individual PayLater) kickoff
 
 ```bash
 cd backend
-# Author the schema in src/db/schema.ts (users, sessions, tabung, tabung_members)
+# Author the schema in src/db/schema.ts (users with individual_paylater_allowance_cents, sessions, kampungs)
 npm run db:generate   # generates migration file
 npm run db:migrate    # applies it to Postgres
 ```
 
-Then wire Better Auth + tabung routes per [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md) Phase 1.
+Then wire Better Auth + `/api/me` endpoint that returns the current user's individual PayLater allowance, per [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md) Phase 1.
 
 ---
 

@@ -24,20 +24,20 @@ docs/
 
 ---
 
-## Pitch Deck Outline (8 slides · 4 min · Innovation Track)
+## Pitch Deck Outline (8 slides · 4 min · Financial Inclusion Track)
 
 | # | Slide | Time |
 |---|---|---|
-| 1 | Title — Kutu Digitizer · *three pillars on one rail* | 10s |
-| 2 | Practice + Gap — 15% unbanked, kutu invisible to formal system | 30s |
-| 3 | Three pillars — Kutu (savings) · Penasihat (growth) · Pengawal (security) | 50s |
-| 4 | Why Innovation Track — track brief verbatim mapped to pillars | 30s |
-| 5 | Demo — live walkthrough across all three pillars | 70s |
-| 6 | Stack — minimal (Node · TS · Postgres · TNG · Claude) | 20s |
-| 7 | Lineage — billion-dollar precedent per pillar | 20s |
-| 8 | Ask — TNG extended · regulatory · next cohort | 10s |
+| 1 | Title — DuitLater · *Sendiri tak mampu, ramai-ramai boleh* | 10s |
+| 2 | The Gap — Mak Cik Aminah's RM 300 PayLater · need is RM 1,800 · combined RM 2,000 | 35s |
+| 3 | The Solution — 4 steps · Form pool · Combine PayLater · Penasihat · Vote & buy | 40s |
+| 4 | The Test Bed — NADI Felda Gedangsa, Hulu Selangor (Felda smallholder + MCMC NADI) | 25s |
+| 5 | Demo — live walkthrough (sign-up · pool · suggestion · vote · NADI · repayment) | 70s |
+| 6 | Stack — minimal (Node · TS · Postgres · TNG · Claude) | 15s |
+| 7 | Lineage — MoneyFellows · Esusu · Stokfella · Easypaisa Pool Buy | 15s |
+| 8 | Ask — TNG sandbox · MCMC NADI framework · MyKasih merchant network | 25s |
 
-Total: 240s strict. Cut Pengawal sub-demo first if demo runs long (Slide 5 fallback).
+Total: 240s strict. Cut repayment sub-demo first if demo runs long (Slide 5 fallback).
 
 ---
 

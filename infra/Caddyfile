@@ -1,8 +1,8 @@
-# Kutu Digitizer · Caddy reverse proxy
+# DuitLater · Caddy reverse proxy
 # Pattern A: same-domain path-routing. No CORS across the hackathon.
-# Replace {$KUTU_DOMAIN} at deploy time (e.g. export KUTU_DOMAIN=kutu.example.my).
+# Replace {$DUITLATER_DOMAIN} at deploy time (e.g. export DUITLATER_DOMAIN=duitlater.example.my).
 
-{$KUTU_DOMAIN:localhost} {
+{$DUITLATER_DOMAIN:localhost} {
     encode gzip zstd
 
     # Backend API: strip /api prefix before forwarding

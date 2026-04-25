@@ -1,6 +1,6 @@
-# Architecture — Kutu Digitizer
+# Architecture — DuitLater
 
-**Single EC2 instance · 4 Docker containers · same-domain routing**
+**Single EC2 instance · 4 Docker containers · same-domain routing · four-way Malaysian institutional integration**
 
 ---
 
@@ -8,258 +8,201 @@
 
 ```mermaid
 graph TB
-    User([User Browser])
+    User([B40 user · TNG eWallet])
+    NadiStaff([NADI staff · Felda Gedangsa])
 
     subgraph DNS
-        Domain[kutu.domain.com<br/>A record → Elastic IP]
+        Domain[duitlater.domain.com<br/>A record → Elastic IP]
     end
 
     subgraph EC2["EC2 · t3.medium · ap-southeast-1"]
-        subgraph Net["Docker Network: kutu_web"]
-            Caddy["caddy:2-alpine<br/>:80 · :443<br/>SSL + routing"]
-            Frontend["frontend<br/>Next.js standalone<br/>:3000"]
+        subgraph Net["Docker Network: duitlater_web"]
+            Caddy["caddy:2-alpine<br/>:80 · :443<br/>SSL + path-routing"]
+            Frontend["frontend<br/>Next.js 15 standalone<br/>:3000"]
             App["app<br/>Hono + Better Auth<br/>:4000"]
             Postgres[("postgres:16-alpine<br/>:5432<br/>postgres_data")]
         end
     end
 
-    subgraph AWS["AWS Cloud · Sponsor Credit"]
-        S3[("S3 Bucket<br/>kutu-uploads")]
-    end
-
-    subgraph External["External APIs"]
+    subgraph External["External Services"]
+        TNG["TNG PayLater sandbox<br/>(simulated for demo)"]
         Claude["Anthropic Claude API<br/>AI Penasihat"]
-        TNG["TNG eWallet API<br/>contribution rails"]
+        MyKasih["MyKasih catalogue<br/>(seeded for demo)"]
     end
 
     User -->|HTTPS :443| Domain
+    NadiStaff -->|HTTPS :443| Domain
     Domain --> Caddy
     Caddy -->|handle /*| Frontend
     Caddy -->|handle_path /api/*| App
     App -->|SQL internal| Postgres
-    App -->|AWS SDK| S3
-    App -->|HTTPS| Claude
     App -->|HTTPS| TNG
+    App -->|HTTPS| Claude
+    App -->|read-only seed| MyKasih
 ```
 
 ---
 
-## 2. Request Flow — Create Tabung
+## 2. Pool Formation Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant U as User
-    participant C as Caddy
+    participant U as Initiator (Mak Cik Aminah)
     participant F as Frontend
     participant A as Backend (Hono)
     participant P as Postgres
+    participant U2 as Member 2 (Pak Cik Razali)
 
-    U->>C: GET /
-    C->>F: proxy frontend:3000
-    F-->>C: HTML + JS bundle
-    C-->>U: rendered page
+    U->>F: Click "Cipta pool"
+    F->>F: Show form (name, stated need, target budget)
+    U->>F: Submit
+    F->>A: POST /api/pools
+    A->>P: INSERT pools (state=draft)
+    A->>P: INSERT pool_members (initiator)
+    A-->>F: { poolId, inviteCode }
+    F-->>U: Pool detail page · combined cap = RM 300
 
-    Note over U: user fills create-tabung form
+    U->>U2: Share invite link / QR (out-of-band)
+    U2->>F: Open /join/<code>
+    F->>A: GET /api/pools/by-code/<code>
+    A-->>F: Pool preview (initiator + need)
+    U2->>F: Click "Sertai pool"
+    F->>A: POST /api/pools/join
+    A->>P: INSERT pool_members (Pak Cik Razali)
+    A-->>F: { ok, poolId }
+    F-->>U2: Redirect to pool detail · combined cap = RM 700
 
-    U->>C: POST /api/tabung<br/>Cookie: session_token
-    C->>A: proxy app:4000
-    A->>A: Better Auth middleware
-    A->>P: SELECT user FROM sessions
-    P-->>A: user row
-    A->>A: validate zod schema
-    A->>P: INSERT tabung + members
-    P-->>A: tabung.id
-    A-->>C: 201 + JSON
-    C-->>U: tabung created
+    Note over U,U2: ... more members join ...
+
+    U->>F: Click "Lock pool"
+    F->>A: POST /api/pools/<id>/lock
+    A->>P: UPDATE pools SET state=locked, combined_cap_cents=SUM(allowances)
+    A->>P: UPDATE pool_members SET individual_allowance_at_lock_cents (snapshot)
+    A-->>F: { ok, combinedCap, memberCount }
+    F-->>U: "Pool dah dikunci. Cadangkan barang →"
 ```
 
 ---
 
-## 3. Auth Flow — Better Auth
+## 3. AI Penasihat Suggestion Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant U as User
-    participant A as Backend
-    participant P as Postgres
-
-    Note over U,P: SIGN-UP
-    U->>A: POST /api/auth/sign-up
-    A->>A: argon2 hash
-    A->>P: INSERT users
-    A->>P: INSERT sessions
-    P-->>A: session token
-    A-->>U: Set-Cookie HttpOnly Secure SameSite=Lax
-
-    Note over U,P: AUTHENTICATED REQUEST
-    U->>A: GET /api/tabung (Cookie)
-    A->>P: SELECT sessions JOIN users
-    P-->>A: session + user
-    A->>P: SELECT tabung WHERE user_id
-    P-->>A: rows
-    A-->>U: 200 + data
-```
-
----
-
-## 4. Contribution + Rotation Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant U as Member
-    participant F as Frontend
-    participant A as Backend
-    participant P as Postgres
-    participant T as TNG eWallet
-
-    U->>F: Click "Contribute RM 100"
-    F->>A: POST /api/contributions/initiate
-    A->>P: INSERT contribution (status=pending)
-    A->>T: Create payment intent
-    T-->>A: payment_url + reference
-    A-->>F: { paymentUrl, contributionId }
-    F-->>U: Redirect to TNG sandbox
-
-    U->>T: Complete payment
-    T->>A: POST /api/webhooks/tng (signed)
-    A->>A: Verify HMAC signature
-    A->>P: UPDATE contribution status=paid
-    A->>P: UPDATE member trust_score +1
-
-    A->>A: Check if all members paid this cycle
-    alt all members paid
-        A->>P: INSERT rotation (recipient = scheduled member)
-        A->>P: INSERT payout
-        A->>T: Initiate payout to recipient
-        T-->>A: payout_reference
-        A->>P: UPDATE rotation status=paid
-    end
-
-    Note over U,T: User returns from TNG to app
-    U->>F: GET /tabung/:id
-    F->>A: GET /api/tabung/:id
-    A-->>F: updated ledger
-    F-->>U: green checkmark + new state
-```
-
----
-
-## 4b. Penasihat Robo-Advisor Flow (Innovation pillar)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant U as Member
+    participant U as Pool member
     participant F as Frontend
     participant A as Backend (Hono)
     participant P as Postgres
     participant C as Claude API
 
-    Note over U,C: Risk profile (first-time only)
-    U->>F: Open /penasihat/cadang
-    F->>A: GET /api/penasihat/profile
-    A->>P: SELECT user_risk_profiles
-    P-->>A: empty
-    A-->>F: { profileNeeded: true }
-    U->>F: Submit 5-question questionnaire
-    F->>A: POST /api/penasihat/profile
-    A->>P: INSERT user_risk_profiles
-    P-->>A: { riskBand: 'balanced' }
+    U->>F: Click "Cadangkan barang"
+    F->>A: POST /api/penasihat/suggest<br/>{ poolId }
 
-    Note over U,C: Recommendation request
-    U->>F: Click "Cadang"
-    F->>A: POST /api/penasihat/recommend<br/>{ surplusAmount }
-    A->>P: SELECT user.completedCycles, riskProfile
-    P-->>A: context
-    A->>C: prompt: BM-first robo-advisor<br/>+ user context + instrument list
-    C-->>A: 3 structured recommendations<br/>(conservative / balanced / growth)
-    A->>P: INSERT pengawal_recommendations (audit)
-    A-->>F: 3 recommendation cards
-    F-->>U: Render cards (BM reasoning + allocation)
-
-    Note over U,P: Demo stub (no real broker)
-    U->>F: Click "Pilih balanced"
-    F->>A: POST /api/penasihat/execute (stub)
-    A->>P: INSERT recommendation_taken
-    A-->>F: { ok: true, demoStub: true }
-```
-
----
-
-## 4c. Pengawal Scam Sentinel Flow (Security pillar)
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant U as Member
-    participant F as Frontend
-    participant A as Backend (Hono)
-    participant P as Postgres
-    participant C as Claude API
-
-    Note over U,C: User initiates a transfer (TNG-bound)
-    U->>F: Enter recipient + amount + (optional) message
-    F->>F: Show "Confirm transfer?" preview
-    F->>A: POST /api/pengawal/check<br/>{ recipientHandle, amount, messageContext }
-
-    A->>P: SELECT flagged_recipients WHERE handle=?
-    P-->>A: { flagged: true, reasons: [...], reportCount: 5 }
-    A->>P: SELECT user.medianTransfer, recentRecipients
-    P-->>A: behavioural baseline
-
-    A->>C: prompt: scam-pattern detector<br/>+ message context (BM/EN/Mandarin)
-    C-->>A: { patternMatches: ['investment guarantee', ...] }
-
-    A->>A: Combine signals → riskScore (0-100)
-    A->>P: INSERT pengawal_checks (audit)
-
-    alt riskScore >= 60
-        A-->>F: { recommendation: 'warn', flags: [...] }
-        F-->>U: Render Pengawal warning modal (BM-first)
-        U->>F: Click "Batal" OR "Teruskan, aku faham risiko"
-        alt user chooses Batal
-            F->>F: Cancel transfer · no TNG call
-        else user overrides
-            F->>A: POST /api/pengawal/override (audit)
-            A->>P: INSERT pengawal_overrides
-            F->>A: Continue with TNG transfer flow
-        end
-    else low risk
-        A-->>F: { recommendation: 'allow' }
-        F->>A: Continue with TNG transfer flow
+    A->>P: SELECT pool + members + combined_cap
+    P-->>A: pool context
+    A->>P: SELECT mykasih_catalogue WHERE price ≤ combined_cap
+    P-->>A: candidate items
+    A->>P: SELECT recent suggestions for pool (cache check)
+    alt cache hit (< 30 min old)
+        P-->>A: cached items
+        A-->>F: 5 cached suggestions
+    else cache miss
+        A->>C: prompt: BM-first item ranker<br/>+ pool context (cap, stated need, season)<br/>+ candidate catalogue<br/>+ structured output schema
+        C-->>A: { items: [{ id, name, price, allocation_pct, reasoning_bm }] × 5 }
+        A->>P: INSERT pool_suggestions (cache)
+        A-->>F: 5 ranked suggestions in BM
     end
+
+    F-->>U: Render 5 suggestion cards
+    U->>F: Click "Pilih barang ini" on a card
+    F->>A: POST /api/pools/<id>/select-item<br/>{ catalogueItemId }
+    A->>P: UPDATE pools SET selected_item_id, state='voting'
+    A-->>F: { ok }
+    F-->>U: Transition to vote view
 ```
 
 ---
 
-## 5. S3 Upload Flow (Presigned URL)
+## 4. Pool Vote + Simulated TNG Approval Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant U as User
+    participant Members as Pool members (4)
     participant F as Frontend
     participant A as Backend
-    participant S as AWS S3
+    participant P as Postgres
+    participant T as TNG PayLater (sandbox simulated)
 
-    U->>F: Select file
-    F->>A: POST /api/uploads/presign
-    A->>A: validate session + size + type
-    A->>S: getSignedUrl putObject (300s TTL)
-    S-->>A: presigned URL
-    A-->>F: { uploadUrl, key }
+    Note over Members,A: Pool state: 'voting'
+    Members->>F: Each opens pool detail
+    F-->>Members: Vote modal (item · share · monthly)
+    Members->>F: Vote yes / no
+    F->>A: POST /api/pools/<id>/vote { vote }
+    A->>P: INSERT pool_votes
+    A->>A: Tally votes
+    A-->>F: { tally: yes:3, no:1, threshold: 3 } (majority reached)
 
-    Note over F,S: Direct upload bypasses backend
+    A->>P: UPDATE pools SET state='approved'
+    A->>P: INSERT pool_transactions (item, total)
+    A->>P: INSERT paylater_obligations (per member, proportional shares)
 
-    F->>S: PUT file
-    S-->>F: 200 OK
+    loop For each member
+        A->>T: Simulate PayLater approval<br/>(member, share)
+        T-->>A: { approved: true, reference: SIM-XXX }
+        A->>P: UPDATE paylater_obligations SET tng_reference
+    end
 
-    F->>A: POST /api/uploads/confirm
-    A->>A: Persist reference in DB
-    A-->>F: { url }
+    A-->>F: All members notified (next page load)
+    F-->>Members: "Pool diluluskan. Menunggu pengesahan dari NADI."
+```
+
+---
+
+## 5. NADI Confirm Delivery + Repayment Cycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant N as NADI staff (Cik Hidayah)
+    participant F as Frontend (NADI portal)
+    participant A as Backend
+    participant P as Postgres
+    participant Mem as Pool member
+    participant T as TNG (simulated payment)
+
+    Note over N,P: Pool state: 'approved'
+    N->>F: Open /nadi/dashboard
+    F->>A: GET /api/nadi/pending-deliveries
+    A->>P: SELECT pools WHERE state='approved' AND kampung=<NADI's>
+    P-->>A: pending pools
+    A-->>F: List
+    F-->>N: Pending deliveries view
+
+    N->>F: Click "Sahkan dah hantar"
+    F->>A: POST /api/pools/<id>/confirm-delivery
+    A->>P: UPDATE pools SET state='active', delivered_at=NOW()
+    A->>P: Initialize repayment cycle 1
+    A-->>F: { ok }
+    F-->>N: Pool moved to "Active"
+
+    Note over Mem,P: Cycle 1 begins
+    Mem->>F: Open pool detail
+    F->>A: GET /api/pools/<id>/ledger
+    A->>P: SELECT repayments + obligations
+    A-->>F: Ledger (member · cycle · status)
+    F-->>Mem: "Bayar bulan ni — RM 75"
+
+    Mem->>F: Click "Bayar bulan ni"
+    F->>A: POST /api/repayments/pay { obligationId, cycleNumber }
+    A->>T: Simulate TNG payment
+    T-->>A: { paid, reference }
+    A->>P: INSERT repayments
+    A->>A: Recalculate kampung trust score
+    A->>P: UPDATE kampung_trust_scores
+    A-->>F: { ok, newTrustScore }
+    F-->>Mem: Ledger row turns green
 ```
 
 ---
@@ -273,7 +216,6 @@ graph TB
         DBrowser([Browser]) -->|:3000| DF[Frontend<br/>npm run dev]
         DBrowser -->|fetch :4000/api| DA[Backend<br/>npm run dev]
         DA --> DP[(Postgres<br/>Docker :5432)]
-        DA -.->|AWS SDK| DS3[(S3 dev bucket)]
     end
 
     subgraph Prod["PROD — EC2 Single Instance"]
@@ -282,50 +224,44 @@ graph TB
         PC -->|"/*"| PF[Frontend container]
         PC -->|"/api/*"| PA[Backend container]
         PA --> PP[(Postgres container)]
-        PA -.->|AWS SDK| PS3[(S3 prod bucket)]
     end
 ```
 
 ---
 
-## 7. Deploy Pipeline
-
-```mermaid
-flowchart LR
-    Dev[Dev Laptop] -->|git commit| Local[Local git]
-    Local -->|git push| GH[(GitHub)]
-    GH -->|SSH manual pull| EC2[EC2 Instance]
-    EC2 -->|git pull| Pull[Updated code]
-    Pull -->|docker compose up -d --build| Build[Rebuild images]
-    Build --> Restart[Containers restart]
-    Restart -->|db migrate| Migrate[Apply migrations]
-    Migrate --> Live([Live])
-```
-
-Total deploy: ~90 seconds.
-
----
-
-## 8. Data Model
+## 7. Data Model
 
 ```mermaid
 erDiagram
     USERS ||--o{ SESSIONS : has
-    USERS ||--o{ TABUNG : creates
-    USERS ||--o{ TABUNG_MEMBERS : "joins as"
-    TABUNG ||--|{ TABUNG_MEMBERS : contains
-    TABUNG ||--o{ CONTRIBUTIONS : receives
-    TABUNG ||--o{ ROTATIONS : schedules
-    TABUNG_MEMBERS ||--o{ CONTRIBUTIONS : makes
-    ROTATIONS ||--o{ PAYOUTS : triggers
+    USERS }o--|| KAMPUNGS : "lives in"
+    USERS ||--o{ POOL_MEMBERS : "joins as"
+    KAMPUNGS ||--o{ POOLS : "hosts"
+    KAMPUNGS ||--o| KAMPUNG_TRUST_SCORES : "has"
+    POOLS ||--|{ POOL_MEMBERS : contains
+    POOLS ||--o{ POOL_SUGGESTIONS : "received"
+    POOLS ||--o{ POOL_VOTES : "voted on"
+    POOLS ||--o| POOL_TRANSACTIONS : "results in"
+    POOL_TRANSACTIONS ||--|{ PAYLATER_OBLIGATIONS : "split into"
+    PAYLATER_OBLIGATIONS ||--o{ REPAYMENTS : "paid via"
+    MYKASIH_CATALOGUE ||--o{ POOL_TRANSACTIONS : "purchased from"
 
     USERS {
         uuid id PK
         string email UK
         string name
         string password_hash
-        int trust_score
+        uuid kampung_id FK
+        int individual_paylater_allowance_cents
+        string role
         timestamp created_at
+    }
+
+    KAMPUNGS {
+        uuid id PK
+        string name
+        string nadi_centre_name
+        string district
     }
 
     SESSIONS {
@@ -335,118 +271,110 @@ erDiagram
         timestamp expires_at
     }
 
-    TABUNG {
+    POOLS {
         uuid id PK
-        uuid created_by FK
+        uuid kampung_id FK
+        uuid initiator_user_id FK
         string name
-        int monthly_amount_cents
-        int duration_months
-        string status
-    }
-
-    TABUNG_MEMBERS {
-        uuid id PK
-        uuid tabung_id FK
-        uuid user_id FK
-        int rotation_order
-        string invite_code
-    }
-
-    CONTRIBUTIONS {
-        uuid id PK
-        uuid tabung_id FK
-        uuid member_id FK
-        int amount_cents
-        string tng_reference
-        string status
-        timestamp paid_at
-    }
-
-    ROTATIONS {
-        uuid id PK
-        uuid tabung_id FK
-        uuid recipient_member_id FK
-        int cycle_number
-        timestamp scheduled_at
-        timestamp paid_at
-    }
-
-    PAYOUTS {
-        uuid id PK
-        uuid rotation_id FK
-        uuid member_id FK
-        int amount_cents
-        string tng_reference
-        timestamp paid_at
-    }
-```
-
-### Phase 5 additional tables (Innovation + Security pillars)
-
-```mermaid
-erDiagram
-    USERS ||--o| USER_RISK_PROFILES : "has one"
-    USERS ||--o{ PENASIHAT_RECOMMENDATIONS : "received"
-    USERS ||--o{ PENGAWAL_CHECKS : "ran"
-    USERS ||--o{ PENGAWAL_OVERRIDES : "overrode"
-    FLAGGED_RECIPIENTS ||--o{ PENGAWAL_CHECKS : "matched in"
-
-    USER_RISK_PROFILES {
-        uuid user_id PK_FK
-        string risk_band
-        json questionnaire_answers
-        timestamp updated_at
-    }
-
-    PENASIHAT_RECOMMENDATIONS {
-        uuid id PK
-        uuid user_id FK
-        int surplus_amount_cents
-        json recommendations
+        string stated_need_text
+        string stated_need_category
+        int target_budget_cents
+        int combined_cap_cents
+        uuid selected_catalogue_item_id FK
+        string state
         timestamp created_at
+        timestamp locked_at
+        timestamp delivered_at
     }
 
-    FLAGGED_RECIPIENTS {
+    POOL_MEMBERS {
         uuid id PK
-        string handle UK
-        string flag_reason
-        int report_count
-        timestamp first_flagged_at
-    }
-
-    PENGAWAL_CHECKS {
-        uuid id PK
-        uuid sender_user_id FK
-        string recipient_handle FK
-        int amount_cents
-        json signals
-        int risk_score
-        string recommendation
-        timestamp checked_at
-    }
-
-    PENGAWAL_OVERRIDES {
-        uuid id PK
-        uuid check_id FK
+        uuid pool_id FK
         uuid user_id FK
-        timestamp overridden_at
+        int individual_allowance_at_lock_cents
+        timestamp joined_at
+    }
+
+    MYKASIH_CATALOGUE {
+        uuid id PK
+        string name_bm
+        string name_en
+        string category
+        int price_cents
+        string image_url
+        string description_bm
+    }
+
+    POOL_SUGGESTIONS {
+        uuid id PK
+        uuid pool_id FK
+        json items_json
+        timestamp suggested_at
+    }
+
+    POOL_VOTES {
+        uuid id PK
+        uuid pool_id FK
+        uuid user_id FK
+        uuid suggestion_item_id FK
+        string vote
+        timestamp voted_at
+    }
+
+    POOL_TRANSACTIONS {
+        uuid id PK
+        uuid pool_id FK
+        uuid catalogue_item_id FK
+        int total_amount_cents
+        timestamp approved_at
+        timestamp delivered_at
+    }
+
+    PAYLATER_OBLIGATIONS {
+        uuid id PK
+        uuid transaction_id FK
+        uuid user_id FK
+        int share_amount_cents
+        decimal share_pct
+        string tng_reference
+    }
+
+    REPAYMENTS {
+        uuid id PK
+        uuid obligation_id FK
+        uuid user_id FK
+        int cycle_number
+        int amount_cents
+        string tng_reference
+        timestamp paid_at
+    }
+
+    KAMPUNG_TRUST_SCORES {
+        uuid kampung_id PK_FK
+        decimal score
+        int signal_count
+        timestamp last_updated_at
     }
 ```
 
-Notes:
+### Key invariants
 
-- `flagged_recipients` is seeded for demo (one known-bad handle for the on-stage Pengawal trigger). In production, the table is populated by community reports + scam list integrations.
-- `pengawal_checks` is append-only audit. Every check leaves a row whether or not the user overrode the warning — regulator-friendly trail.
-- `penasihat_recommendations.recommendations` is JSON for demo speed; in production it would normalize to a child table.
+- Money columns are integer cents (never float)
+- `pool.state` transitions forward only (`draft → locked → suggesting → voting → approved → active → completed | dissolved`)
+- `pool.combined_cap_cents` set at lock time; never recalculated
+- `pool_members.individual_allowance_at_lock_cents` is a snapshot (TNG may change individual allowances later; pool obligation uses snapshot)
+- `paylater_obligations` rows are append-only after creation
+- `repayments` are append-only; corrections via compensating rows, never destructive UPDATE
+- `kampung_trust_scores` recalculated on every repayment or pool completion
 
 ---
 
-## 9. Network Security
+## 8. Network Security
 
 ```mermaid
 graph TB
     subgraph Internet["Public Internet"]
-        Users[Users]
+        Users[B40 users · NADI staff]
     end
 
     subgraph SecGroup["EC2 Security Group"]
@@ -455,7 +383,7 @@ graph TB
     end
 
     subgraph EC2Host["EC2 Host"]
-        subgraph DockerNet["Docker kutu_web"]
+        subgraph DockerNet["Docker duitlater_web"]
             CaddyC[Caddy]
             FEC[Frontend]
             APIC[API]
@@ -471,6 +399,8 @@ graph TB
 ```
 
 Postgres never exposed publicly. Only `app` container reaches it via Docker network.
+
+NADI portal is a route within the same frontend (`/nadi/*`), gated by the user's `role` field. No separate domain or auth provider.
 
 ---
 
@@ -499,13 +429,8 @@ Postgres never exposed publicly. Only `app` container reaches it via Docker netw
 
 ---
 
-## Render These Diagrams to PDF
+## External integration notes
 
-```bash
-cd /path/to/Kutu-Digitizer
-npx -y -p @mermaid-js/mermaid-cli mmdc -i ARCHITECTURE.md -o ARCHITECTURE-rendered.md -e png --scale 2
-sed -i '' 's/!\[diagram\]/![]/g' ARCHITECTURE-rendered.md
-pandoc ARCHITECTURE-rendered.md -o ARCHITECTURE.pdf --pdf-engine=weasyprint
-```
-
-(See `/Users/ijam/Desktop/Touch-N-Go/style.css` for styling reference.)
+- **TNG PayLater** — for hackathon, simulated client returns success. Production: TNG sandbox API integration. Exposed via single backend service `services/tng.ts` for clean swap-out.
+- **Claude API** — `services/claude.ts` wraps Anthropic SDK. System prompt locked in `backend/src/prompts/penasihat-suggest.md` (committed for review).
+- **MyKasih catalogue** — for hackathon, ~30 items seeded into `mykasih_catalogue` table from `backend/src/db/seeds/catalogue.ts`. Production: sync job from MyKasih Foundation API (when partnership established).

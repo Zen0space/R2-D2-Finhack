@@ -5,32 +5,36 @@ export default function LandingPage() {
         TNG FINHACK 2026 · Financial Inclusion Track
       </p>
       <h1 className="mt-4 text-5xl leading-tight text-[color:var(--color-tabung-ink)]">
-        Kutu Digitizer
+        DuitLater
       </h1>
       <p className="mt-3 font-[family-name:var(--font-display)] text-xl italic text-[color:var(--color-tabung-maroon)]">
-        Communal savings, on rails the unbanked already use.
+        Sendiri tak mampu, ramai-ramai boleh.
       </p>
       <p className="mt-6 text-base leading-relaxed text-[color:var(--color-tabung-ink)]/80">
-        The practice is older than banks. Millions of Malaysians run a kutu on trust, paper, and
-        WhatsApp — without a visible ledger. We build the digital rail without replacing the
-        practice.
+        Pool PayLater untuk komuniti B40. Dua hingga lapan ahli gabungkan TNG PayLater
+        allowance individu mereka untuk membeli barang-barang yang sendiri tak mampu —
+        difasilitasi oleh NADI centre, dipandu oleh Penasihat AI dalam Bahasa Melayu,
+        dengan katalog daripada MyKasih MySARA.
       </p>
       <div className="mt-10 flex flex-wrap items-center gap-3">
         <span className="rounded-full border border-[color:var(--color-tabung-sand)] px-3 py-1 text-xs text-[color:var(--color-tabung-slate)]">
-          Next.js 15
+          TNG PayLater
         </span>
         <span className="rounded-full border border-[color:var(--color-tabung-sand)] px-3 py-1 text-xs text-[color:var(--color-tabung-slate)]">
-          Tailwind v4
+          NADI · MCMC
         </span>
         <span className="rounded-full border border-[color:var(--color-tabung-sand)] px-3 py-1 text-xs text-[color:var(--color-tabung-slate)]">
-          Hono + Drizzle
+          MyKasih · MySARA
         </span>
         <span className="rounded-full border border-[color:var(--color-tabung-sand)] px-3 py-1 text-xs text-[color:var(--color-tabung-slate)]">
-          Postgres 16
+          Next.js 15 · Tailwind v4
+        </span>
+        <span className="rounded-full border border-[color:var(--color-tabung-sand)] px-3 py-1 text-xs text-[color:var(--color-tabung-slate)]">
+          Hono · Drizzle · Postgres 16
         </span>
       </div>
       <p className="mt-10 font-[family-name:var(--font-mono)] text-xs text-[color:var(--color-tabung-slate)]">
-        Phase 0 · Stack Activation · landing rendered
+        Phase 0 · Stack Activation · landing rendered · test bed: NADI Felda Gedangsa, Hulu Selangor
       </p>
     </main>
   );

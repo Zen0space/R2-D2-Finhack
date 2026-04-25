@@ -1,103 +1,116 @@
-# Pitch Narration — Kutu Digitizer
+# Pitch Narration — DuitLater
 
-**Speaker:** Ijam · **Duration:** 4 minutes strict · **Track:** Innovation · **Register:** bilingual BM-first, code-switch natural · **Setting:** on-stage at TNG FINHACK 2026 judges' panel
+**Speaker:** Ijam · **Duration:** 4 minutes strict · **Track:** Financial Inclusion · **Register:** bilingual BM-first, code-switch natural · **Setting:** on-stage at TNG FINHACK 2026 judges' panel
 
-Timing shown in `[mm:ss]` cues. Bracketed stage directions are notes to self, not spoken. Italic BM lines are preferred voice — switch to English only where audience requires.
+Timing shown in `[mm:ss]` cues. Bracketed stage directions are notes, not spoken. Italic BM lines are preferred voice.
 
 ---
 
 ## [00:00] — Slide 1 · Title · 10 seconds
 
-*Assalamualaikum and good afternoon. Saya Ijam, from team KrackedDevs. Kami bawa* **Kutu Digitizer** *— tiga tiang dalam satu landasan TNG. Three pillars on one rail.*
+*Assalamualaikum. Saya Ijam, dari team R2-D2. Kami bawa* **DuitLater** *— pool PayLater untuk komuniti B40. Sendiri tak mampu, ramai-ramai boleh.*
 
 [Beat. Change slide.]
 
 ---
 
-## [00:10] — Slide 2 · Practice + Gap · 30 seconds
+## [00:10] — Slide 2 · The Gap · 35 seconds
 
-*My grandmother runs a kutu with seven of her neighbours. RM 200 sebulan, lapan bulan. Lima belas tahun depa buat — never miss a cycle. Bank Negara has never seen a single one of those transactions.*
+*Bayangkan Mak Cik Aminah dari Felda Gedangsa. Dia ada TNG eWallet. PayLater dia — RM 300. Tu je dia boleh.*
 
-[Pause on the 15% statistic for 2 beats.]
+*Dia nak satu mesin jahit untuk start home tailoring — RM 1,800. Sendiri tak mampu.*
 
-***15% of Malaysian adults remain unbanked.* That's the formal number. The informal number is bigger — millions practising rotating savings, kutu, arisan, tabung — invisible to credit bureaus, invisible to banks, invisible to the formal system that's supposed to serve them.*
+*Tapi enam jiran dia, semua dalam Felda Gedangsa, semua ada TNG, semua dalam B40 — gabung PayLater diorang sahaja, dah lebih RM 2,000. Cukup untuk mesin jahit.*
 
-*Twenty-three million Malaysians already carry TNG eWallet. The rails are in their pocket. The practice is in their lives. The platform is overdue.*
+***Tapi TNG eWallet hari ini tak ada mekanisme nak combine PayLater allowance antara pengguna.*** *Itu gap dia.*
 
-[Beat. Change slide.]
-
----
-
-## [00:40] — Slide 3 · Three pillars · 50 seconds
-
-*Kami bina Kutu Digitizer atas tiga tiang — three pillars — on one TNG rail.*
-
-***Tiang pertama — Kutu.*** *Communal rotating savings, on rails 23 million Malaysians already use. Auto-deduct via TNG. Transparent ledger every member can see. Visible trust score that follows you tabung to tabung. Yang nenek aku buat, kita bawa to 23 million people.*
-
-***Tiang kedua — Penasihat.*** *Bilingual AI robo-advisor, BM-first. Tanya dia,* "patut ke aku letak payout aku dalam ASNB?" *— dia jawab dengan reasoning yang spesifik kepada tabung kau, dengan rekomendasi risk-tuned across conservative, balanced, growth. Bukan generic advice — advice yang grounded in your numbers.*
-
-***Tiang ketiga — Pengawal.*** *AI scam sentinel. Bila kau hampir confirm transfer kepada penerima yang flagged — Pengawal stop kau. Pattern-match scam phrasing dalam BM, English, Mandarin. Community-fed reputation database. The vulnerable get scammed in their own language; the warning meets them in their own language too.*
-
-*Tiga tiang, satu platform, satu TNG rail.*
+*Tiga juta keluarga B40 di Malaysia. Lima belas peratus orang dewasa unbanked. Dua puluh tiga juta TNG users. The rails are there. The need is there. The pool mechanism is missing.*
 
 [Beat. Change slide.]
 
 ---
 
-## [01:30] — Slide 4 · Why Innovation track · 30 seconds
+## [00:45] — Slide 3 · The Solution · 40 seconds
 
-*The Innovation track brief asked for —* "a secure, AI-driven eWallet platform that enhances digital payment transparency, automates regulatory compliance, and delivers real-time financial insights for users and regulators."
+***DuitLater.*** *Empat langkah, satu produk.*
 
-*Read it back to our pillars:* **secure** *— Pengawal.* **AI-driven** *— Penasihat plus Pengawal.* **Transparency** *— Kutu's ledger.* **Real-time insights** *— Penasihat answers grounded in live tabung state.*
+***Langkah pertama —*** *Form pool. Dua sampai lapan ahli, daftar di NADI centre. NADI Felda Gedangsa staff bantu pool formation, terangkan mekanisme.*
 
-*Track brief described what we built. We took it literally.*
+***Langkah kedua —*** *Combine PayLater. Sum of individual TNG limits. RM 300 plus RM 400 plus RM 250... combined cap pool muncul. Tiada subsidi external — yang kita ada cuma tindakan kolektif kampung sendiri.*
+
+***Langkah ketiga —*** **Penasihat** *— AI advisor BM-first — cadangkan top-5 barang dari katalog MyKasih MySARA. 140 ribu item dah ada dalam katalog tu. Penasihat pilih yang sesuai dengan combined cap, dengan need yang pool nyatakan, dengan musim — sekolah dah dekat? Cuti panjang? Musim hujan?*
+
+***Langkah keempat —*** *Pool vote. Majoriti setuju, TNG luluskan, NADI staff sahkan barang dah hantar. Bayar balik bulanan secara individu. Skor kepercayaan kampung naik bila kita semua bayar tepat masa.*
+
+*Empat institusi Malaysia sebenar:* **TNG · NADI · MyKasih · isi rumah B40.** *Tiada welfare baru direka. Tiada lender baru. Cuma compose institusi yang dah ada.*
 
 [Beat. Change slide.]
 
 ---
 
-## [02:00] — Slide 5 · Demo · 70 seconds
+## [01:25] — Slide 4 · The Test Bed · 25 seconds
 
-*Let me show you. Live, on stage, all three pillars.*
+*Test bed kami —* **NADI Felda Gedangsa, Hulu Selangor.**
 
-[SWITCH TO LIVE DEMO SCREEN. Follow demo-script.md beat-by-beat.]
+*Felda settlement — peneroka oil palm dan getah. Tradisi pengurusan komunal — Felda memang collective by design. NADI centre dah ada di sana, run oleh MCMC, dah serve kampung dengan digital training, light banking, dan courier service.*
 
-- **[00:08 into demo]** *Cipta tabung — name, monthly amount, duration. Submit. Tabung lahir.*
-- **[00:18]** *Invite code, QR code, copy link to WhatsApp.*
-- **[00:25]** *Second member joins via the link. Roster updates live.*
-- **[00:35]** *Bayar — TNG sandbox, contribution flows, ledger row turns green, trust score ticks +1.*
-- **[00:50]** ***Penasihat.*** *Tanya in BM —* "patut ke aku join tabung kedua, atau invest dulu yang dah selesai?" *— streamed BM reply with risk-tuned recommendations citing user's actual completed-cycle count.*
-- **[01:05]** ***Pengawal.*** *Cuba transfer to a known-flagged recipient — warning modal masuk in BM,* "Pengawal jumpa red flag — penerima ni baru join 2 hari, ada 5 aduan komuniti, message dia ada pattern 'investment guarantee 30%'. Yakin nak teruskan?"
+*B40 tepat. Communal trust dah ada. Digital infrastructure dah ada. Yang kita tambah — financial layer.*
+
+*Drive sejam setengah dari sini. Site visit feasible. Ini bukan persona pitching — ini real settlement, real NADI, real B40.*
+
+[Beat. Change slide.]
+
+---
+
+## [01:50] — Slide 5 · The Demo · 70 seconds
+
+*Live, on stage.*
+
+[SWITCH TO LIVE DEMO. Follow demo-script beat-by-beat.]
+
+- **[00:08 into demo]** *Daftar sebagai Mak Cik Aminah. Dashboard tunjuk PayLater individual saya — RM 300.*
+- **[00:18]** *Cipta pool. Nama "Pool Felda Gedangsa Mac". Need: "Mesin jahit untuk side income". Budget target: RM 1,800.*
+- **[00:30]** *Generate invite code, share. Dua jiran join. Combined cap muncul — RM 1,000, RM 1,400, RM 1,800.*
+- **[00:45]** *Lock pool. Combined cap final RM 2,000.*
+- **[00:55]** ***Penasihat.*** *Click Cadangkan. Lima cadangan BM muncul — mesin jahit RM 1,800, beras 100kg + minyak masak RM 580, alat sekolah 8 anak RM 720, generator RM 1,200, alat ternakan ayam RM 480.*
+- **[01:08]** *Pilih mesin jahit. Pool vote modal. Tiga ahli vote yes — majority. TNG approval simulated. Setiap ahli ada obligation proportional.*
+- **[01:25]** *NADI staff login. Confirm dah hantar. Pool jadi active. Cycle 1 mula. Bayar bulan ni — RM 250 per orang. Ledger update green. Skor kepercayaan kampung naik 1 mata.*
 
 [Return to deck. Change slide.]
 
 ---
 
-## [03:10] — Slide 6 · Stack · 20 seconds
+## [03:00] — Slide 6 · Stack · 15 seconds
 
-*Stack sengaja minimal. Node, TypeScript, Postgres 16. TNG eWallet for the rail. Claude API for the AI on Penasihat and Pengawal. Better Auth, Drizzle, Hono on the back. Next.js fifteen on the front.*
-
-*One EC2, four containers. No Kubernetes. No Redis. No GraphQL. Scope matches size. Forty-eight hours, ship the product.*
+*Stack minimal. Node, TypeScript, Postgres, TNG sandbox, Claude API. Hono + Drizzle + Better Auth + Next.js 15 + shadcn/ui. Satu EC2. Empat container. Tak Kubernetes, tak GraphQL, tak Redis. Scope match size.*
 
 [Beat. Change slide.]
 
 ---
 
-## [03:30] — Slide 7 · Lineage · 20 seconds
+## [03:15] — Slide 7 · Lineage · 15 seconds
 
-*Each pillar has a billion-dollar precedent.* **Kutu** — *MoneyFellows raised 31 million. Esusu valued at a billion.* **Penasihat** — *Wealthsimple, StashAway, Betterment — robo-advisor's a five-billion-dollar category.* **Pengawal** — *Bolster, Sift, Trustpair — fraud sentinel raised forty million plus globally.*
+*Pool credit dah scale di tempat lain. MoneyFellows raised 31 juta dolar di Mesir. Esusu valued at a billion in the US. Stokfella di Afrika Selatan. Easypaisa Pool Buy di Pakistan — precedent paling rapat dengan kita.*
 
-*Three proven categories. Three Malaysian-context implementations. One TNG-native platform — that's the new shape.*
+*Malaysia ada TNG. Malaysia ada NADI. Malaysia ada MyKasih. We have the rails, we have the institutions — DuitLater is the wiring.*
 
 [Beat. Change slide.]
 
 ---
 
-## [03:50] — Slide 8 · Ask · 10 seconds
+## [03:30] — Slide 8 · Ask · 25 seconds
 
-*What we need —* **TNG sandbox extended** *across all three pillars.* **Regulatory introduction** *— Bank Negara, SC, on community trust score portability.* **Next cohort** *— whatever you run next, R2-D2 wants in.*
+*Tiga benda kami minta.*
 
-*Tiga tiang, satu landasan. Terima kasih.*
+***Satu —*** *TNG. Sandbox API access untuk PayLater rail. Pool transaction flow kita perlu test against real risk model TNG.*
+
+***Dua —*** *MCMC. Formal collaboration framework dengan NADI Selangor. Lapan puluh empat centre dah ready as distribution channel.*
+
+***Tiga —*** *MyKasih Foundation. Merchant network access plus MySARA catalogue API untuk last-mile delivery.*
+
+*Tiga institusi Malaysia. Satu produk yang TNG boleh ship. Empat puluh ribu B40 household di Selangor sahaja kalau pilot scale. Empat juta nationally.*
+
+*Team R2-D2. Terima kasih.*
 
 [Stop at 04:00. Smile. Do not apologize. Do not overrun.]
 
@@ -106,18 +119,17 @@ Timing shown in `[mm:ss]` cues. Bracketed stage directions are notes to self, no
 ## Register Notes (Tutur-protocol)
 
 **Do say:**
-- *Tabung · kutu · ahli · pusingan · kepercayaan · catatan · landasan · tiang*
-- *Rails · ledger · trust-score · sandbox · pattern-match* (English technical terms stay English)
-- Short declarative sentences. No clause pile-up.
-- *Tiga tiang, satu landasan* — repeat at slide 1, slide 3, slide 8 as the signature phrase.
+- *Pool · ahli · sumbangan · bayaran balik · kepercayaan · catatan · kampung · cadangan · NADI · MyKasih · Felda*
+- *PayLater · TNG · sandbox · API · catalogue* (English technical terms stay English)
+- Short declarative sentences. *Sendiri tak mampu, ramai-ramai boleh* — repeat at slide 1, slide 3, slide 8.
 
 **Do not say:**
-- "Revolutionize" / "disrupt" / "unleash" / "transform"
+- "Revolutionize" / "disrupt" / "unleash"
+- "Empowering underserved communities" (empty phrasing)
+- "Saving the poor" / "uplifting the marginalised" (paternalistic)
 - "Fintech ecosystem"
-- "Empowering underserved communities" (empty phrasing — use concrete numbers instead)
-- "In conclusion" / "to wrap up"
 
-**Code-switch rhythm:** BM for emotional/practice/cultural beats; English for numbers, stack names, comparables. Never force.
+**Code-switch rhythm:** BM for emotional/cultural beats; English for institution names, stack names, comparables, numbers.
 
 ---
 
@@ -125,19 +137,19 @@ Timing shown in `[mm:ss]` cues. Bracketed stage directions are notes to self, no
 
 | Situation | Recovery |
 |---|---|
-| Demo screen freezes | *"Let me continue while the demo recovers —"* then skip to slide 6 early |
-| Penasihat slow to stream | *"Penasihat reasoning runs through Claude — first response can take a beat. Here's the architecture while it loads."* — buy time with slide 6 |
-| Pengawal demo doesn't trigger | *"The flag is fed via community-fed reputation. Today, our seeded recipient. Production, the network."* — pivot to roadmap |
-| Timer hits 3:30 on slide 5 | Cut Pengawal sub-demo. Verbal claim: *"Pengawal demonstrated in repo, not on stage today."* Jump to slide 7 |
-| Judge interrupts with question | *"Good question — let me answer after the pitch so I don't eat the clock."* |
+| Demo screen freezes | *"Let me continue while the demo recovers —"* skip to slide 6 early |
+| Penasihat slow to stream | *"Penasihat reasoning runs through Claude — first response can take a beat. Slide 6 architecture while it loads."* |
+| Pool vote demo doesn't trigger | *"Vote tally runs in real-time — production has a 10-second poll. For demo, fast-forward."* |
+| Timer hits 3:30 on slide 5 | Cut repayment sub-demo. Verbal claim: *"Repayment ledger shipped — full demo in repo."* Jump to slide 7 |
+| Judge interrupts | *"Good question — let me answer after the pitch so I don't eat the clock."* |
 | Mic fails | Project voice, keep walking slides, finish visually |
 
 ---
 
 ## Pre-Pitch Ritual
 
-- 5 min before: breath cycle, shoulders down, walk slow
-- 2 min before: clipboard check — remote works, demo URL loaded, sound tested, Pengawal flagged-recipient seeded
+- 5 min before: breath cycle, shoulders down
+- 2 min before: clipboard check — remote works, demo URL loaded, sound tested, NADI staff login pre-loaded, pool members pre-seeded
 - 30 sec before: one look at Mung + Akmal — team nod
 - On stage: find one judge's eyes for slide 1 open. Don't break eye contact for the first sentence.
 

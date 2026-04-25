@@ -14,7 +14,7 @@ app.use(
   }),
 );
 
-app.get("/health", (c) => c.json({ ok: true, service: "kutu-backend", env: env.NODE_ENV }));
+app.get("/health", (c) => c.json({ ok: true, service: "duitlater-backend", env: env.NODE_ENV }));
 
 app.get("/", (c) => c.json({ name: "Kutu Digitizer API", version: "0.1.0" }));
 
@@ -26,5 +26,5 @@ app.onError((err, c) => {
 });
 
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  logger.info(`kutu-backend listening on :${info.port}`);
+  logger.info(`duitlater-backend listening on :${info.port}`);
 });

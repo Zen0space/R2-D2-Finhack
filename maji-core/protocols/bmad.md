@@ -1,4 +1,4 @@
-# BMAD Method — Kutu Digitizer
+# BMAD Method — DuitLater
 
 **BMAD** is the build methodology maji-core uses to coordinate the team across the 48-hour hackathon. It is **artifact-driven**: the current state of build artifacts (files on disk) determines the current phase, not a verbal claim.
 
@@ -8,19 +8,17 @@
 
 Phases are defined in [DEVELOPMENT-PLAN.md](../../DEVELOPMENT-PLAN.md) at the repo root. maji-core treats the **Phase Status table** in that file as the live phase registry.
 
-The product is submitted to the **Innovation track** (TNG FINHACK 2026) with three pillars under the Innovation umbrella: **Kutu** (savings · Financial Inclusion-aligned), **Penasihat** (AI robo-advisor · Innovation core), and **Pengawal** (AI scam sentinel · Security & Fraud-aligned). Phase 5 splits into 5a / 5b / 5c — one sub-phase per pillar feature.
+The product (DuitLater) is submitted to the **Financial Inclusion track** (TNG FINHACK 2026). Single-product, single-track. Test bed: NADI Felda Gedangsa, Hulu Selangor.
 
-| Phase | Pillar | Goal | Testable outcome |
-|---|---|---|---|
-| 0 — Stack Activation | foundation | Empty repos to "hello world" hitting the stack | `curl /health` returns `{"ok":true}` AND frontend renders at `:3000` |
-| 1 — Auth + First Tabung | Kutu | Signed-in user creates a tabung and sees it persisted | Register → create tabung → reload → tabung still there |
-| 2 — Member Invite + Join | Kutu | Creator invites, invitee joins, roster appears | Generate invite code → second account accepts → roster shows two |
-| 3 — Contribution Flow | Kutu | Member contributes via TNG sandbox; ledger reflects | Contribute → sandbox returns → ledger green + trust +1 |
-| 4 — Rotation Payout | Kutu | Cycle completes; scheduled recipient receives payout | All paid → trigger rotation → correct recipient receives |
-| 5a — Penasihat Chat | Innovation | BM chat grounded in tabung state | Ask BM question → streamed BM reply citing real tabung data |
-| 5b — Penasihat Robo-Advisor | Innovation | Risk-tuned investment recommendations · BM-first reasoning | Complete questionnaire → receive 3 recommendations citing instruments + allocation% + BM reasoning |
-| 5c — Pengawal Scam Sentinel | Security | AI scam pattern detection · BM-first warning · community-fed reputation | Attempt transfer to seeded flagged recipient → Pengawal modal in BM with concrete red flags → user override logged |
-| 6 — Pitch Polish | all | Demo + deck + rehearsal | Live URL + 4-min demo across 3 pillars + deck + video + submission filed |
+| Phase | Goal | Testable outcome |
+|---|---|---|
+| 0 — Stack Activation | Empty repos to "hello world" hitting the stack with DuitLater branding | `curl /health` returns `{"ok":true}` AND DuitLater frontend renders at `:3000` |
+| 1 — Auth + Individual PayLater | Signed-in user sees individual TNG PayLater allowance | Register → dashboard shows individual PayLater allowance → reload persists |
+| 2 — Pool Formation + Lock | Creator invites, members join, pool locks with combined cap | Create pool → invite code → second account joins → lock → combined cap = sum of allowances |
+| 3 — Penasihat + Catalogue | Locked pool gets BM-first item suggestions from MyKasih catalogue | Click "Cadangkan" → 5 BM suggestions returned with reasoning + allocation% within combined cap |
+| 4 — Vote + TNG Approval + Purchase | Members vote, majority triggers simulated TNG approval, NADI confirms delivery | 3-of-4 vote yes → pool approved → simulated TNG approval per member → NADI portal confirms → pool active |
+| 5 — Repayment + Kampung Trust | Members repay monthly, ledger reflects, kampung trust score updates | All members pay cycle 1 → ledger all-green → kampung trust score increments |
+| 6 — NADI Portal + Pitch Polish | NADI staff dashboard polished + pitch deck + demo video + rehearsal | Live URL + 4-min demo end-to-end + deck PDF + video + FINHACK portal submission filed |
 
 ---
 
@@ -76,15 +74,13 @@ maji-core detects phase state by checking for expected artifacts:
 
 | Phase | Expected artifact (partial list) |
 |---|---|
-| 0 | `backend/package.json` + `frontend/package.json` + `docker-compose.dev.yml` + working `/health` |
-| 1 | `backend/src/db/schema.ts` has `users`, `sessions`, `tabung` tables + migration applied |
-| 2 | `backend/src/routes/members.ts` + invite code generator + `/join/:code` page |
-| 3 | `backend/src/routes/contributions.ts` + `backend/src/webhooks/tng.ts` + ledger UI |
-| 4 | `backend/src/services/rotation-engine.ts` + `rotations` + `payouts` tables |
-| 5a | `backend/src/routes/penasihat/chat.ts` + `/penasihat` page + streaming reply |
-| 5b | `backend/src/routes/penasihat/recommend.ts` + `user_risk_profiles` table + `/penasihat/cadang` page + 3-card UI |
-| 5c | `backend/src/routes/pengawal/check.ts` + `flagged_recipients` + `pengawal_checks` tables + warning modal in transfer flow |
-| 6 | `docs/pitch-deck.pdf` + `docs/demo-video.mp4` + deployed URL |
+| 0 | `backend/package.json` + `frontend/package.json` + `docker-compose.dev.yml` + DuitLater landing rendered + working `/health` |
+| 1 | `backend/src/db/schema.ts` has `users` (with `individual_paylater_allowance_cents`), `sessions`, `kampungs` tables + migration applied + `/dashboard` shows allowance |
+| 2 | `pools` + `pool_members` tables + `POST /api/pools` + invite code generator + `/join/:code` page + `lock` action computes combined cap |
+| 3 | `mykasih_catalogue` table seeded + `pool_suggestions` table + `POST /api/penasihat/suggest` + Claude API integration + 5-card UI |
+| 4 | `pool_votes` + `pool_transactions` + `paylater_obligations` tables + simulated TNG client + `/nadi/dashboard` route with confirm-delivery action |
+| 5 | `repayments` + `kampung_trust_scores` tables + repayment ledger UI + kampung trust widget + `Bayar bulan ni` action |
+| 6 | `docs/pitch-deck.pdf` + `docs/demo-video.mp4` + deployed URL + NADI portal polished |
 
 A phase is only ✅ when (a) its artifacts exist and (b) its testable outcome has been verified.
 

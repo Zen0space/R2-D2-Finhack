@@ -1,4 +1,4 @@
-# Infra — Kutu Digitizer Deployment
+# Infra — DuitLater Deployment
 
 **Docker · Caddy · EC2 · AWS S3 · Elastic IP**
 
@@ -43,7 +43,7 @@ infra/
 ## DNS
 
 ```
-kutu.yourdomain.com   A   <ELASTIC_IP>
+duitlater.yourdomain.com   A   <ELASTIC_IP>
 ```
 
 ## Deploy Sequence (first time)
@@ -53,7 +53,7 @@ ssh ubuntu@<ELASTIC_IP>
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER && newgrp docker
 
-git clone <repo-url> kutu && cd kutu/infra
+git clone <repo-url> duitlater && cd duitlater/infra
 mkdir -p secrets
 openssl rand -base64 32 > secrets/pg_password.txt
 chmod 600 secrets/pg_password.txt

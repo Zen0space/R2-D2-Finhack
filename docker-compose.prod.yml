@@ -1,7 +1,7 @@
 services:
   caddy:
     image: caddy:2-alpine
-    container_name: kutu-caddy
+    container_name: duitlater-caddy
     restart: unless-stopped
     ports:
       - "80:80"
@@ -11,7 +11,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - kutu_web
+      - duitlater_web
     depends_on:
       - frontend
       - app
@@ -20,12 +20,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: kutu-frontend
+    container_name: duitlater-frontend
     restart: unless-stopped
     env_file:
       - ./frontend/.env.prod
     networks:
-      - kutu_web
+      - duitlater_web
     expose:
       - "3000"
 
@@ -33,12 +33,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: kutu-app
+    container_name: duitlater-app
     restart: unless-stopped
     env_file:
       - ./backend/.env.prod
     networks:
-      - kutu_web
+      - duitlater_web
     expose:
       - "4000"
     depends_on:
@@ -47,29 +47,29 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: kutu-postgres
+    container_name: duitlater-postgres
     restart: unless-stopped
     env_file:
       - ./backend/.env.prod
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-kutu}
+      POSTGRES_USER: ${POSTGRES_USER:-duitlater}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-kutu_digitizer}
+      POSTGRES_DB: ${POSTGRES_DB:-duitlater}
     volumes:
-      - kutu_postgres_data:/var/lib/postgresql/data
+      - duitlater_postgres_data:/var/lib/postgresql/data
     networks:
-      - kutu_web
+      - duitlater_web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kutu} -d ${POSTGRES_DB:-kutu_digitizer}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-duitlater} -d ${POSTGRES_DB:-duitlater}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  kutu_postgres_data:
+  duitlater_postgres_data:
   caddy_data:
   caddy_config:
 
 networks:
-  kutu_web:
+  duitlater_web:
     driver: bridge
