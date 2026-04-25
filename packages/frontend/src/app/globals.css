@@ -67,11 +67,24 @@ button {
 
 .wallet-header {
   position: relative;
-  padding: 12px 22px 64px;
+  padding: 12px 22px 18px;
   color: white;
+  background: white;
+}
+
+.wallet-header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 74px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 38%),
     var(--app-blue);
+  z-index: 0;
+}
+
+.wallet-header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .top-strip,
@@ -213,12 +226,12 @@ button {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  width: calc(100% - 36px);
+  width: 100%;
   min-height: 104px;
-  margin: -44px auto 0;
+  margin: 26px 0 0;
   padding: 14px 10px;
   border: 1px solid rgba(16, 32, 51, 0.08);
-  border-radius: 8px;
+  border-radius: 18px;
   background: white;
   box-shadow: 0 12px 28px rgba(19, 49, 84, 0.14);
 }

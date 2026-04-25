@@ -6,21 +6,11 @@ import {
   promoItems,
   rewardCards,
   serviceTiles,
-  walletActions,
 } from "@/lib/home-data";
 
 export function WalletContent() {
   return (
     <>
-      <section className="quick-actions" aria-label="Wallet actions">
-        {walletActions.map((action) => (
-          <button className="quick-action" key={action.label} type="button">
-            <Image alt="" height={44} src={action.image} width={44} />
-            <span>{action.label}</span>
-          </button>
-        ))}
-      </section>
-
       <section className="content-stack">
         <div className="reward-grid">
           {rewardCards.map((reward, index) => (

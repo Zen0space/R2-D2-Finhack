@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Bell, History, Plus, Search, UserRound } from "lucide-react";
+import { QuickActionsPanel } from "./quick-actions-panel";
 
 export function WalletHeader() {
   return (
@@ -50,6 +51,8 @@ export function WalletHeader() {
           Transaction History
         </button>
       </div>
+
+      <QuickActionsPanel />
     </header>
   );
 }
