@@ -4,7 +4,7 @@
 node_modules
 packages/*/node_modules
 packages/*/dist
-packages/frontend
+packages/frontend/.next
 docs
 *.log
 .env
