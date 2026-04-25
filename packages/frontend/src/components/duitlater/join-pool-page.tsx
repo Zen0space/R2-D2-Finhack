@@ -46,7 +46,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
         throw new Error("Sign in dulu untuk sertai pool.");
       }
 
-      return poolsClient.join(normalizedInviteCode, session.user);
+      return poolsClient.join(normalizedInviteCode);
     },
     onSuccess: (joinedPool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });

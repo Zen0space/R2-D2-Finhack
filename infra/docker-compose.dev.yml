@@ -22,6 +22,18 @@ services:
       - web
     depends_on:
       - app
+      - frontend
+
+  frontend:
+    image: ghcr.io/zen0space/duitlater-frontend:${FRONTEND_TAG:-dev}
+    container_name: duitlater-dev-frontend
+    restart: unless-stopped
+    env_file:
+      - ../packages/frontend/.env.dev
+    networks:
+      - web
+    expose:
+      - "3000"
 
   app:
     image: ghcr.io/zen0space/duitlater-backend:${BACKEND_TAG:-dev}

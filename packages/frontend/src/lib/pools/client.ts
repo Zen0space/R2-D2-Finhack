@@ -8,7 +8,6 @@ import type {
   PoolNeedCategory,
   PoolRecord,
   PoolState,
-  PoolSuggestionFilter,
 } from "@/types/pool";
 import {
   calculateLiveCombinedCapCents,
@@ -179,7 +178,7 @@ export const poolsClient = {
     return mapBackendPool((body.data as { pool: BackendPool }).pool);
   },
 
-  async join(inviteCode: string, _user: MemberProfile): Promise<PoolRecord> {
+  async join(inviteCode: string): Promise<PoolRecord> {
     const joinBody = await apiFetch("/api/v1/pools/join", {
       method: "POST",
       body: JSON.stringify({ code: inviteCode }),
@@ -190,7 +189,7 @@ export const poolsClient = {
     return pool;
   },
 
-  async lock(poolId: string, _userId: string): Promise<PoolRecord> {
+  async lock(poolId: string): Promise<PoolRecord> {
     await apiFetch(`/api/v1/pools/${poolId}/lock`, { method: "POST" });
     const pool = await poolsClient.getById(poolId);
     if (!pool) throw new Error("Pool tak ditemui selepas lock.");
@@ -198,21 +197,21 @@ export const poolsClient = {
   },
 
   // Phase 3 stubs — wired in the next phase
-  async suggest(_poolId: string, _filter?: PoolSuggestionFilter): Promise<PoolRecord> {
+  async suggest(): Promise<PoolRecord> {
     throw new Error("AI Penasihat belum disambung — Phase 3.");
   },
 
-  async chooseSuggestion(_poolId: string, _suggestionId: string): Promise<PoolRecord> {
+  async chooseSuggestion(): Promise<PoolRecord> {
     throw new Error("Pilih barang belum disambung — Phase 3.");
   },
 
-  async listCatalogue(_filter?: PoolSuggestionFilter) {
+  async listCatalogue() {
     return [];
   },
 
   getSelectedSuggestion,
 
-  countCatalogueMatches: (pool: PoolRecord, _filter?: PoolSuggestionFilter) => {
+  countCatalogueMatches: (pool: PoolRecord) => {
     const cap = pool.combinedCapCents ?? calculateLiveCombinedCapCents(pool);
     return cap > 0 ? 1 : 0;
   },

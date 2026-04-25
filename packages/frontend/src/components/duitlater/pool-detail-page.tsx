@@ -30,7 +30,7 @@ import {
 } from "@/lib/pools/storage";
 import { cn, formatCurrency } from "@/lib/utils";
 import { poolNeedCategories } from "@/types/pool";
-import type { PoolSuggestionFilter } from "@/types/pool";
+import type { PoolRecord, PoolSuggestionFilter } from "@/types/pool";
 
 type PoolDetailPageProps = {
   poolId: string;
@@ -64,7 +64,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   const { data: pool, isLoading: isPoolLoading } = usePoolDetailQuery(poolId);
 
   const lockMutation = useMutation({
-    mutationFn: () => poolsClient.lock(poolId, session?.user.id ?? ""),
+    mutationFn: () => poolsClient.lock(poolId),
     onSuccess: (updatedPool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
@@ -75,8 +75,8 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
     },
   });
 
-  const suggestMutation = useMutation({
-    mutationFn: (filter: PoolSuggestionFilter) => poolsClient.suggest(poolId, filter),
+  const suggestMutation = useMutation<PoolRecord, Error, PoolSuggestionFilter>({
+    mutationFn: () => poolsClient.suggest(),
     onMutate: (filter) => {
       setPendingFilter(filter);
     },
@@ -94,9 +94,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   });
 
   const chooseSuggestionMutation = useMutation({
-    mutationFn: (suggestionId: string) => poolsClient.chooseSuggestion(poolId, suggestionId),
-    onMutate: (suggestionId) => {
-      setPendingSuggestionId(suggestionId);
+    mutationFn: () => poolsClient.chooseSuggestion(),
+    onMutate: () => {
+      setPendingSuggestionId(null);
     },
     onSuccess: (updatedPool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
@@ -522,7 +522,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
             choosePendingSuggestionId={pendingSuggestionId}
             isChoosePending={chooseSuggestionMutation.isPending}
             isSuggestPending={suggestMutation.isPending}
-            onChoose={(suggestionId) => chooseSuggestionMutation.mutate(suggestionId)}
+            onChoose={() => chooseSuggestionMutation.mutate()}
             onSuggest={(filter) => suggestMutation.mutate(filter)}
             pool={pool}
             selectedSuggestion={selectedSuggestion}
