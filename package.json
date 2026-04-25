@@ -1,12 +1,13 @@
 {
   "name": "r2-d2-finhack",
   "private": true,
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
-    "dev": "pnpm -r dev",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
-    "lint:fix": "pnpm -r lint:fix",
+    "dev": "pnpm --parallel --filter backend --filter frontend dev",
+    "build": "pnpm db:generate && pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "lint:fix": "pnpm -r --if-present lint:fix",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
@@ -22,7 +23,7 @@
     "typescript": "^5.0.0"
   },
   "engines": {
-    "node": ">=18",
+    "node": ">=22",
     "pnpm": ">=9"
   }
 }

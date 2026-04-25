@@ -15,6 +15,10 @@ out/
 .nuxt/
 .output/
 
+# Serwist generated service workers
+**/public/sw*
+**/public/swe-worker*
+
 # Environment variables
 .env
 .env.local

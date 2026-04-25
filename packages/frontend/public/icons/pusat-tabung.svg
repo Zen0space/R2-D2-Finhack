@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Pusat Tabung</title>
+  <rect width="512" height="512" rx="104" fill="#1976d2"/>
+  <circle cx="256" cy="256" r="168" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="120" fill="#f9c74f"/>
+  <path d="M165 279c34 59 148 59 182 0" fill="none" stroke="#1976d2" stroke-width="36" stroke-linecap="round"/>
+  <path d="M184 217h144" fill="none" stroke="#1976d2" stroke-width="38" stroke-linecap="round"/>
+  <path d="M256 154v204" fill="none" stroke="#1976d2" stroke-width="38" stroke-linecap="round"/>
+</svg>

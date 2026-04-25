@@ -1,0 +1,33 @@
+{
+  "name": "Pusat Tabung TNG PWA",
+  "short_name": "Pusat Tabung",
+  "description": "A TNG-style web wallet PWA for tabung circles, member trust, and monthly rotations.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f8fc",
+  "theme_color": "#1976d2",
+  "icons": [
+    {
+      "src": "/icons/pusat-tabung.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "300x300",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/tng-assets/screenshots/homescreenA.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
