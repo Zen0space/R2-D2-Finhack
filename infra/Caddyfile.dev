@@ -1,11 +1,11 @@
 # DuitLater · dev API Caddyfile
 # Backend-only. All paths proxied directly — no /api/ stripping needed.
-# dev.api.duitlater.com/health → backend :4000/health
-# dev.api.duitlater.com/auth/sign-in → backend :4000/auth/sign-in
+# api.dev.duitlater.com/health → backend :4000/health
+# api.dev.duitlater.com/auth/sign-in → backend :4000/auth/sign-in
 #
 # Set at deploy time: export DUITLATER_DOMAIN=duitlater.com
 
-dev.api.{$DUITLATER_DOMAIN:localhost} {
+api.dev.{$DUITLATER_DOMAIN:localhost} {
     encode gzip zstd
 
     reverse_proxy duitlater-dev-app:4000

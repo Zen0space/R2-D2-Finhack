@@ -12,6 +12,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      DUITLATER_DOMAIN: ${DUITLATER_DOMAIN:-localhost}
     volumes:
       - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
       - caddy_dev_data:/data

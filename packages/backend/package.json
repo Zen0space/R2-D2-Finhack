@@ -12,9 +12,11 @@
   "dependencies": {
     "@hono/node-server": "^1.13.0",
     "@hono/zod-validator": "^0.7.6",
+    "better-auth": "^1.6.9",
     "db": "workspace:*",
     "dotenv": "^16.6.1",
     "hono": "^4.6.0",
+    "nanoid": "^5.1.9",
     "zod": "^4.3.6"
   },
   "devDependencies": {
