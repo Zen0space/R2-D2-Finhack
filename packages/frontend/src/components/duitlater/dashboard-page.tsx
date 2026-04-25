@@ -24,10 +24,10 @@ import { authClient } from "@/lib/auth/client";
 import { cn, formatCurrency } from "@/lib/utils";
 import { poolNeedCategories } from "@/types/pool";
 
-const phaseTwoChecklist = [
-  "Dashboard dah ada butang Cipta pool dan list pool yang user sertai.",
-  "Pool detail tunjuk ahli, invite code, QR demo, pautan shareable, dan live cap semasa.",
-  "Join flow melalui /join/:code dan lock flow dari initiator dah wujud sebagai frontend slice.",
+const phaseFourChecklist = [
+  "Ahli pool kini boleh undi barang yang dipilih dan nampak tally semasa terus pada detail pool.",
+  "Bila majoriti setuju, ringkasan transaksi dan pecahan share setiap ahli terus muncul dalam state approved.",
+  "Staf NADI ada portal khas untuk sahkan penghantaran sebelum pool bergerak ke state active.",
 ] as const;
 
 const stateTone = {
@@ -117,7 +117,9 @@ export function DashboardPage() {
   const pools = poolsQuery.data ?? [];
   const firstName = user.name.split(" ")[0] ?? user.name;
   const draftCount = pools.filter((pool) => pool.state === "draft").length;
-  const lockedCount = pools.filter((pool) => pool.state === "locked").length;
+  const votingCount = pools.filter((pool) => pool.state === "voting").length;
+  const approvedCount = pools.filter((pool) => pool.state === "approved").length;
+  const isNadiStaff = user.role === "nadi_staff";
 
   return (
     <>
@@ -128,22 +130,35 @@ export function DashboardPage() {
               <div className="grid gap-4">
                 <div className="flex flex-wrap gap-3">
                   <Badge tone="gold">Dashboard</Badge>
-                  <Badge tone="forest">Phase 2 frontend</Badge>
+                  <Badge tone="forest">Phase 4 frontend</Badge>
+                  {isNadiStaff ? <Badge tone="maroon">NADI staff</Badge> : null}
                 </div>
                 <div className="grid gap-3">
                   <h1 className="text-5xl sm:text-6xl">Selamat datang, {firstName}.</h1>
                   <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
-                    Sekarang anda dah boleh cipta pool, jemput ahli, dan lock combined cap terus dari
-                    frontend ini. Ini sambungan terus dari allowance view Phase 1.
+                    {isNadiStaff
+                      ? "Portal NADI untuk sahkan penghantaran pool yang sudah lulus undian kini dah hidup dalam frontend ini."
+                      : "Sekarang anda dah boleh cipta pool, pilih barang, undi bersama ahli lain, dan tunggu pengesahan penghantaran dari NADI."}
                   </p>
                 </div>
               </div>
 
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                <Button className="w-full sm:w-auto" size="default" onClick={() => setIsComposerOpen(true)}>
-                  <Plus aria-hidden="true" size={16} />
-                  Cipta pool
-                </Button>
+                {!isNadiStaff ? (
+                  <Button className="w-full sm:w-auto" size="default" onClick={() => setIsComposerOpen(true)}>
+                    <Plus aria-hidden="true" size={16} />
+                    Cipta pool
+                  </Button>
+                ) : null}
+                {isNadiStaff ? (
+                  <Link
+                    className={cn(buttonVariants({ variant: "primary" }), "w-full sm:w-auto")}
+                    href="/nadi/dashboard"
+                  >
+                    <ShieldCheck aria-hidden="true" size={16} />
+                    Portal NADI
+                  </Link>
+                ) : null}
                 <Link
                   className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
                   href="/settings"
@@ -174,7 +189,9 @@ export function DashboardPage() {
                     <ShieldCheck aria-hidden="true" size={20} />
                   </div>
                   <CardDescription className="text-white/75">
-                    Allowance peribadi ini akan jadi sumbangan anda bila join atau cipta pool.
+                    {isNadiStaff
+                      ? "Akaun demo NADI ini masih bawa profil kampung yang sama supaya anda boleh semak penghantaran pool untuk komuniti Felda Gedangsa."
+                      : "Allowance peribadi ini akan jadi sumbangan anda bila join atau cipta pool."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 py-6">
@@ -182,8 +199,9 @@ export function DashboardPage() {
                     {formatCurrency(user.individualPayLaterAllowanceCents)}
                   </p>
                   <p className="max-w-xl text-sm text-white/78 sm:text-base">
-                    Anda dari {user.kampung.name}. Pool Phase 2 guna allowance ahli sebenar untuk kira
-                    live cap sebelum lock.
+                    {isNadiStaff
+                      ? `Akaun ini dipautkan ke ${user.kampung.name}. Buka portal NADI untuk tengok pool yang menunggu pengesahan penghantaran.`
+                      : `Anda dari ${user.kampung.name}. Pool kini guna allowance ahli yang dikunci untuk kira share undian dan ringkasan transaksi.`}
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4">
@@ -194,9 +212,15 @@ export function DashboardPage() {
                     </div>
                     <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-                        Pool locked
+                        Pool voting
                       </p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{lockedCount}</p>
+                      <p className="mt-2 text-3xl font-semibold text-white">{votingCount}</p>
+                    </div>
+                    <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4 sm:col-span-2">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+                        Menunggu NADI
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold text-white">{approvedCount}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -204,22 +228,34 @@ export function DashboardPage() {
 
               <Card>
                 <CardHeader className="gap-3">
-                  <Badge tone="maroon">Apa baru</Badge>
-                  <CardTitle className="text-4xl">Pool formation dah hidup.</CardTitle>
+                <Badge tone="maroon">Apa baru</Badge>
+                  <CardTitle className="text-4xl">Undian pool dah hidup.</CardTitle>
                   <CardDescription className="text-base">
-                    Dari dashboard ini anda boleh buka modal cipta pool, masuk ke detail pool, dan
-                    ikut status draft atau locked setiap pool yang anda sertai.
+                    {isNadiStaff
+                      ? "Akaun NADI boleh lompat terus ke portal pengesahan. Akaun ahli pula boleh undi cadangan barang dan tengok state approved sebaik majoriti tercapai."
+                      : "Dari dashboard ini anda boleh masuk ke detail pool, undi item yang dipilih, dan pantau pool mana yang sedang tunggu pengesahan dari NADI."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 text-sm text-[color:var(--dl-slate)]">
-                    Jika anda terima invite code dari ahli lain, buka terus pautan `/join/:code`.
-                    Auth page juga sekarang akan sambung balik ke halaman join selepas login.
+                    {isNadiStaff
+                      ? "Portal NADI memaparkan pool approved untuk kampung yang sama dan beri tindakan tunggal: `Sahkan dah hantar`."
+                      : "Jika anda terima invite code dari ahli lain, buka terus pautan `/join/:code`. Bila barang sudah dipilih, undian akan muncul automatik pada pool detail untuk ahli yang belum mengundi."}
                   </div>
-                  <Button className="w-full" variant="outline" size="lg" onClick={() => setIsComposerOpen(true)}>
-                    <Plus aria-hidden="true" size={18} />
-                    Cipta pool pertama
-                  </Button>
+                  {isNadiStaff ? (
+                    <Link
+                      className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
+                      href="/nadi/dashboard"
+                    >
+                      <ShieldCheck aria-hidden="true" size={18} />
+                      Buka portal NADI
+                    </Link>
+                  ) : (
+                    <Button className="w-full" variant="outline" size="lg" onClick={() => setIsComposerOpen(true)}>
+                      <Plus aria-hidden="true" size={18} />
+                      Cipta pool pertama
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -250,17 +286,27 @@ export function DashboardPage() {
               <Card>
                 <CardHeader className="gap-3">
                   <Badge tone="maroon">Masih kosong</Badge>
-                  <CardTitle className="text-4xl">Belum ada pool. Cipta atau sertai.</CardTitle>
+                  <CardTitle className="text-4xl">
+                    {isNadiStaff ? "Belum ada pool untuk dipantau." : "Belum ada pool. Cipta atau sertai."}
+                  </CardTitle>
                   <CardDescription className="text-base">
-                    Sebaik sahaja anda cipta pool, kad detail pool akan muncul di sini dengan target budget,
-                    invite code, dan live cap semasa.
+                    {isNadiStaff
+                      ? "Bila ada pool yang lulus undian di kampung ini, portal NADI akan mula memaparkan kad penghantaran di sini dan pada halaman khas staf."
+                      : "Sebaik sahaja anda cipta pool, kad detail pool akan muncul di sini dengan target budget, invite code, dan live cap semasa."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-3">
-                  <Button size="lg" onClick={() => setIsComposerOpen(true)}>
-                    <Plus aria-hidden="true" size={18} />
-                    Cipta pool
-                  </Button>
+                  {isNadiStaff ? (
+                    <Link className={cn(buttonVariants({ variant: "primary", size: "lg" }))} href="/nadi/dashboard">
+                      <ShieldCheck aria-hidden="true" size={18} />
+                      Portal NADI
+                    </Link>
+                  ) : (
+                    <Button size="lg" onClick={() => setIsComposerOpen(true)}>
+                      <Plus aria-hidden="true" size={18} />
+                      Cipta pool
+                    </Button>
+                  )}
                   <Link className={cn(buttonVariants({ variant: "outline", size: "lg" }))} href="/">
                     Lihat ringkasan
                   </Link>
@@ -335,7 +381,7 @@ export function DashboardPage() {
                 <Badge tone="forest">Profil</Badge>
                 <CardTitle className="text-4xl">Ringkasan ahli</CardTitle>
                 <CardDescription className="text-base">
-                  Identiti ahli dan kampung ini ikut terus ke semua pool yang anda cipta atau sertai.
+                  Identiti dan kampung ini ikut terus ke semua tindakan anda, termasuk undian pool atau pengesahan NADI.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
@@ -364,14 +410,14 @@ export function DashboardPage() {
 
             <Card>
               <CardHeader className="gap-3">
-                <Badge tone="gold">Phase 2 checklist</Badge>
+                <Badge tone="gold">Phase 4 checklist</Badge>
                 <CardTitle className="text-4xl">Apa yang siap setakat ini</CardTitle>
                 <CardDescription className="text-base">
-                  Frontend sekarang dah bergerak ke pool formation, join, dan lock flow.
+                  Frontend sekarang dah bergerak ke undian ahli, ringkasan approved, dan pengesahan NADI.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
-                {phaseTwoChecklist.map((item) => (
+                {phaseFourChecklist.map((item) => (
                   <div
                     className="flex items-start gap-3 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/78 p-4"
                     key={item}
@@ -385,7 +431,7 @@ export function DashboardPage() {
 
                 <div className="flex items-center gap-3 rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4 text-sm text-[color:var(--dl-forest)]">
                   <CheckCircle2 aria-hidden="true" size={18} />
-                  Frontend-only demo ini sesuai untuk prototaip flow. Swapping ke backend sebenar nanti boleh guna surface yang sama.
+                  Frontend-only demo ini kini cukup untuk tunjuk flow end-to-end dari ahli pilih barang sampai staf NADI sahkan penghantaran.
                 </div>
               </CardContent>
             </Card>
@@ -393,7 +439,9 @@ export function DashboardPage() {
         </div>
       </main>
 
-      <PoolComposerModal currentUser={user} isOpen={isComposerOpen} onClose={() => setIsComposerOpen(false)} />
+      {!isNadiStaff ? (
+        <PoolComposerModal currentUser={user} isOpen={isComposerOpen} onClose={() => setIsComposerOpen(false)} />
+      ) : null}
     </>
   );
 }

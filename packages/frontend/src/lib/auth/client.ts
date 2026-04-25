@@ -2,6 +2,7 @@
 
 import type { AuthResult, SignInInput, SignUpInput } from "@/types/auth";
 import {
+  DEMO_ACCOUNTS,
   DEMO_CREDENTIALS,
   createSessionForUser,
   createUser,
@@ -48,4 +49,5 @@ export const authClient = {
   },
 };
 
+export { DEMO_ACCOUNTS };
 export { DEMO_CREDENTIALS };

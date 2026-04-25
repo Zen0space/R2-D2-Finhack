@@ -87,8 +87,20 @@ export function PoolSuggestionsPanel({
             <div className="grid gap-3">
               <div className="flex flex-wrap gap-3">
                 <Badge tone="gold">AI Penasihat</Badge>
-                <Badge tone={pool.state === "voting" ? "forest" : "maroon"}>
-                  {pool.state === "voting" ? "Pool dalam voting" : "Cadangan BM-first"}
+                <Badge
+                  tone={
+                    pool.state === "voting" || pool.state === "approved" || pool.state === "active"
+                      ? "forest"
+                      : "maroon"
+                  }
+                >
+                  {pool.state === "voting"
+                    ? "Undian aktif"
+                    : pool.state === "approved"
+                      ? "Menunggu NADI"
+                      : pool.state === "active"
+                        ? "Sudah active"
+                        : "Cadangan BM-first"}
                 </Badge>
               </div>
               <div className="grid gap-2">
@@ -143,7 +155,13 @@ export function PoolSuggestionsPanel({
                   </p>
                   <h3 className="text-3xl">{selectedSuggestion.nameBm}</h3>
                 </div>
-                <Badge tone="forest">Sedia untuk undian Phase 4</Badge>
+                <Badge tone="forest">
+                  {pool.state === "approved"
+                    ? "Lulus undian"
+                    : pool.state === "active"
+                      ? "Penghantaran disahkan"
+                      : "Sedia untuk undian"}
+                </Badge>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
@@ -267,7 +285,7 @@ export function PoolSuggestionsPanel({
 
                     <Button
                       className="w-full"
-                      disabled={pool.state === "voting" || isChoosePending}
+                      disabled={!["locked", "suggesting"].includes(pool.state) || isChoosePending}
                       size="lg"
                       variant={isSelected ? "secondary" : "primary"}
                       onClick={() => onChoose(suggestion.id)}

@@ -1,9 +1,10 @@
 "use client";
 
 import type { MemberProfile } from "@/types/auth";
-import type { CreatePoolInput, PoolSuggestionFilter } from "@/types/pool";
+import type { CreatePoolInput, PoolSuggestionFilter, PoolVoteChoice } from "@/types/pool";
 import {
   buildPoolShareLink,
+  confirmPoolDelivery,
   countCatalogueMatches,
   createPool,
   getSelectedSuggestion,
@@ -11,15 +12,21 @@ import {
   getPoolByInviteCode,
   joinPool,
   listCatalogue,
+  listPoolsForNadi,
   listPoolsForUser,
   lockPool,
   selectSuggestion,
   suggestPool,
+  voteOnPool,
 } from "./storage";
 
 export const poolsClient = {
   async listMine(userId: string) {
     return listPoolsForUser(userId);
+  },
+
+  async listForNadi(user: MemberProfile) {
+    return listPoolsForNadi(user);
   },
 
   async getById(poolId: string) {
@@ -48,6 +55,14 @@ export const poolsClient = {
 
   async chooseSuggestion(poolId: string, suggestionId: string) {
     return selectSuggestion(poolId, suggestionId);
+  },
+
+  async vote(poolId: string, userId: string, vote: PoolVoteChoice) {
+    return voteOnPool(poolId, userId, vote);
+  },
+
+  async confirmDelivery(poolId: string, user: MemberProfile) {
+    return confirmPoolDelivery(poolId, user);
   },
 
   async listCatalogue(filter?: PoolSuggestionFilter) {
