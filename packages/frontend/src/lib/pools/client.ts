@@ -534,36 +534,23 @@ export const poolsClient = {
       return [];
     }
 
-    const backendMine = await apiFetch<{ pools: BackendPool[] }>("/api/v1/pools/mine").catch(
-      () => null,
+    const response = await apiFetch<{ pools: BackendPool[] }>("/api/v1/pools/nadi").catch(
+      (error) => {
+        if (error instanceof ApiRequestError && (error.status === 403 || error.status === 404)) {
+          return null;
+        }
+
+        throw error;
+      },
     );
 
-    backendMine?.data.pools.forEach((pool) => rememberPoolId(pool.id));
+    if (response) {
+      const hydratedPools = await Promise.all(response.data.pools.map(hydratePoolRecord));
+      hydratedPools.forEach((pool) => rememberPoolId(pool.id));
 
-    const detailedPools = (
-      await Promise.all(
-        [...knownPoolIds].map(async (poolId) => {
-          try {
-            return await fetchPoolRecord(poolId);
-          } catch {
-            return null;
-          }
-        }),
-      )
-    ).filter((pool): pool is PoolRecord => pool !== null);
-
-    const backendScopedPools = detailedPools
-      .filter((pool) => pool.kampungId === user.kampung.id)
-      .filter((pool) => ["approved", "active", "completed"].includes(pool.state))
-      .sort((left, right) => {
-        const rightDate = right.approvedAt ?? right.createdAt;
-        const leftDate = left.approvedAt ?? left.createdAt;
-
-        return rightDate.localeCompare(leftDate);
-      });
-
-    if (backendScopedPools.length > 0) {
-      return backendScopedPools;
+      if (hydratedPools.length > 0) {
+        return hydratedPools;
+      }
     }
 
     return listLocalNadiPools(user);

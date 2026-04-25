@@ -80,6 +80,13 @@ const joinSchema = z.object({ code: z.string().length(8) });
 const selectItemSchema = z.object({ catalogueItemId: z.string().min(1) });
 const voteSchema = z.object({ vote: z.enum(["YES", "NO"]) });
 
+const nadiPoolStateValues = ["APPROVED", "ACTIVE", "COMPLETED"] as const;
+const nadiListQuerySchema = z.object({
+  state: z
+    .union([z.enum(nadiPoolStateValues), z.array(z.enum(nadiPoolStateValues))])
+    .optional(),
+});
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -259,6 +266,53 @@ poolsRouter.get("/mine", async (c) => {
   return c.json(
     successResponse({
       pools: memberships.map((m) => poolView(m.pool)),
+    }),
+  );
+});
+
+// ---------------------------------------------------------------------------
+// E4.5 — GET /api/v1/pools/nadi (NADI staff portal listing)
+//
+// Returns pools awaiting or past NADI confirmation, scoped to the staffer's
+// kampung. ADMIN sees every kampung. Default state filter is APPROVED + ACTIVE
+// + COMPLETED. Ordered by most recent approval first.
+// ---------------------------------------------------------------------------
+
+poolsRouter.get("/nadi", zValidator("query", nadiListQuerySchema), async (c) => {
+  const user = c.get("user");
+
+  if (user.role !== "NADI_STAFF" && user.role !== "ADMIN") {
+    throw ApiError.forbidden("NADI staff access required");
+  }
+
+  if (user.role === "NADI_STAFF" && !user.kampungId) {
+    throw ApiError.badRequest("NADI staff account is missing a kampung assignment");
+  }
+
+  const { state } = c.req.valid("query");
+  const stateFilter = state ? (Array.isArray(state) ? state : [state]) : [...nadiPoolStateValues];
+
+  const pools = await prisma.pool.findMany({
+    where: {
+      state: { in: stateFilter },
+      ...(user.role === "NADI_STAFF" ? { kampungId: user.kampungId! } : {}),
+    },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, individualPaylaterCents: true },
+          },
+        },
+      },
+      kampung: { select: { id: true, name: true, districtHint: true } },
+    },
+    orderBy: [{ approvedAt: "desc" }, { createdAt: "desc" }],
+  });
+
+  return c.json(
+    successResponse({
+      pools: pools.map(poolView),
     }),
   );
 });
