@@ -432,5 +432,5 @@ NADI portal is a route within the same frontend (`/nadi/*`), gated by the user's
 ## External integration notes
 
 - **TNG PayLater** — for hackathon, simulated client returns success. Production: TNG sandbox API integration. Exposed via single backend service `services/tng.ts` for clean swap-out.
-- **Claude API** — `services/claude.ts` wraps Anthropic SDK. System prompt locked in `backend/src/prompts/penasihat-suggest.md` (committed for review).
-- **MyKasih catalogue** — for hackathon, ~30 items seeded into `mykasih_catalogue` table from `backend/src/db/seeds/catalogue.ts`. Production: sync job from MyKasih Foundation API (when partnership established).
+- **Claude API** — `services/claude.ts` wraps Anthropic SDK. System prompt locked in `packages/backend/src/prompts/penasihat-suggest.md` (committed for review).
+- **MyKasih catalogue** — for hackathon, ~30 items seeded into `mykasih_catalogue` table from `packages/backend/src/db/seeds/catalogue.ts`. Production: sync job from MyKasih Foundation API (when partnership established).

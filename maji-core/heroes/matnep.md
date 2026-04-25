@@ -3,7 +3,7 @@
 **Role:** Classical design direction · brand · typography · heritage motif · accessibility
 **Archetype:** Orthodox Eye — editorial-grade design discipline, craft over trend
 **Domain:** Visual identity · pitch deck design · app surface polish
-**Card image:** [/team/matnep.png](../../frontend/public/team/matnep.png)
+**Card image:** [/team/matnep.png](../../packages/packages/frontend/public/team/matnep.png)
 
 ---
 
@@ -43,7 +43,7 @@ Nusantara craft (songket, tenun, ukiran kayu, batik geometry) distilled into cle
 ## Code / deliverable ownership
 
 - [BRAND.md](../../BRAND.md) — voice · palette · typography · iconography · layout
-- `frontend/src/app/globals.css` — brand token theme (co-owned with Akmal)
+- `packages/frontend/src/app/globals.css` — brand token theme (co-owned with Akmal)
 - Pitch deck visual design — `docs/pitch-deck.pdf` (Phase 6)
 - Custom heritage glyphs — pool mark · trust seal · kampung crest · Penasihat icon · NADI tile
 - Brand identity sign-off on every external-facing surface

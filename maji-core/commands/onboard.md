@@ -91,7 +91,7 @@ Code ownership
   • {OWNERSHIP_2}
   • {OWNERSHIP_3}
 
-Card: /team/{name}.png (frontend/public/team/{name}.png)
+Card: /team/{name}.png (packages/frontend/public/team/{name}.png)
 ```
 
 ---

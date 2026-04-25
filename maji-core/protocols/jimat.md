@@ -49,11 +49,11 @@ Jimat is about removing **noise**, not **signal**. If compression removes clarit
 
 ### After (jimat penuh)
 
-> [index.ts:42](./backend/src/index.ts#L42) — loop var `user` shadows outer `user`. Rename loop var to `u`.
+> [index.ts:42](./packages/backend/src/index.ts#L42) — loop var `user` shadows outer `user`. Rename loop var to `u`.
 
 ### Even terser (jimat ultra)
 
-> [index.ts:42](./backend/src/index.ts#L42) shadow → rename loop var
+> [index.ts:42](./packages/backend/src/index.ts#L42) shadow → rename loop var
 
 ---
 
