@@ -316,8 +316,8 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 
 | Phase | Status | Started | Completed | Tested by |
 |---|---|---|---|---|
-| 0 — Stack Activation | 🟡 Scaffolded (needs `npm install` + verify) | 2026-04-25 ~06:30 | — | — |
-| 1 — Auth + Individual PayLater | 🟡 In progress (frontend) | 2026-04-25 | — | — |
+| 0 — Stack Activation | ✅ done | 2026-04-25 ~06:30 | 2026-04-25 | Mung |
+| 1 — Auth + Individual PayLater | ✅ done | 2026-04-25 | 2026-04-26 | Mung · Akmal |
 | 2 — Pool Formation + Lock | 🟡 In progress (frontend) | 2026-04-25 | — | — |
 | 3 — Penasihat + Catalogue | 🟡 In progress (frontend) | 2026-04-26 | — | — |
 | 4 — Vote + TNG Approval + Purchase | ⏳ Pending | — | — | — |

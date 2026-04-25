@@ -127,8 +127,6 @@ export function findUserByEmail(email: string) {
 
 function buildSession(user: StoredUser): Session {
   return {
-    mode: "demo-local",
-    issuedAt: new Date().toISOString(),
     user: sanitizeUser(user),
   };
 }

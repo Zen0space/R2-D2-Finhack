@@ -86,7 +86,7 @@ const voteSchema = z.object({ vote: z.enum(["YES", "NO"]) });
 
 function poolView(
   pool: Pool & {
-    members: (PoolMember & { user: Pick<User, "id" | "name" | "email"> })[];
+    members: (PoolMember & { user: Pick<User, "id" | "name" | "email" | "individualPaylaterCents"> })[];
     kampung: { id: string; name: string; districtHint: string | null };
   },
 ) {
@@ -107,6 +107,7 @@ function poolView(
       userId: m.userId,
       userName: m.user.name,
       userEmail: m.user.email,
+      individualPaylaterCents: m.user.individualPaylaterCents,
       individualAllowanceAtLockCents: m.individualAllowanceAtLockCents,
       joinedAt: m.joinedAt,
     })),
@@ -158,7 +159,7 @@ poolsRouter.post("/", zValidator("json", createPoolSchema), async (c) => {
       },
     },
     include: {
-      members: { include: { user: { select: { id: true, name: true, email: true } } } },
+      members: { include: { user: { select: { id: true, name: true, email: true, individualPaylaterCents: true } } } },
       kampung: { select: { id: true, name: true, districtHint: true } },
     },
   });
@@ -178,7 +179,7 @@ poolsRouter.get("/mine", async (c) => {
     include: {
       pool: {
         include: {
-          members: { include: { user: { select: { id: true, name: true, email: true } } } },
+          members: { include: { user: { select: { id: true, name: true, email: true, individualPaylaterCents: true } } } },
           kampung: { select: { id: true, name: true, districtHint: true } },
         },
       },
@@ -203,29 +204,14 @@ poolsRouter.get("/by-code/:code", zValidator("param", codeParamSchema), async (c
   const pool = await prisma.pool.findUnique({
     where: { inviteCode: code },
     include: {
+      members: { include: { user: { select: { id: true, name: true, email: true, individualPaylaterCents: true } } } },
       kampung: { select: { id: true, name: true, districtHint: true } },
-      _count: { select: { members: true } },
     },
   });
 
   if (!pool) throw ApiError.notFound("Pool with that code");
 
-  return c.json(
-    successResponse({
-      preview: {
-        id: pool.id,
-        name: pool.name,
-        statedNeed: pool.statedNeed,
-        category: pool.category,
-        state: pool.state,
-        kampung: pool.kampung,
-        memberCount: pool._count.members,
-        capacityRemaining: MAX_POOL_SIZE - pool._count.members,
-        targetBudgetCents: pool.targetBudgetCents,
-        combinedCapCents: pool.combinedCapCents,
-      },
-    }),
-  );
+  return c.json(successResponse({ pool: poolView(pool) }));
 });
 
 // ---------------------------------------------------------------------------
@@ -239,7 +225,7 @@ poolsRouter.get("/:id", zValidator("param", idParamSchema), async (c) => {
   const pool = await prisma.pool.findUnique({
     where: { id },
     include: {
-      members: { include: { user: { select: { id: true, name: true, email: true } } } },
+      members: { include: { user: { select: { id: true, name: true, email: true, individualPaylaterCents: true } } } },
       kampung: { select: { id: true, name: true, districtHint: true } },
     },
   });

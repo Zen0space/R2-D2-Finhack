@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAtom } from "jotai";
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,8 +13,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, useState } from "react";
+import { startTransition } from "react";
 import { toast } from "sonner";
+import { poolComposerOpenAtom } from "@/store/pools";
 import { PoolComposerModal } from "@/components/duitlater/pool-composer-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -55,7 +57,7 @@ const stateLabel = {
 export function DashboardPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [isComposerOpen, setIsComposerOpen] = useAtom(poolComposerOpenAtom);
   const { data: session, isLoading } = useSessionQuery();
   const poolsQuery = usePoolsQuery(session?.user.id ?? null);
 

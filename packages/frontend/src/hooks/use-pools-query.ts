@@ -20,11 +20,11 @@ export function usePoolDetailQuery(poolId: string | null) {
   });
 }
 
-export function usePoolInviteQuery(inviteCode: string | null) {
+export function usePoolInviteQuery(inviteCode: string | null, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["pools", "invite", inviteCode],
     queryFn: () => poolsClient.getByInviteCode(inviteCode ?? ""),
-    enabled: inviteCode !== null,
+    enabled: (options?.enabled ?? true) && inviteCode !== null,
     refetchInterval: 2_000,
   });
 }

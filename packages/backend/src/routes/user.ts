@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/me — current user + kampung + individual PayLater allowance.
+ * GET /api/v1/user — current user + kampung + individual PayLater allowance.
  *
  * Source of truth for the dashboard's "PayLater Saya" card and the kampung
  * trust score widget. Resolves session via Better Auth.
@@ -11,11 +11,11 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
 
-export const meRouter = new Hono();
+export const userRouter = new Hono();
 
-meRouter.use("*", requireAuth);
+userRouter.use("*", requireAuth);
 
-meRouter.get("/", async (c) => {
+userRouter.get("/", async (c) => {
   const sessionUser = c.get("user");
 
   const user = await prisma.user.findUnique({

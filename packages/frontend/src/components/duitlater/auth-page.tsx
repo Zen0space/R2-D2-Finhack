@@ -14,7 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { authClient, DEMO_CREDENTIALS } from "@/lib/auth/client";
+import { authClient, API_BASE, DEMO_CREDENTIALS } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import type { SignInInput } from "@/types/auth";
 
@@ -160,9 +160,16 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
   });
 
   const mutation = useMutation({
-    mutationFn: (values: SignInInput) => authClient.signIn(values),
-    onSuccess: ({ session }) => {
-      queryClient.setQueryData(["auth", "session"], session);
+    mutationFn: async (values: SignInInput) => {
+      const result = await authClient.signIn.email({
+        email: values.email,
+        password: values.password,
+      });
+      if (result.error) throw new Error(result.error.message ?? "E-mel atau kata laluan tak padan.");
+      return result;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
       toast.success(pageCopy["sign-in"].toast);
       startTransition(() => router.push(nextPath));
     },
@@ -245,15 +252,32 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
   });
 
   const mutation = useMutation({
-    mutationFn: (values: SignUpFormValues) =>
-      authClient.signUp({
-        name: values.name,
-        kampungName: values.kampungName,
+    mutationFn: async (values: SignUpFormValues) => {
+      // Resolve kampungId from name — default to Felda Gedangsa if not found
+      const kampungRes = await fetch(
+        `${API_BASE}/api/v1/kampungs?q=${encodeURIComponent(values.kampungName)}&limit=1`,
+      );
+      const kampungBody = (await kampungRes.json()) as {
+        data?: { kampungs?: { id: string }[] };
+      };
+      const kampungId =
+        kampungBody?.data?.kampungs?.[0]?.id ?? "cmoekukcx000i3ygufgjh8q08";
+
+      // kampungId is an additionalField on the server — cast needed until
+      // inferAdditionalFields plugin is configured on the client.
+      const result = await (authClient.signUp.email as unknown as (
+        opts: Record<string, unknown>,
+      ) => Promise<{ error: { message?: string } | null }>)({
         email: values.email,
         password: values.password,
-      }),
-    onSuccess: ({ session }) => {
-      queryClient.setQueryData(["auth", "session"], session);
+        name: values.name,
+        kampungId,
+      });
+      if (result.error) throw new Error(result.error.message ?? "Tak dapat cipta akaun.");
+      return result;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
       toast.success(pageCopy["sign-up"].toast);
       startTransition(() => router.push(nextPath));
     },
