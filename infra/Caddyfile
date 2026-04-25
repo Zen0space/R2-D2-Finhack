@@ -9,9 +9,20 @@
 {$DUITLATER_DOMAIN:localhost} {
     encode gzip zstd
 
-    # Backend API: strip /api prefix before forwarding
-    handle_path /api/* {
+    # DB-aware readiness for DNS/proxy checks.
+    handle /health {
         reverse_proxy duitlater-prod-app:4000
+    }
+
+    # Backend API: preserve /api so /api/v1/* reaches Hono unchanged.
+    handle /api/* {
+        reverse_proxy duitlater-prod-app:4000
+    }
+
+    # Local uploads replicated between VPS peers by Syncthing.
+    handle_path /uploads/* {
+        root * /srv/uploads/prod
+        file_server
     }
 
     # Frontend: Next.js standalone server handles everything else
@@ -36,8 +47,17 @@
 dev.{$DUITLATER_DOMAIN:localhost} {
     encode gzip zstd
 
-    handle_path /api/* {
+    handle /health {
         reverse_proxy duitlater-dev-app:4000
+    }
+
+    handle /api/* {
+        reverse_proxy duitlater-dev-app:4000
+    }
+
+    handle_path /uploads/* {
+        root * /srv/uploads/dev
+        file_server
     }
 
     handle {

@@ -78,6 +78,7 @@ model User {
   votes                    PoolVote[]
   obligations              PaylaterObligation[]
   repayments               Repayment[]
+  uploads                  UploadAsset[]
 
   @@index([kampungId])
   @@index([role])
@@ -334,4 +335,28 @@ model Repayment {
 
   @@unique([obligationId, cycleNumber])
   @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Upload assets — local VPS disk files replicated by Syncthing
+// ---------------------------------------------------------------------------
+
+model UploadAsset {
+  id           String   @id @default(cuid())
+  ownerUserId  String
+  originalName String
+  storedName   String
+  relativePath String   @unique
+  publicUrl    String
+  mimeType     String
+  sizeBytes    Int
+  sha256       String
+  visibility   String   @default("PUBLIC")
+  createdAt    DateTime @default(now())
+
+  owner User @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@index([ownerUserId])
+  @@index([sha256])
+  @@index([createdAt])
 }

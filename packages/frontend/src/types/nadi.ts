@@ -24,3 +24,39 @@ export type NadiWeeklySummaryRecord = {
   weekEnd: string;
   weekStart: string;
 };
+
+export type NadiPoolStateCounts = {
+  DRAFT: number;
+  LOCKED: number;
+  SUGGESTING: number;
+  VOTING: number;
+  APPROVED: number;
+  ACTIVE: number;
+  COMPLETED: number;
+  DISSOLVED: number;
+};
+
+export type NadiDashboardStats = {
+  kampung: {
+    id: string;
+    name: string;
+    districtHint: string | null;
+    trustScore: number;
+  };
+  pools: {
+    byState: NadiPoolStateCounts;
+    pendingDelivery: number;
+    active: number;
+    completed: number;
+    total: number;
+  };
+  members: {
+    totalSeats: number;
+  };
+  finance: {
+    totalDisbursedCents: number;
+    repaymentCompletionPct: number;
+    cyclesPaid: number;
+    cyclesTotal: number;
+  };
+};

@@ -67,9 +67,25 @@ jobs:
             set -e
             cd /var/www/R2-D2-Finhack
             git pull origin dev
-            export DUITLATER_DOMAIN=${{ secrets.DUITLATER_DOMAIN }}
             docker compose -f infra/docker-compose.dev.yml -p dev pull app
             docker compose -f infra/docker-compose.dev.yml -p dev up -d app
-            echo "✅ Dev backend deployed — migrations run automatically on container start"
+            echo "✅ Dev backend deployed"
             sleep 5
             docker compose -f infra/docker-compose.dev.yml -p dev logs app --tail 20
+
+      - name: Deploy to server (main branch only)
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /var/www/R2-D2-Finhack
+            git pull origin main
+            docker compose -f infra/docker-compose.dev.yml -p dev pull prod-app
+            docker compose -f infra/docker-compose.dev.yml -p dev up -d prod-app
+            echo "✅ Prod backend deployed"
+            sleep 5
+            docker compose -f infra/docker-compose.dev.yml -p dev logs prod-app --tail 20
