@@ -23,4 +23,8 @@ EXPOSE 4000
 # Run from the backend package dir so Node resolves tsx from its local
 # node_modules (packages/backend/node_modules/tsx) rather than the workspace root.
 WORKDIR /app/packages/backend
-CMD ["node", "--import", "tsx/esm", "src/index.ts"]
+COPY packages/backend/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+
+# entrypoint: prisma migrate deploy → start server
+CMD ["./entrypoint.sh"]
