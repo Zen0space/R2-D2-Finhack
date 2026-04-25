@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "setup": "bash scripts/setup.sh",
-    "predev": "bash scripts/kill-ports.sh",
+    "predev": "pnpm db:generate && bash scripts/kill-ports.sh",
     "dev": "pnpm --parallel --filter './packages/{backend,frontend}' dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
