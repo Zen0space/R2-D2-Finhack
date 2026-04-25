@@ -30,7 +30,9 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session, isLoading: isSessionLoading } = useSessionQuery();
-  const { data: pool, isLoading: isPoolLoading } = usePoolInviteQuery(normalizedInviteCode);
+  const { data: pool, isLoading: isPoolLoading } = usePoolInviteQuery(normalizedInviteCode, {
+    enabled: !isSessionLoading && !!session,
+  });
   const searchParams = new URLSearchParams(searchParamsString);
 
   const nextPath = `/join/${normalizedInviteCode}${searchParamsString ? `?${searchParamsString}` : ""}`;

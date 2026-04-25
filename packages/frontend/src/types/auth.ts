@@ -17,9 +17,7 @@ export type MemberProfile = {
 };
 
 export type Session = {
-  mode: "demo-local";
   user: MemberProfile;
-  issuedAt: string;
 };
 
 export type SignInInput = {

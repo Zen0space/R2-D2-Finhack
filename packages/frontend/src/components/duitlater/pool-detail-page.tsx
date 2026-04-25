@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAtom } from "jotai";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -16,6 +17,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { pendingSuggestionFilterAtom, pendingSuggestionIdAtom } from "@/store/pools";
 import { InviteQr } from "@/components/duitlater/invite-qr";
 import { PoolSuggestionsPanel } from "@/components/duitlater/pool-suggestions-panel";
 import { Badge } from "@/components/ui/badge";
@@ -76,8 +78,8 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   const queryClient = useQueryClient();
   const [lastVotePromptKey, setLastVotePromptKey] = useState<string | null>(null);
   const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
-  const [pendingFilter, setPendingFilter] = useState<PoolSuggestionFilter | null>(null);
-  const [pendingSuggestionId, setPendingSuggestionId] = useState<string | null>(null);
+  const [pendingFilter, setPendingFilter] = useAtom(pendingSuggestionFilterAtom);
+  const [pendingSuggestionId, setPendingSuggestionId] = useAtom(pendingSuggestionIdAtom);
   const { data: session, isLoading: isSessionLoading } = useSessionQuery();
   const { data: pool, isLoading: isPoolLoading } = usePoolDetailQuery(poolId);
 

@@ -316,15 +316,15 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 
 | Phase | Status | Started | Completed | Tested by |
 |---|---|---|---|---|
-| 0 â€” Stack Activation | ðŸŸ¡ Scaffolded (needs `npm install` + verify) | 2026-04-25 ~06:30 | â€” | â€” |
-| 1 â€” Auth + Individual PayLater | ðŸŸ¡ In progress (frontend) | 2026-04-25 | â€” | â€” |
-| 2 â€” Pool Formation + Lock | ðŸŸ¡ In progress (frontend) | 2026-04-25 | â€” | â€” |
-| 3 â€” Penasihat + Catalogue | ðŸŸ¡ In progress (frontend) | 2026-04-26 | â€” | â€” |
-| 4 â€” Vote + TNG Approval + Purchase | ðŸŸ¡ In progress (frontend + route tightening) | 2026-04-26 | â€” | â€” |
-| 5 â€” Repayment + Kampung Trust | â³ Pending | â€” | â€” | â€” |
-| 5b â€” NADI Weekly Summary (AI) | â³ Pending | â€” | â€” | â€” |
-| 6b â€” Multi-Cloud Infra + HA | â³ Pending | â€” | â€” | â€” |
-| 6 â€” NADI Portal + Pitch Polish | â³ Pending | â€” | â€” | â€” |
+| 0 — Stack Activation | ✅ done | 2026-04-25 ~06:30 | 2026-04-25 | Mung |
+| 1 — Auth + Individual PayLater | ✅ done | 2026-04-25 | 2026-04-26 | Mung · Akmal |
+| 2 — Pool Formation + Lock | 🟡 In progress (frontend) | 2026-04-25 | — | — |
+| 3 — Penasihat + Catalogue | 🟡 In progress (frontend) | 2026-04-26 | — | — |
+| 4 — Vote + TNG Approval + Purchase | 🟡 In progress (frontend + route tightening) | 2026-04-26 | — | — |
+| 5 — Repayment + Kampung Trust | ⏳ Pending | — | — | — |
+| 5b — NADI Weekly Summary (AI) | ⏳ Pending | — | — | — |
+| 6b — Multi-Cloud Infra + HA | ⏳ Pending | — | — | — |
+| 6 — NADI Portal + Pitch Polish | ⏳ Pending | — | — | — |
 
 Update this table as phases complete. Symbols: â³ pending Â· ðŸŸ¡ in progress Â· âœ… done Â· âš ï¸ blocked.
 
