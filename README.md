@@ -520,6 +520,22 @@ UPLOAD_ROOT=/data/uploads
 UPLOAD_PUBLIC_PATH=/uploads
 ```
 
+SMTP values for registration email verification:
+
+```env
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_REQUIRE_TLS=true
+SMTP_USER=<smtp-username>
+SMTP_PASS=<smtp-password>
+SMTP_FROM="DuitLater <no-reply@duitlater.com>"
+SMTP_EHLO_DOMAIN=duitlater.com
+SMTP_TIMEOUT_MS=12000
+```
+
+Use port `587` with STARTTLS for most providers. Use port `465` with `SMTP_SECURE=true` only when the provider requires implicit TLS.
+
 Dev backend values are the same shape but use:
 
 ```env
@@ -542,6 +558,12 @@ ANTHROPIC_API_KEY=
 ```
 
 Current code uses Alibaba Penasihat URL/key if configured. If not configured or failing, it falls back to local heuristic suggestions.
+
+Registration email behavior:
+- `POST /api/v1/auth/registration-code` sends a 6-digit code to the user's email.
+- If SMTP rejects the recipient or delivery command, the API returns an error and the account is not created.
+- `POST /api/v1/auth/verify-registration-code` verifies the code before the frontend calls Better Auth sign-up.
+- Some email providers accept a message first and bounce it later; this system catches SMTP send/reject errors, not every delayed bounce.
 
 ---
 

@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, KeyRound, Landmark, MapPinned, ShieldCheck, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, type ReactNode } from "react";
+import { startTransition, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -15,7 +15,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { formatErrorMessage } from "@/lib/api/errors";
-import { authClient, API_BASE, DEMO_ACCOUNTS, DEMO_CREDENTIALS } from "@/lib/auth/client";
+import {
+  authClient,
+  API_BASE,
+  DEMO_ACCOUNTS,
+  DEMO_CREDENTIALS,
+  requestRegistrationCode,
+  verifyRegistrationCode,
+} from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import type { SignInInput } from "@/types/auth";
 
@@ -30,6 +37,7 @@ const signUpSchema = signInSchema
   .extend({
     name: z.string().min(2, "Nama minimum 2 huruf."),
     kampungName: z.string().min(2, "Masukkan nama kampung."),
+    verificationCode: z.string().optional(),
     confirmPassword: z.string().min(8, "Ulang kata laluan anda."),
   })
   .refine((value) => value.password === value.confirmPassword, {
@@ -250,6 +258,7 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
 function SignUpFormCard({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [codeSent, setCodeSent] = useState(false);
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     mode: "onBlur",
@@ -257,6 +266,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
       name: "",
       kampungName: "Felda Gedangsa",
       email: "",
+      verificationCode: "",
       password: "",
       confirmPassword: "",
     },
@@ -264,6 +274,25 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
 
   const mutation = useMutation({
     mutationFn: async (values: SignUpFormValues) => {
+      if (!codeSent) {
+        await requestRegistrationCode({
+          email: values.email,
+          name: values.name,
+        });
+
+        return { stage: "code-sent" as const };
+      }
+
+      const code = values.verificationCode?.trim();
+      if (!code) {
+        throw new Error("Masukkan kod pengesahan 6 digit yang dihantar ke e-mel anda.");
+      }
+
+      await verifyRegistrationCode({
+        email: values.email,
+        code,
+      });
+
       // Resolve kampungId from name — default to Felda Gedangsa if not found
       const kampungRes = await fetch(
         `${API_BASE}/api/v1/kampungs?q=${encodeURIComponent(values.kampungName)}&limit=1`,
@@ -285,9 +314,15 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
         kampungId,
       });
       if (result.error) throw new Error(result.error.message ?? "Couldn't create the account.");
-      return result;
+      return { stage: "signed-up" as const };
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (result.stage === "code-sent") {
+        setCodeSent(true);
+        toast.success("Kod pengesahan sudah dihantar. Semak e-mel anda.");
+        return;
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
       toast.success(pageCopy["sign-up"].toast);
       startTransition(() => router.push(nextPath));
@@ -317,6 +352,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.name)}
               autoComplete="name"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-name"
               placeholder="Contoh: Nurul Aisyah"
               {...form.register("name")}
@@ -332,6 +368,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.kampungName)}
               autoComplete="address-level2"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-kampung"
               placeholder="Contoh: Felda Gedangsa"
               {...form.register("kampungName")}
@@ -342,11 +379,42 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.email)}
               autoComplete="email"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-email"
               placeholder="nama@contoh.my"
               {...form.register("email")}
             />
           </Field>
+
+          {codeSent ? (
+            <Field
+              error={form.formState.errors.verificationCode?.message}
+              htmlFor="sign-up-verification-code"
+              label="Kod pengesahan e-mel"
+              required
+            >
+              <Input
+                aria-invalid={Boolean(form.formState.errors.verificationCode)}
+                autoComplete="one-time-code"
+                id="sign-up-verification-code"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="6 digit"
+                {...form.register("verificationCode")}
+              />
+              <button
+                className="mt-2 text-left text-sm font-semibold text-[color:var(--dl-maroon)] underline-offset-4 hover:underline"
+                disabled={mutation.isPending}
+                type="button"
+                onClick={() => {
+                  setCodeSent(false);
+                  form.setValue("verificationCode", "");
+                }}
+              >
+                Tukar e-mel atau hantar semula kod
+              </button>
+            </Field>
+          ) : null}
 
           <Field
             error={form.formState.errors.password?.message}
@@ -357,6 +425,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.password)}
               autoComplete="new-password"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-password"
               placeholder="Minimum 8 aksara"
               type="password"
@@ -373,6 +442,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
             <Input
               aria-invalid={Boolean(form.formState.errors.confirmPassword)}
               autoComplete="new-password"
+              disabled={codeSent || mutation.isPending}
               id="sign-up-confirm-password"
               placeholder="Ulang kata laluan"
               type="password"
@@ -381,7 +451,13 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
           </Field>
 
           <Button className="mt-2 w-full" size="lg" type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? "Sedang cipta..." : pageCopy["sign-up"].ctaLabel}
+            {mutation.isPending
+              ? codeSent
+                ? "Sedang sahkan..."
+                : "Sedang hantar kod..."
+              : codeSent
+                ? "Sahkan kod dan cipta akaun"
+                : "Hantar kod pengesahan"}
             <ArrowRight aria-hidden="true" size={18} />
           </Button>
         </form>
