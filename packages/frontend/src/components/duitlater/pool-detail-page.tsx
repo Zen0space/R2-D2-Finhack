@@ -38,7 +38,13 @@ import {
 } from "@/lib/pools/storage";
 import { cn, formatCurrency } from "@/lib/utils";
 import { poolNeedCategories } from "@/types/pool";
-import type { PoolRecord, PoolSuggestionFilter, PoolVoteChoice } from "@/types/pool";
+import type {
+  PoolRecord,
+  PoolRepaymentCycleRecord,
+  PoolRepaymentCycleStatus,
+  PoolSuggestionFilter,
+  PoolVoteChoice,
+} from "@/types/pool";
 
 type PoolDetailPageProps = {
   poolId: string;
@@ -73,6 +79,34 @@ function formatDateTime(value: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function getRepaymentStatusTone(status: PoolRepaymentCycleStatus) {
+  if (status === "PAID") {
+    return "forest" as const;
+  }
+
+  if (status === "DUE") {
+    return "gold" as const;
+  }
+
+  return "neutral" as const;
+}
+
+function getRepaymentStatusLabel(status: PoolRepaymentCycleStatus) {
+  if (status === "PAID") {
+    return "Paid";
+  }
+
+  if (status === "DUE") {
+    return "Perlu bayar";
+  }
+
+  return "Belum buka";
+}
+
+function getNextDueCycle(cycles: PoolRepaymentCycleRecord[]) {
+  return cycles.find((cycle) => cycle.status === "DUE") ?? null;
 }
 
 export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
@@ -165,6 +199,20 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
     },
   });
 
+  const repaymentMutation = useMutation({
+    mutationFn: ({ cycleNumber, obligationId }: { cycleNumber: number; obligationId: string }) =>
+      poolsClient.payRepayment(poolId, obligationId, cycleNumber),
+    onSuccess: ({ pool: updatedPool, repayment }) => {
+      queryClient.invalidateQueries({ queryKey: ["pools"] });
+      queryClient.invalidateQueries({ queryKey: ["kampung", "trust", updatedPool.kampungId] });
+      queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
+      toast.success(`Bayaran kitaran ${repayment.cycleNumber} berjaya direkodkan.`);
+    },
+    onError: (error) => {
+      toast.error(formatErrorMessage(error, "Couldn't process the repayment right now."));
+    },
+  });
+
   if (isSessionLoading || isPoolLoading) {
     return (
       <main className="px-4 py-6 sm:px-6 lg:py-10">
@@ -253,6 +301,15 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   const sharePreviewByUserId = new Map(
     pool.members.map((member) => [member.userId, getMemberSharePreview(pool, member.userId)]),
   );
+  const repaymentLedger = pool.repaymentLedger ?? [];
+  const repaymentSummary = pool.repaymentSummary;
+  const repaymentByUserId = new Map(repaymentLedger.map((entry) => [entry.userId, entry]));
+  const currentUserRepayment = repaymentByUserId.get(session.user.id) ?? null;
+  const currentUserDueCycle = currentUserRepayment ? getNextDueCycle(currentUserRepayment.cycles) : null;
+  const repaymentCompletionPct = repaymentSummary
+    ? Math.round((repaymentSummary.cyclesPaid / Math.max(repaymentSummary.cyclesTotal, 1)) * 100)
+    : 0;
+  const isRepaymentState = pool.state === "active" || pool.state === "completed";
   const canVoteNow = pool.state === "voting" && !currentUserVote;
   const awaitingNadi = pool.state === "approved" && pool.transaction;
 
@@ -292,7 +349,11 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                 <Badge tone="gold">{stateLabels[pool.state]}</Badge>
                 <Badge tone="neutral">{pool.kampungName}</Badge>
                 <Badge tone="forest">
-                  {pool.state === "approved" || pool.state === "active" ? "Phase 4 live" : "Auto refresh 2s"}
+                  {pool.state === "active" || pool.state === "completed"
+                    ? "Phase 5 live"
+                    : pool.state === "approved"
+                      ? "Phase 4 live"
+                      : "Auto refresh 2s"}
                 </Badge>
               </div>
               <div className="grid gap-3">
@@ -323,7 +384,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   : pool.state === "approved"
                     ? "Majoriti sudah dicapai. Ringkasan transaksi kini dikunci sementara staf NADI sahkan penghantaran."
                     : pool.state === "active"
-                      ? "Penghantaran sudah disahkan oleh NADI. Pool ini kini aktif dengan rekod transaksi yang sama untuk semua ahli."
+                      ? "Penghantaran sudah disahkan oleh NADI. Pool ini kini aktif dengan catatan bayaran balik bulanan yang visible kepada semua ahli."
+                      : pool.state === "completed"
+                        ? "Semua kitaran bayaran balik telah selesai. Rekod pool ini kekal sebagai visible record untuk ahli dan kampung."
                   : pool.state === "suggesting"
                     ? "5 cadangan BM-first kini tersedia di bawah. Anda boleh tapis ikut kategori sebelum pilih satu untuk dibawa ke voting."
                     : pool.state === "locked"
@@ -466,7 +529,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       ? "maroon"
                       : pool.state === "voting"
                         ? "forest"
-                        : pool.state === "approved" || pool.state === "active"
+                        : pool.state === "approved" || pool.state === "active" || pool.state === "completed"
                           ? "forest"
                           : "gold"
                   }
@@ -479,6 +542,8 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                         ? "Menunggu NADI"
                         : pool.state === "active"
                           ? "Sudah disahkan"
+                          : pool.state === "completed"
+                            ? "Selesai dibayar"
                       : "Phase 3 aktif"}
                 </Badge>
                 <CardTitle className="text-4xl">
@@ -490,6 +555,8 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                         ? "Ringkasan transaksi dah siap"
                         : pool.state === "active"
                           ? "Pool dah bergerak ke active"
+                          : pool.state === "completed"
+                            ? "Kitaran pool ini dah selesai"
                       : "Katalog sedia untuk dipilih"}
                 </CardTitle>
                 <CardDescription className="text-base">
@@ -500,7 +567,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       : pool.state === "approved"
                         ? "Majoriti sudah dicapai. Sekarang hanya pengesahan penghantaran dari staf NADI diperlukan."
                         : pool.state === "active"
-                          ? "Staf NADI telah sahkan penghantaran. Ringkasan transaksi kekal di bawah sebagai rekod visible kepada ahli pool."
+                          ? "Staf NADI telah sahkan penghantaran. Sekarang ahli boleh mula bayar kitaran semasa sambil nampak visible record untuk semua ahli."
+                          : pool.state === "completed"
+                            ? "Semua kitaran bayaran balik telah direkodkan. Rekod ini kekal visible supaya kampung nampak cycle yang dihormati bersama."
                     : pool.state === "suggesting"
                       ? "Cadangan telah dijana. Tapis ikut kategori dan pilih satu barang dari panel di bawah."
                       : pool.state === "locked"
@@ -576,9 +645,13 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                               ? `${selectedSuggestion.nameBm} lulus undian dan kini tunggu pengesahan NADI.`
                               : pool.state === "active"
                                 ? `${selectedSuggestion.nameBm} sudah disahkan untuk penghantaran pool ini.`
+                                : pool.state === "completed"
+                                  ? `${selectedSuggestion.nameBm} telah habis dibayar oleh semua ahli pool ini.`
                                 : `${selectedSuggestion.nameBm} telah dipilih untuk dibawa ke voting.`
                             : pool.state === "approved"
                               ? "Pool ini sudah diluluskan."
+                              : pool.state === "completed"
+                                ? "Pool ini sudah selesai sepenuhnya."
                               : "Pool ini sudah berada dalam voting."}
                         </p>
                         <p className="text-sm text-[color:var(--dl-forest)]">
@@ -588,7 +661,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                               : "Undian anda masih belum direkodkan. Buka modal undian untuk semak share anda sebelum hantar keputusan."
                             : pool.state === "approved"
                               ? "Semua ahli kini melihat ringkasan transaksi yang sama sementara staf NADI buat pengesahan penghantaran."
-                              : "Rekod pilihan ini kekal dipapar supaya semua ahli nampak konteks pembelian yang sama."}
+                              : pool.state === "active"
+                                ? "Catatan bayaran balik kini dibuka. Ahli boleh bayar kitaran semasa terus dari ledger di bawah."
+                                : "Semua kitaran telah selesai. Rekod ini kekal dipapar supaya semua ahli nampak konteks pembelian dan penyelesaian yang sama."}
                         </p>
                       </div>
                     </div>
@@ -640,22 +715,31 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
           </div>
         </section>
 
-        {pool.state === "voting" || pool.state === "approved" || pool.state === "active" ? (
+        {pool.state === "voting" ||
+        pool.state === "approved" ||
+        pool.state === "active" ||
+        pool.state === "completed" ? (
           <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
             <Card>
               <CardHeader className="gap-3">
-                <Badge tone={pool.state === "voting" ? "forest" : "gold"}>
+                <Badge tone={pool.state === "voting" || pool.state === "completed" ? "forest" : "gold"}>
                   {pool.state === "voting" ? "Tally undian" : "Keputusan pool"}
                 </Badge>
                 <CardTitle className="text-4xl">
-                  {pool.state === "voting" ? "Siapa dah setuju" : "Ringkasan selepas undian"}
+                  {pool.state === "voting"
+                    ? "Siapa dah setuju"
+                    : pool.state === "completed"
+                      ? "Ringkasan selepas bayaran"
+                      : "Ringkasan selepas undian"}
                 </CardTitle>
                 <CardDescription className="text-base">
                   {pool.state === "voting"
                     ? "Tally ini bergerak bila ahli hantar undian. Majoriti mudah akan terus meluluskan pool."
                     : pool.state === "approved"
                       ? "Undian majoriti sudah dicapai. Langkah seterusnya ialah pengesahan penghantaran oleh staf NADI."
-                      : "Undian sudah selesai dan penghantaran telah disahkan. Rekod ini kekal sebagai rujukan ahli pool."}
+                      : pool.state === "active"
+                        ? "Undian sudah selesai dan penghantaran telah disahkan. Rekod ini kekal sebagai rujukan ahli pool."
+                        : "Semua kitaran bayaran balik telah selesai. Rekod ini kini lengkap sebagai rujukan bersama untuk ahli pool."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -700,7 +784,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                         : "Semua ahli sudah hantar keputusan untuk pusingan ini."
                       : pool.state === "approved"
                         ? "Undian cukup untuk lulus. Rekod share di sebelah telah dibekukan untuk pembelian ini."
-                        : `NADI sahkan penghantaran pada ${formatDateTime(pool.deliveredAt)}.`}
+                        : pool.state === "active"
+                          ? `NADI sahkan penghantaran pada ${formatDateTime(pool.deliveredAt)}.`
+                          : "Semua kitaran bayaran balik sudah lengkap untuk pool ini."}
                   </p>
                 </div>
 
@@ -719,7 +805,15 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       Anggaran bayaran bulanan anda ialah {formatCurrency(currentUserShare.monthlyAmountCents)} selama{" "}
                       {currentUserShare.totalCycles} bulan.
                     </p>
-                    {currentUserVote ? (
+                    {isRepaymentState && currentUserRepayment ? (
+                      <p className="mt-2 text-sm text-[color:var(--dl-forest)]">
+                        {pool.state === "completed"
+                          ? `Semua ${currentUserRepayment.totalCycles} kitaran anda sudah selesai dibayar.`
+                          : currentUserDueCycle
+                            ? `Kitaran ${currentUserDueCycle.cycleNumber} sedang dibuka. Baki semasa anda ${formatCurrency(currentUserRepayment.outstandingAmountCents)}.`
+                            : `Anda sudah bayar ${currentUserRepayment.cyclesPaid}/${currentUserRepayment.totalCycles} kitaran.`}
+                      </p>
+                    ) : currentUserVote ? (
                       <p className="mt-2 text-sm text-[color:var(--dl-forest)]">
                         Undian anda: {currentUserVote.vote === "YES" ? "Setuju" : "Tak setuju"} · dihantar{" "}
                         {formatDateTime(currentUserVote.votedAt)}
@@ -736,18 +830,24 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
             <Card>
               <CardHeader className="gap-3">
-                <Badge tone={pool.state === "active" ? "forest" : "gold"}>
-                  {pool.state === "voting" ? "Anggaran transaksi" : "Transaksi pool"}
+                <Badge tone={pool.state === "active" || pool.state === "completed" ? "forest" : "gold"}>
+                  {pool.state === "voting" ? "Anggaran transaksi" : pool.state === "completed" ? "Transaksi selesai" : "Transaksi pool"}
                 </Badge>
                 <CardTitle className="text-4xl">
-                  {pool.state === "voting" ? "Pecahan share sebelum lulus" : "Apa yang telah dikunci"}
+                  {pool.state === "voting"
+                    ? "Pecahan share sebelum lulus"
+                    : pool.state === "completed"
+                      ? "Apa yang telah diselesaikan"
+                      : "Apa yang telah dikunci"}
                 </CardTitle>
                 <CardDescription className="text-base">
                   {pool.state === "voting"
                     ? "Setiap ahli nampak jumlah share yang sama sebelum buat keputusan supaya undian lebih jelas dan telus."
                     : pool.state === "approved"
                       ? "Transaksi ini kekal visible kepada semua ahli sementara menunggu pengesahan penghantaran."
-                      : "Transaksi yang sama kekal dipapar selepas pengesahan untuk menunjukkan apa yang telah dibeli bersama."}
+                      : pool.state === "active"
+                        ? "Transaksi yang sama kekal dipapar selepas pengesahan untuk menunjukkan apa yang telah dibeli bersama."
+                        : "Transaksi dan pecahan share ini kini lengkap kerana semua kitaran bayaran balik telah direkodkan."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -774,7 +874,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                           ? "Menunggu majoriti"
                           : pool.state === "approved"
                             ? "Menunggu NADI"
-                            : "Active"}
+                            : pool.state === "active"
+                              ? "Active"
+                              : "Selesai"}
                       </p>
                     </div>
                   </div>
@@ -783,6 +885,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                 <div className="grid gap-3">
                   {pool.members.map((member) => {
                     const share = sharePreviewByUserId.get(member.userId);
+                    const repayment = repaymentByUserId.get(member.userId);
 
                     if (!share) {
                       return null;
@@ -801,6 +904,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                           <p className="mt-1 text-sm text-[color:var(--dl-slate)]">
                             Share {share.sharePct}% · allowance terkunci{" "}
                             {formatCurrency(member.individualAllowanceAtLockCents ?? member.individualAllowanceCents)}
+                            {repayment
+                              ? ` · bayar ${repayment.cyclesPaid}/${repayment.totalCycles} kitaran`
+                              : ""}
                           </p>
                         </div>
                         <div>
@@ -828,6 +934,200 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       : " Menunggu pengesahan penghantaran dari NADI."}
                   </div>
                 ) : null}
+              </CardContent>
+            </Card>
+          </section>
+        ) : null}
+
+        {isRepaymentState ? (
+          <section className="grid gap-4">
+            <Card>
+              <CardHeader className="gap-3">
+                <Badge tone={pool.state === "completed" ? "forest" : "gold"}>Repayment ledger</Badge>
+                <CardTitle className="text-4xl">Catatan bayaran balik pool</CardTitle>
+                <CardDescription className="text-base">
+                  Rekod ini visible kepada semua ahli. Kitaran yang sudah dibayar kekal hijau, kitaran semasa tunggu ahli yang berkaitan, dan catatan lama tidak dipadam.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-3 lg:grid-cols-4">
+                  <div className="rounded-[1.25rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
+                      Kitaran selesai
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold text-[color:var(--dl-forest)]">
+                      {repaymentSummary?.cyclesPaid ?? 0}
+                    </p>
+                  </div>
+                  <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                      Jumlah kitaran
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold">{repaymentSummary?.cyclesTotal ?? 0}</p>
+                  </div>
+                  <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                      Ahli terlibat
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold">{repaymentSummary?.memberCount ?? pool.members.length}</p>
+                  </div>
+                  <div className="rounded-[1.25rem] border border-[color:rgba(200,148,31,0.22)] bg-[color:rgba(200,148,31,0.08)] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-gold-dark)]">
+                      Progress pool
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold">{repaymentCompletionPct}%</p>
+                  </div>
+                </div>
+
+                {currentUserRepayment ? (
+                  <div className="rounded-[1.5rem] border border-[color:rgba(200,148,31,0.22)] bg-[color:rgba(200,148,31,0.08)] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-gold-dark)]">
+                          Bayaran anda
+                        </p>
+                        <p className="mt-2 text-2xl font-semibold">
+                          {pool.state === "completed"
+                            ? "Semua selesai"
+                            : currentUserDueCycle
+                              ? `Kitaran ${currentUserDueCycle.cycleNumber} sedang dibuka`
+                              : "Tiada kitaran tertunggak buat masa ini"}
+                        </p>
+                      </div>
+                      <Badge tone={pool.state === "completed" || !currentUserDueCycle ? "forest" : "gold"}>
+                        {currentUserRepayment.cyclesPaid}/{currentUserRepayment.totalCycles} kitaran
+                      </Badge>
+                    </div>
+                    <p className="mt-3 text-sm text-[color:var(--dl-slate)]">
+                      Baki outstanding anda sekarang {formatCurrency(currentUserRepayment.outstandingAmountCents)}.
+                      {currentUserDueCycle
+                        ? ` Amaun untuk kitaran ini ialah ${formatCurrency(currentUserDueCycle.amountCents)}.`
+                        : " Tiada tindakan tambahan diperlukan pada masa ini."}
+                    </p>
+                  </div>
+                ) : null}
+
+                {repaymentLedger.length === 0 ? (
+                  <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4 text-sm text-[color:var(--dl-slate)]">
+                    Ledger repayment belum tersedia untuk pool ini.
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {repaymentLedger.map((entry) => (
+                      <div
+                        className="rounded-[1.75rem] border border-[color:var(--dl-sand)] bg-white/82 p-4"
+                        key={entry.obligationId}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <div className="flex flex-wrap gap-2">
+                              <strong className="text-lg">{entry.userName}</strong>
+                              {entry.userId === session.user.id ? <Badge tone="forest">Anda</Badge> : null}
+                              <Badge tone="neutral">{entry.progressPct}% siap</Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-[color:var(--dl-slate)]">
+                              Share {entry.sharePct}% · bulanan {formatCurrency(entry.monthlyAmountCents)} · baki{" "}
+                              {formatCurrency(entry.outstandingAmountCents)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                              Jumlah share
+                            </p>
+                            <p className="mt-2 text-lg font-semibold">{formatCurrency(entry.shareAmountCents)}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid gap-2">
+                          <div className="hidden rounded-[1.1rem] bg-[color:rgba(248,244,236,0.72)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:grid sm:grid-cols-[0.8fr_0.95fr_0.9fr_1fr_auto]">
+                            <span>Kitaran</span>
+                            <span>Status</span>
+                            <span>Amaun</span>
+                            <span>Dibayar pada</span>
+                            <span>Tindakan</span>
+                          </div>
+
+                          {entry.cycles.map((cycle) => {
+                            const isOwnDueCycle =
+                              pool.state === "active" &&
+                              entry.userId === session.user.id &&
+                              cycle.status === "DUE";
+                            const activeMutation = repaymentMutation.variables;
+                            const isPayingThisCycle =
+                              repaymentMutation.isPending &&
+                              activeMutation?.obligationId === entry.obligationId &&
+                              activeMutation?.cycleNumber === cycle.cycleNumber;
+
+                            return (
+                              <div
+                                className="grid gap-3 rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.56)] p-4 sm:grid-cols-[0.8fr_0.95fr_0.9fr_1fr_auto] sm:items-center"
+                                key={`${entry.obligationId}-${cycle.cycleNumber}`}
+                              >
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:hidden">
+                                    Kitaran
+                                  </p>
+                                  <p className="mt-1 text-sm font-semibold sm:mt-0">Kitaran {cycle.cycleNumber}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:hidden">
+                                    Status
+                                  </p>
+                                  <div className="mt-1 sm:mt-0">
+                                    <Badge tone={getRepaymentStatusTone(cycle.status)}>
+                                      {getRepaymentStatusLabel(cycle.status)}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:hidden">
+                                    Amaun
+                                  </p>
+                                  <p className="mt-1 text-sm font-semibold sm:mt-0">
+                                    {formatCurrency(cycle.amountCents)}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:hidden">
+                                    Dibayar pada
+                                  </p>
+                                  <p className="mt-1 text-sm text-[color:var(--dl-slate)] sm:mt-0">
+                                    {formatDateTime(cycle.paidAt)}
+                                  </p>
+                                </div>
+                                <div className="sm:justify-self-end">
+                                  {isOwnDueCycle ? (
+                                    <Button
+                                      className="w-full sm:w-auto"
+                                      disabled={repaymentMutation.isPending}
+                                      size="sm"
+                                      onClick={() =>
+                                        repaymentMutation.mutate({
+                                          cycleNumber: cycle.cycleNumber,
+                                          obligationId: entry.obligationId,
+                                        })
+                                      }
+                                    >
+                                      {isPayingThisCycle ? "Sedang bayar..." : "Bayar bulan ni"}
+                                    </Button>
+                                  ) : (
+                                    <span className="text-sm text-[color:var(--dl-slate)]">
+                                      {cycle.status === "PAID"
+                                        ? "Selesai"
+                                        : cycle.status === "DUE" && entry.userId === session.user.id
+                                          ? "Tunggu tindakan anda"
+                                          : "—"}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </section>

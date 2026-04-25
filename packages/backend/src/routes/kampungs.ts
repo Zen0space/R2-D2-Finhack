@@ -128,6 +128,7 @@ kampungsRouter.get("/:id/trust", zValidator("param", idParamSchema), async (c) =
       kampungName: kampung.name,
       score,
       label_bm,
+      signalCount: totalPaid,
       signals: {
         totalCycles,
         totalPaid,
