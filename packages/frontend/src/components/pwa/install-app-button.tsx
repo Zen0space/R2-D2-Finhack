@@ -3,7 +3,6 @@
 import { useAtomValue, useSetAtom } from "jotai";
 import { Download, Smartphone } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { useAppInstallPrompt } from "@/hooks/use-app-install-prompt";
 import {
   canInstallAppAtom,
   clearInstallPromptAtom,
@@ -14,8 +13,6 @@ import {
 import { cn } from "@/lib/utils";
 
 export function InstallAppButton() {
-  useAppInstallPrompt();
-
   const installPrompt = useAtomValue(installPromptAtom);
   const canInstallApp = useAtomValue(canInstallAppAtom);
   const isAppInstalled = useAtomValue(isAppInstalledAtom);

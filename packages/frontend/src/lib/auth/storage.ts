@@ -16,23 +16,67 @@ const defaultKampung: Kampung = {
   state: "Selangor",
 };
 
-const demoUser: StoredUser = {
-  id: "member-nurul",
-  name: "Nurul Aisyah",
-  email: "nurul@duitlater.my",
-  password: "duitlater123",
-  kampung: defaultKampung,
-  role: "member",
-  individualPayLaterAllowanceCents: 30_000,
-  createdAt: "2026-04-25T08:00:00.000Z",
-};
+const demoUsers: StoredUser[] = [
+  {
+    id: "member-nurul",
+    name: "Nurul Aisyah",
+    email: "nurul@duitlater.my",
+    password: "duitlater123",
+    kampung: defaultKampung,
+    role: "member",
+    individualPayLaterAllowanceCents: 30_000,
+    createdAt: "2026-04-25T08:00:00.000Z",
+  },
+  {
+    id: "member-razali",
+    name: "Razali Ismail",
+    email: "razali@duitlater.my",
+    password: "duitlater123",
+    kampung: defaultKampung,
+    role: "member",
+    individualPayLaterAllowanceCents: 45_000,
+    createdAt: "2026-04-25T08:05:00.000Z",
+  },
+  {
+    id: "member-faiz",
+    name: "Faiz Haziq",
+    email: "faiz@duitlater.my",
+    password: "duitlater123",
+    kampung: defaultKampung,
+    role: "member",
+    individualPayLaterAllowanceCents: 60_000,
+    createdAt: "2026-04-25T08:10:00.000Z",
+  },
+  {
+    id: "nadi-hidayah",
+    name: "Cik Hidayah",
+    email: "hidayah.nadi@duitlater.my",
+    password: "duitlater123",
+    kampung: defaultKampung,
+    role: "nadi_staff",
+    individualPayLaterAllowanceCents: 30_000,
+    createdAt: "2026-04-25T08:15:00.000Z",
+  },
+];
 
-const seededUsers: StoredUser[] = [demoUser];
+const seededUsers: StoredUser[] = demoUsers;
+const primaryDemoUser = demoUsers.at(0);
+
+if (!primaryDemoUser) {
+  throw new Error("At least one demo user is required");
+}
 
 export const DEMO_CREDENTIALS = {
-  email: demoUser.email,
-  password: demoUser.password,
+  email: primaryDemoUser.email,
+  password: primaryDemoUser.password,
 } as const;
+
+export const DEMO_ACCOUNTS = demoUsers.map((user) => ({
+  email: user.email,
+  name: user.name,
+  password: user.password,
+  role: user.role,
+}));
 
 function isBrowser() {
   return typeof window !== "undefined";
@@ -127,8 +171,6 @@ export function findUserByEmail(email: string) {
 
 function buildSession(user: StoredUser): Session {
   return {
-    mode: "demo-local",
-    issuedAt: new Date().toISOString(),
     user: sanitizeUser(user),
   };
 }

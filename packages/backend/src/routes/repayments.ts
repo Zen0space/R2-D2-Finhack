@@ -15,21 +15,15 @@ import { z } from "zod";
 import { Prisma, prisma } from "db";
 
 import { requireAuth } from "../middleware/require-auth.js";
-import { ApiError, errorResponse } from "../lib/errors.js";
+import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
-import { log } from "../middleware/logger.js";
+import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
 
 export const repaymentsRouter = new Hono();
 
 repaymentsRouter.use("*", requireAuth);
 
-repaymentsRouter.onError((err, c) => {
-  if (err instanceof ApiError) {
-    return c.json(errorResponse(err), err.statusCode as 400 | 401 | 403 | 404 | 409 | 500);
-  }
-  log("ERROR", `[repayments] ${err instanceof Error ? err.message : String(err)}`);
-  return c.json(errorResponse(ApiError.internal()), 500);
-});
+repaymentsRouter.onError(createFeatureErrorHandler("repayments"));
 
 const paySchema = z.object({
   obligationId: z.string().min(1),
@@ -44,7 +38,7 @@ repaymentsRouter.post("/pay", zValidator("json", paySchema), async (c) => {
   const obligation = await prisma.paylaterObligation.findUnique({
     where: { id: obligationId },
     include: {
-      transaction: { include: { pool: { select: { kampungId: true } } } },
+      transaction: { include: { pool: { select: { id: true, kampungId: true } } } },
     },
   });
 
@@ -84,7 +78,22 @@ repaymentsRouter.post("/pay", zValidator("json", paySchema), async (c) => {
       data: { cyclesPaid: { increment: 1 } },
     });
 
-    return { payment, updatedObligation };
+    const siblingObligations = await tx.paylaterObligation.findMany({
+      where: { transactionId: obligation.transactionId },
+      select: { cyclesPaid: true, totalCycles: true },
+    });
+    const poolCompleted =
+      siblingObligations.length > 0 &&
+      siblingObligations.every((entry) => entry.cyclesPaid >= entry.totalCycles);
+
+    if (poolCompleted) {
+      await tx.pool.update({
+        where: { id: obligation.transaction.pool.id },
+        data: { state: "COMPLETED" },
+      });
+    }
+
+    return { payment, poolCompleted, updatedObligation };
   });
 
   // Recalculate kampung trust score (post-transaction so it sees latest data)
@@ -108,6 +117,7 @@ repaymentsRouter.post("/pay", zValidator("json", paySchema), async (c) => {
           (result.updatedObligation.cyclesPaid / result.updatedObligation.totalCycles) * 100,
         ),
       },
+      poolCompleted: result.poolCompleted,
     }),
   );
 });

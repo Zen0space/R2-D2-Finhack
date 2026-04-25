@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition } from "react";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/api/errors";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +31,9 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session, isLoading: isSessionLoading } = useSessionQuery();
-  const { data: pool, isLoading: isPoolLoading } = usePoolInviteQuery(normalizedInviteCode);
+  const { data: pool, isLoading: isPoolLoading } = usePoolInviteQuery(normalizedInviteCode, {
+    enabled: !isSessionLoading && !!session,
+  });
   const searchParams = new URLSearchParams(searchParamsString);
 
   const nextPath = `/join/${normalizedInviteCode}${searchParamsString ? `?${searchParamsString}` : ""}`;
@@ -41,7 +44,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
   const joinMutation = useMutation({
     mutationFn: () => {
       if (!session) {
-        throw new Error("Sign in dulu untuk sertai pool.");
+        throw new Error("Sign in before joining a pool.");
       }
 
       return poolsClient.join(normalizedInviteCode, session.user);
@@ -53,7 +56,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
       startTransition(() => router.push(`/pools/${joinedPool.id}`));
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat sertai pool sekarang.");
+      toast.error(formatErrorMessage(error, "Couldn't join the pool right now."));
     },
   });
 

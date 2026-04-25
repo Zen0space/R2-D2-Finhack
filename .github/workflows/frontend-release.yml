@@ -1,15 +1,15 @@
-name: Backend — Release
+name: Frontend — Release
 
 on:
   push:
     branches: [main, dev]
     paths:
-      - 'packages/backend/**'
+      - 'packages/frontend/**'
       - 'packages/db/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - '.dockerignore'
-      - '.github/workflows/backend-release.yml'
+      - '.github/workflows/frontend-release.yml'
   workflow_dispatch:
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/duitlater-backend
+          images: ghcr.io/${{ github.repository_owner }}/duitlater-frontend
           # main → :latest + :sha-<short>
           # dev  → :dev    + :dev-sha-<short>
           tags: |
@@ -49,10 +49,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: packages/backend/Dockerfile
+          file: packages/frontend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL || '/api' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -68,8 +70,8 @@ jobs:
             cd /var/www/R2-D2-Finhack
             git pull origin dev
             export DUITLATER_DOMAIN=${{ secrets.DUITLATER_DOMAIN }}
-            docker compose -f infra/docker-compose.dev.yml -p dev pull app
-            docker compose -f infra/docker-compose.dev.yml -p dev up -d app
-            echo "✅ Dev backend deployed — migrations run automatically on container start"
+            docker compose -f infra/docker-compose.dev.yml -p dev pull frontend
+            docker compose -f infra/docker-compose.dev.yml -p dev up -d frontend
+            echo "✅ Dev frontend deployed"
             sleep 5
-            docker compose -f infra/docker-compose.dev.yml -p dev logs app --tail 20
+            docker compose -f infra/docker-compose.dev.yml -p dev logs frontend --tail 20

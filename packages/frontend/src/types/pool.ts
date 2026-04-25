@@ -66,9 +66,82 @@ export type PoolSuggestionRecord = {
   reasoningBm: string;
 };
 
+export type PoolVoteChoice = "YES" | "NO";
+
+export type PoolVoteRecord = {
+  id: string;
+  userId: string;
+  userName: string;
+  vote: PoolVoteChoice;
+  votedAt: string;
+};
+
+export type PoolObligationRecord = {
+  id: string;
+  monthlyAmountCents: number;
+  poolMemberId: string;
+  shareAmountCents: number;
+  sharePct: number;
+  totalCycles: number;
+  userId: string;
+  userName: string;
+};
+
+export type PoolTransactionRecord = {
+  approvedAt: string;
+  deliveredAt: string | null;
+  id: string;
+  itemNameBm: string;
+  obligations: PoolObligationRecord[];
+  suggestionId: string;
+  totalAmountCents: number;
+};
+
+export type PoolRepaymentCycleStatus = "PAID" | "DUE" | "PENDING";
+
+export type PoolRepaymentCycleRecord = {
+  amountCents: number;
+  cycleNumber: number;
+  paidAt: string | null;
+  status: PoolRepaymentCycleStatus;
+  tngReference: string | null;
+};
+
+export type PoolRepaymentLedgerEntry = {
+  cycles: PoolRepaymentCycleRecord[];
+  cyclesPaid: number;
+  monthlyAmountCents: number;
+  obligationId: string;
+  outstandingAmountCents: number;
+  progressPct: number;
+  shareAmountCents: number;
+  sharePct: number;
+  totalCycles: number;
+  userId: string;
+  userName: string;
+};
+
+export type PoolRepaymentSummary = {
+  cyclesPaid: number;
+  cyclesTotal: number;
+  memberCount: number;
+};
+
+export type PoolVotingState = {
+  hasMajorityApproval: boolean;
+  majorityThreshold: number;
+  noCount: number;
+  pendingMemberIds: string[];
+  pendingMemberNames: string[];
+  totalMembers: number;
+  yesCount: number;
+};
+
 export type PoolRecord = {
+  approvedAt: string | null;
   combinedCapCents: number | null;
   createdAt: string;
+  deliveredAt: string | null;
   id: string;
   initiatorUserId: string;
   inviteCode: string;
@@ -86,6 +159,23 @@ export type PoolRecord = {
   suggestionFilter: PoolSuggestionFilter;
   suggestions: PoolSuggestionRecord[];
   targetBudgetCents: number;
+  repaymentLedger?: PoolRepaymentLedgerEntry[];
+  repaymentSummary?: PoolRepaymentSummary | null;
+  transaction: PoolTransactionRecord | null;
+  votingStartedAt: string | null;
+  votes: PoolVoteRecord[];
+};
+
+export type KampungTrustRecord = {
+  completionRatePct: number;
+  kampungId: string;
+  kampungName: string;
+  labelBm: string;
+  poolCount: number;
+  score: number;
+  signalCount: number;
+  totalCycles: number;
+  totalPaid: number;
 };
 
 export type CreatePoolInput = {

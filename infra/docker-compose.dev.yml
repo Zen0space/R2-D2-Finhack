@@ -17,8 +17,8 @@ services:
       - ../packages/frontend/.env.dev
     networks:
       - web
-    expose:
-      - "3000"
+    depends_on:
+      - app
 
   app:
     image: ghcr.io/zen0space/duitlater-backend:${BACKEND_TAG:-dev}
@@ -50,7 +50,7 @@ services:
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-duitlater} -d $${POSTGRES_DB:-duitlater_dev}"]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-duitlater} -d $${POSTGRES_DB:-duitlater_dev}" ]
       interval: 10s
       timeout: 5s
       retries: 5

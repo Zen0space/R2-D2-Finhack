@@ -6,7 +6,7 @@ import { requestLogger, log } from "./middleware/logger.js";
 import { auth } from "./lib/auth.js";
 import { mykasihRouter } from "./routes/mykasih.js";
 import { nadiRouter } from "./routes/nadi.js";
-import { meRouter } from "./routes/me.js";
+import { userRouter } from "./routes/user.js";
 import { poolsRouter } from "./routes/pools.js";
 import { repaymentsRouter } from "./routes/repayments.js";
 import { kampungsRouter } from "./routes/kampungs.js";
@@ -67,7 +67,7 @@ app.get("/api/v1/health", (c) => {
   });
 });
 
-app.route("/api/v1/me", meRouter);
+app.route("/api/v1/user", userRouter);
 app.route("/api/v1/pools", poolsRouter);
 app.route("/api/v1/repayments", repaymentsRouter);
 app.route("/api/v1/kampungs", kampungsRouter);

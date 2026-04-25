@@ -16,9 +16,9 @@ import { Prisma, prisma, type Pool, type PoolMember, type User } from "db";
 import { customAlphabet } from "nanoid";
 
 import { requireAuth } from "../middleware/require-auth.js";
-import { ApiError, errorResponse } from "../lib/errors.js";
+import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
-import { log } from "../middleware/logger.js";
+import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
 import {
   suggestItems,
   type CatalogueItem,
@@ -42,17 +42,7 @@ const DEFAULT_REPAYMENT_CYCLES = 6;
 
 poolsRouter.use("*", requireAuth);
 
-poolsRouter.onError((err, c) => {
-  if (err instanceof ApiError) {
-    return c.json(errorResponse(err), err.statusCode as 400 | 401 | 403 | 404 | 409 | 500);
-  }
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === "P2025") return c.json(errorResponse(ApiError.notFound("Pool")), 404);
-    if (err.code === "P2002") return c.json(errorResponse(ApiError.conflict("Conflict")), 409);
-  }
-  log("ERROR", `[pools] ${err instanceof Error ? err.message : String(err)}`);
-  return c.json(errorResponse(ApiError.internal()), 500);
-});
+poolsRouter.onError(createFeatureErrorHandler("pools"));
 
 // ---------------------------------------------------------------------------
 // Validators
@@ -80,13 +70,20 @@ const joinSchema = z.object({ code: z.string().length(8) });
 const selectItemSchema = z.object({ catalogueItemId: z.string().min(1) });
 const voteSchema = z.object({ vote: z.enum(["YES", "NO"]) });
 
+const nadiPoolStateValues = ["APPROVED", "ACTIVE", "COMPLETED"] as const;
+const nadiListQuerySchema = z.object({
+  state: z
+    .union([z.enum(nadiPoolStateValues), z.array(z.enum(nadiPoolStateValues))])
+    .optional(),
+});
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function poolView(
   pool: Pool & {
-    members: (PoolMember & { user: Pick<User, "id" | "name" | "email"> })[];
+    members: (PoolMember & { user: Pick<User, "id" | "name" | "email" | "individualPaylaterCents"> })[];
     kampung: { id: string; name: string; districtHint: string | null };
   },
 ) {
@@ -107,6 +104,7 @@ function poolView(
       userId: m.userId,
       userName: m.user.name,
       userEmail: m.user.email,
+      individualPaylaterCents: m.user.individualPaylaterCents,
       individualAllowanceAtLockCents: m.individualAllowanceAtLockCents,
       joinedAt: m.joinedAt,
     })),
@@ -124,6 +122,75 @@ function assertState(pool: Pool, allowed: Pool["state"][], action: string): void
       `Cannot ${action} when pool is ${pool.state}. Required: ${allowed.join(" or ")}.`,
     );
   }
+}
+
+function buildShareAllocations(
+  members: (PoolMember & { user: Pick<User, "id" | "individualPaylaterCents"> })[],
+  totalAmountCents: number,
+) {
+  if (members.length === 0) {
+    return [];
+  }
+
+  const weightedMembers = members.map((member, index) => {
+    const weight =
+      member.individualAllowanceAtLockCents > 0
+        ? member.individualAllowanceAtLockCents
+        : member.user.individualPaylaterCents;
+
+    return {
+      index,
+      member,
+      weight: Math.max(weight, 0),
+    };
+  });
+
+  const totalWeight = weightedMembers.reduce((sum, entry) => sum + entry.weight, 0);
+  const effectiveWeight = totalWeight > 0 ? totalWeight : weightedMembers.length;
+
+  const baseAllocations = weightedMembers.map((entry) => {
+    const normalizedWeight = totalWeight > 0 ? entry.weight : 1;
+    const exactShare = (totalAmountCents * normalizedWeight) / effectiveWeight;
+    const shareCents = Math.floor(exactShare);
+    const sharePct = effectiveWeight > 0 ? (normalizedWeight / effectiveWeight) * 100 : 0;
+
+    return {
+      exactShare,
+      index: entry.index,
+      member: entry.member,
+      remainder: exactShare - shareCents,
+      shareCents,
+      sharePct,
+    };
+  });
+
+  const allocated = baseAllocations.reduce((sum, entry) => sum + entry.shareCents, 0);
+  const remaining = Math.max(totalAmountCents - allocated, 0);
+  const byRemainder = [...baseAllocations].sort((left, right) => {
+    if (right.remainder !== left.remainder) {
+      return right.remainder - left.remainder;
+    }
+
+    return left.index - right.index;
+  });
+
+  for (let index = 0; index < remaining; index += 1) {
+    const target = byRemainder[index];
+
+    if (!target) {
+      break;
+    }
+
+    target.shareCents += 1;
+  }
+
+  return baseAllocations
+    .sort((left, right) => left.index - right.index)
+    .map((entry) => ({
+      member: entry.member,
+      shareCents: entry.shareCents,
+      sharePct: Math.round(entry.sharePct * 100) / 100,
+    }));
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +225,7 @@ poolsRouter.post("/", zValidator("json", createPoolSchema), async (c) => {
       },
     },
     include: {
-      members: { include: { user: { select: { id: true, name: true, email: true } } } },
+      members: { include: { user: { select: { id: true, name: true, email: true, individualPaylaterCents: true } } } },
       kampung: { select: { id: true, name: true, districtHint: true } },
     },
   });
@@ -178,7 +245,7 @@ poolsRouter.get("/mine", async (c) => {
     include: {
       pool: {
         include: {
-          members: { include: { user: { select: { id: true, name: true, email: true } } } },
+          members: { include: { user: { select: { id: true, name: true, email: true, individualPaylaterCents: true } } } },
           kampung: { select: { id: true, name: true, districtHint: true } },
         },
       },
@@ -194,6 +261,53 @@ poolsRouter.get("/mine", async (c) => {
 });
 
 // ---------------------------------------------------------------------------
+// E4.5 — GET /api/v1/pools/nadi (NADI staff portal listing)
+//
+// Returns pools awaiting or past NADI confirmation, scoped to the staffer's
+// kampung. ADMIN sees every kampung. Default state filter is APPROVED + ACTIVE
+// + COMPLETED. Ordered by most recent approval first.
+// ---------------------------------------------------------------------------
+
+poolsRouter.get("/nadi", zValidator("query", nadiListQuerySchema), async (c) => {
+  const user = c.get("user");
+
+  if (user.role !== "NADI_STAFF" && user.role !== "ADMIN") {
+    throw ApiError.forbidden("NADI staff access required");
+  }
+
+  if (user.role === "NADI_STAFF" && !user.kampungId) {
+    throw ApiError.badRequest("NADI staff account is missing a kampung assignment");
+  }
+
+  const { state } = c.req.valid("query");
+  const stateFilter = state ? (Array.isArray(state) ? state : [state]) : [...nadiPoolStateValues];
+
+  const pools = await prisma.pool.findMany({
+    where: {
+      state: { in: stateFilter },
+      ...(user.role === "NADI_STAFF" ? { kampungId: user.kampungId! } : {}),
+    },
+    include: {
+      members: {
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, individualPaylaterCents: true },
+          },
+        },
+      },
+      kampung: { select: { id: true, name: true, districtHint: true } },
+    },
+    orderBy: [{ approvedAt: "desc" }, { createdAt: "desc" }],
+  });
+
+  return c.json(
+    successResponse({
+      pools: pools.map(poolView),
+    }),
+  );
+});
+
+// ---------------------------------------------------------------------------
 // E2.6 — GET /api/v1/pools/by-code/:code (public preview for join page)
 // ---------------------------------------------------------------------------
 
@@ -203,29 +317,14 @@ poolsRouter.get("/by-code/:code", zValidator("param", codeParamSchema), async (c
   const pool = await prisma.pool.findUnique({
     where: { inviteCode: code },
     include: {
+      members: { include: { user: { select: { id: true, name: true, email: true, individualPaylaterCents: true } } } },
       kampung: { select: { id: true, name: true, districtHint: true } },
-      _count: { select: { members: true } },
     },
   });
 
   if (!pool) throw ApiError.notFound("Pool with that code");
 
-  return c.json(
-    successResponse({
-      preview: {
-        id: pool.id,
-        name: pool.name,
-        statedNeed: pool.statedNeed,
-        category: pool.category,
-        state: pool.state,
-        kampung: pool.kampung,
-        memberCount: pool._count.members,
-        capacityRemaining: MAX_POOL_SIZE - pool._count.members,
-        targetBudgetCents: pool.targetBudgetCents,
-        combinedCapCents: pool.combinedCapCents,
-      },
-    }),
-  );
+  return c.json(successResponse({ pool: poolView(pool) }));
 });
 
 // ---------------------------------------------------------------------------
@@ -239,7 +338,7 @@ poolsRouter.get("/:id", zValidator("param", idParamSchema), async (c) => {
   const pool = await prisma.pool.findUnique({
     where: { id },
     include: {
-      members: { include: { user: { select: { id: true, name: true, email: true } } } },
+      members: { include: { user: { select: { id: true, name: true, email: true, individualPaylaterCents: true } } } },
       kampung: { select: { id: true, name: true, districtHint: true } },
     },
   });
@@ -578,7 +677,7 @@ poolsRouter.post(
     }
 
     // Record vote (one per user per item · upsert allowed if user changes mind before majority)
-    await prisma.poolVote.upsert({
+    const existingVote = await prisma.poolVote.findUnique({
       where: {
         poolId_userId_itemId: {
           poolId: id,
@@ -586,13 +685,18 @@ poolsRouter.post(
           itemId: pool.selectedCatalogueItemId,
         },
       },
-      create: {
+    });
+    if (existingVote) {
+      throw ApiError.conflict("You have already voted in this voting cycle");
+    }
+
+    await prisma.poolVote.create({
+      data: {
         poolId: id,
         userId: user.id,
         itemId: pool.selectedCatalogueItemId,
         vote,
       },
-      update: { vote, votedAt: new Date() },
     });
 
     // Tally
@@ -615,16 +719,19 @@ poolsRouter.post(
       const totalCents = Math.round(Number(item.priceRm) * 100);
 
       // Run TNG simulated approval per member (proportional shares)
+      const shareAllocations = buildShareAllocations(pool.members, totalCents);
       const memberApprovals = await Promise.all(
-        pool.members.map(async (m) => {
-          const sharePct =
-            (m.user.individualPaylaterCents / pool.combinedCapCents) * 100;
-          const shareCents = Math.round((sharePct / 100) * totalCents);
+        shareAllocations.map(async (allocation) => {
           const approval = await simulateApproval({
-            userId: m.user.id,
-            amountCents: shareCents,
+            userId: allocation.member.user.id,
+            amountCents: allocation.shareCents,
           });
-          return { member: m, sharePct, shareCents, reference: approval.reference };
+          return {
+            member: allocation.member,
+            reference: approval.reference,
+            shareCents: allocation.shareCents,
+            sharePct: allocation.sharePct,
+          };
         }),
       );
 
@@ -682,6 +789,7 @@ poolsRouter.post(
   zValidator("param", idParamSchema),
   async (c) => {
     const { id } = c.req.valid("param");
+    const user = c.get("user");
 
     const pool = await prisma.pool.findUnique({
       where: { id },
@@ -689,6 +797,9 @@ poolsRouter.post(
     });
     if (!pool) throw ApiError.notFound("Pool");
     assertState(pool, ["APPROVED"], "confirm delivery");
+    if (user.role !== "NADI_STAFF" && user.role !== "ADMIN") {
+      throw ApiError.forbidden("Only NADI staff can confirm delivery");
+    }
     if (!pool.transaction) {
       throw ApiError.badRequest("Pool has no transaction yet");
     }
@@ -719,6 +830,68 @@ poolsRouter.post(
 // ---------------------------------------------------------------------------
 // E5.2 — GET /api/v1/pools/:id/ledger (repayment ledger view)
 // ---------------------------------------------------------------------------
+
+poolsRouter.get("/:id/voting-state", zValidator("param", idParamSchema), async (c) => {
+  const { id } = c.req.valid("param");
+  const user = c.get("user");
+
+  const pool = await prisma.pool.findUnique({
+    where: { id },
+    include: {
+      members: { include: { user: { select: { id: true, name: true } } } },
+    },
+  });
+  if (!pool) throw ApiError.notFound("Pool");
+  if (
+    !pool.members.some((member) => member.userId === user.id) &&
+    user.role !== "NADI_STAFF" &&
+    user.role !== "ADMIN"
+  ) {
+    throw ApiError.forbidden("You are not allowed to inspect this voting state");
+  }
+  if (!pool.selectedCatalogueItemId) {
+    throw ApiError.badRequest("No item selected for voting");
+  }
+
+  const votes = await prisma.poolVote.findMany({
+    where: { poolId: id, itemId: pool.selectedCatalogueItemId },
+    include: {
+      user: { select: { id: true, name: true } },
+    },
+    orderBy: { votedAt: "asc" },
+  });
+
+  const yes = votes.filter((vote) => vote.vote === "YES").length;
+  const no = votes.filter((vote) => vote.vote === "NO").length;
+  const majorityThreshold = Math.floor(pool.members.length / 2) + 1;
+  const votedUserIds = new Set(votes.map((vote) => vote.userId));
+  const pendingMembers = pool.members
+    .filter((member) => !votedUserIds.has(member.userId))
+    .map((member) => ({
+      userId: member.user.id,
+      name: member.user.name,
+    }));
+
+  return c.json(
+    successResponse({
+      poolId: id,
+      state: pool.state,
+      tally: {
+        majorityThreshold,
+        no,
+        pendingMembers,
+        totalMembers: pool.members.length,
+        yes,
+      },
+      votes: votes.map((vote) => ({
+        userId: vote.user.id,
+        userName: vote.user.name,
+        vote: vote.vote,
+        votedAt: vote.votedAt,
+      })),
+    }),
+  );
+});
 
 poolsRouter.get("/:id/ledger", zValidator("param", idParamSchema), async (c) => {
   const { id } = c.req.valid("param");

@@ -8,6 +8,7 @@ import { startTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { formatErrorMessage } from "@/lib/api/errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,7 +76,7 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
       startTransition(() => router.push(`/pools/${pool.id}`));
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat cipta pool sekarang.");
+      toast.error(formatErrorMessage(error, "Couldn't create pool right now."));
     },
   });
 

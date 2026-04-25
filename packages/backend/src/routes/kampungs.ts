@@ -12,8 +12,11 @@ import { z } from "zod";
 import { prisma } from "db";
 import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
+import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
 
 export const kampungsRouter = new Hono();
+
+kampungsRouter.onError(createFeatureErrorHandler("kampungs"));
 
 const idParamSchema = z.object({ id: z.string().min(1) });
 const listQuerySchema = z.object({
@@ -125,6 +128,7 @@ kampungsRouter.get("/:id/trust", zValidator("param", idParamSchema), async (c) =
       kampungName: kampung.name,
       score,
       label_bm,
+      signalCount: totalPaid,
       signals: {
         totalCycles,
         totalPaid,

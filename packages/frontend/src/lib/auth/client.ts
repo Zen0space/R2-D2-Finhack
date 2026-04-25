@@ -1,51 +1,48 @@
 "use client";
 
-import type { AuthResult, SignInInput, SignUpInput } from "@/types/auth";
-import {
-  DEMO_CREDENTIALS,
-  createSessionForUser,
-  createUser,
-  findUserByEmail,
-  readSession,
-  writeSession,
-} from "./storage";
+import { createAuthClient } from "better-auth/client";
 
-// Frontend-only bridge for Phase 1. We keep the surface area small so the pages can
-// swap to Better Auth later without rewriting the route components.
-export const authClient = {
-  async getSession() {
-    return readSession();
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+export const authClient = createAuthClient({
+  baseURL: API_BASE,
+});
+
+// Seeded via `pnpm --filter backend tsx src/scripts/seed-demo.ts`
+export const DEMO_CREDENTIALS = {
+  email: "aminah@duitlater.demo",
+  password: "FeldaG3dangsa!",
+} as const;
+
+export const DEMO_ACCOUNTS = [
+  {
+    email: "aminah@duitlater.demo",
+    name: "Mak Cik Aminah",
+    password: DEMO_CREDENTIALS.password,
+    role: "member",
   },
-
-  async signIn(input: SignInInput): Promise<AuthResult> {
-    const user = findUserByEmail(input.email);
-
-    if (!user || user.password !== input.password) {
-      throw new Error("E-mel atau kata laluan tak padan.");
-    }
-
-    return {
-      isNewUser: false,
-      session: createSessionForUser(user),
-    };
+  {
+    email: "razali@duitlater.demo",
+    name: "Pak Cik Razali",
+    password: DEMO_CREDENTIALS.password,
+    role: "member",
   },
-
-  async signUp(input: SignUpInput): Promise<AuthResult> {
-    const existingUser = findUserByEmail(input.email);
-
-    if (existingUser) {
-      throw new Error("Akaun dengan e-mel ini sudah wujud.");
-    }
-
-    return {
-      isNewUser: true,
-      session: createSessionForUser(createUser(input)),
-    };
+  {
+    email: "faiz@duitlater.demo",
+    name: "Adik Faiz",
+    password: DEMO_CREDENTIALS.password,
+    role: "member",
   },
-
-  async signOut() {
-    writeSession(null);
+  {
+    email: "hamid@duitlater.demo",
+    name: "Pakcik Hamid",
+    password: DEMO_CREDENTIALS.password,
+    role: "member",
   },
-};
-
-export { DEMO_CREDENTIALS };
+  {
+    email: "hidayah@duitlater.demo",
+    name: "Cik Hidayah",
+    password: DEMO_CREDENTIALS.password,
+    role: "nadi_staff",
+  },
+] as const;

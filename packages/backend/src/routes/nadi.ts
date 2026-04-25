@@ -21,9 +21,11 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { prisma } from "db";
 
-import { ApiError, errorResponse } from "../lib/errors.js";
+import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
-import { log } from "../middleware/logger.js";
+import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
+import { requireAuth } from "../middleware/require-auth.js";
+import { generateNadiWeeklySummary } from "../services/nadi-summary.js";
 
 // ---------------------------------------------------------------------------
 // Validators
@@ -43,6 +45,11 @@ const districtsQuerySchema = z.object({
 
 const idParamSchema = z.object({
   id: z.string().min(1),
+});
+
+const summaryBodySchema = z.object({
+  kampungId: z.string().min(1),
+  weekStart: z.coerce.date(),
 });
 
 // ---------------------------------------------------------------------------
@@ -71,13 +78,32 @@ const toWire = (row: NadiCentreRow) => ({
 
 export const nadiRouter = new Hono();
 
-nadiRouter.onError((err, c) => {
-  if (err instanceof ApiError) {
-    return c.json(errorResponse(err), err.statusCode as 400 | 404 | 500);
+nadiRouter.onError(createFeatureErrorHandler("nadi"));
+
+function buildWeekRange(weekStart: Date) {
+  const normalizedStart = new Date(
+    Date.UTC(weekStart.getUTCFullYear(), weekStart.getUTCMonth(), weekStart.getUTCDate()),
+  );
+  const weekEnd = new Date(normalizedStart);
+  weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
+
+  return { weekEnd, weekStart: normalizedStart };
+}
+
+function getExpectedPaidCycles(deliveredAt: Date | null, totalCycles: number, asOf: Date) {
+  if (!deliveredAt) {
+    return 0;
   }
-  log("ERROR", `[nadi] ${err instanceof Error ? err.message : String(err)}`);
-  return c.json(errorResponse(ApiError.internal()), 500);
-});
+
+  const elapsedMs = asOf.getTime() - deliveredAt.getTime();
+
+  if (elapsedMs <= 0) {
+    return 0;
+  }
+
+  const elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+  return Math.min(totalCycles, Math.max(Math.floor(elapsedDays / 30), 0));
+}
 
 // GET /api/v1/nadi/centres
 nadiRouter.get("/centres", zValidator("query", listCentresQuerySchema), async (c) => {
@@ -172,3 +198,163 @@ nadiRouter.get("/districts", zValidator("query", districtsQuerySchema), async (c
 
   return c.json(successResponse({ state, districts: list }));
 });
+
+// POST /api/v1/nadi/summary
+nadiRouter.post(
+  "/summary",
+  requireAuth,
+  zValidator("json", summaryBodySchema),
+  async (c) => {
+    const user = c.get("user");
+    const { kampungId, weekStart } = c.req.valid("json");
+
+    if (user.role !== "NADI_STAFF" && user.role !== "ADMIN") {
+      throw ApiError.forbidden("Only NADI staff can generate a weekly summary");
+    }
+
+    if (user.role !== "ADMIN" && user.kampungId !== kampungId) {
+      throw ApiError.forbidden("This summary is outside your kampung scope");
+    }
+
+    const { weekEnd, weekStart: normalizedWeekStart } = buildWeekRange(weekStart);
+
+    const kampung = await prisma.kampung.findUnique({
+      where: { id: kampungId },
+      select: { id: true, name: true, trustScore: true },
+    });
+
+    if (!kampung) {
+      throw ApiError.notFound("Kampung");
+    }
+
+    const [
+      poolsFormedCount,
+      activePools,
+      pendingDeliveryCount,
+      weeklyTransactions,
+      obligations,
+      repaymentsThisWeek,
+    ] = await Promise.all([
+      prisma.pool.count({
+        where: {
+          kampungId,
+          createdAt: { gte: normalizedWeekStart, lt: weekEnd },
+        },
+      }),
+      prisma.pool.count({
+        where: {
+          kampungId,
+          state: "ACTIVE",
+        },
+      }),
+      prisma.pool.count({
+        where: {
+          kampungId,
+          state: "APPROVED",
+        },
+      }),
+      prisma.poolTransaction.findMany({
+        where: {
+          pool: { kampungId },
+          approvedAt: { gte: normalizedWeekStart, lt: weekEnd },
+        },
+        select: {
+          catalogueItem: {
+            select: {
+              name: true,
+              nameMs: true,
+            },
+          },
+        },
+      }),
+      prisma.paylaterObligation.findMany({
+        where: {
+          transaction: { pool: { kampungId } },
+        },
+        select: {
+          cyclesPaid: true,
+          totalCycles: true,
+          transaction: {
+            select: {
+              deliveredAt: true,
+            },
+          },
+        },
+      }),
+      prisma.repayment.count({
+        where: {
+          obligation: {
+            transaction: {
+              pool: { kampungId },
+            },
+          },
+          paidAt: { gte: normalizedWeekStart, lt: weekEnd },
+        },
+      }),
+    ]);
+
+    const itemCounts = new Map<string, number>();
+
+    for (const transaction of weeklyTransactions) {
+      const itemName =
+        transaction.catalogueItem.nameMs ?? transaction.catalogueItem.name ?? "Item pool";
+      itemCounts.set(itemName, (itemCounts.get(itemName) ?? 0) + 1);
+    }
+
+    const topItemNameBm =
+      [...itemCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? null;
+
+    const totalCycles = obligations.reduce((sum, obligation) => sum + obligation.totalCycles, 0);
+    const totalPaid = obligations.reduce((sum, obligation) => sum + obligation.cyclesPaid, 0);
+    const previousTotalPaid = Math.max(totalPaid - repaymentsThisWeek, 0);
+    const previousScore =
+      totalCycles > 0 ? 60 + 40 * (previousTotalPaid / totalCycles) : 60;
+    const trustScore = Number(kampung.trustScore);
+    const trustDelta = Math.round((trustScore - previousScore) * 10) / 10;
+
+    const latePaymentEvents = obligations.reduce((sum, obligation) => {
+      const expectedPaidCycles = getExpectedPaidCycles(
+        obligation.transaction.deliveredAt,
+        obligation.totalCycles,
+        weekEnd,
+      );
+
+      return sum + Math.max(expectedPaidCycles - obligation.cyclesPaid, 0);
+    }, 0);
+
+    const { provider, summary } = await generateNadiWeeklySummary({
+      activePools,
+      kampungId,
+      kampungName: kampung.name,
+      latePaymentEvents,
+      pendingDeliveryCount,
+      poolsFormedCount,
+      repaymentsThisWeek,
+      topItemNameBm,
+      trustDelta,
+      trustScore,
+      weekEnd: weekEnd.toISOString(),
+      weekStart: normalizedWeekStart.toISOString(),
+    });
+
+    return c.json(
+      successResponse({
+        generatedAt: new Date().toISOString(),
+        metrics: {
+          activePools,
+          latePaymentEvents,
+          pendingDeliveryCount,
+          poolsFormedCount,
+          repaymentsThisWeek,
+          topItemNameBm,
+          trustDelta,
+          trustScore,
+        },
+        provider,
+        summary,
+        weekEnd: weekEnd.toISOString(),
+        weekStart: normalizedWeekStart.toISOString(),
+      }),
+    );
+  },
+);

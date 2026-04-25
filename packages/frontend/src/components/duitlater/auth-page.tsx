@@ -14,7 +14,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { authClient, DEMO_CREDENTIALS } from "@/lib/auth/client";
+import { formatErrorMessage } from "@/lib/api/errors";
+import { authClient, API_BASE, DEMO_ACCOUNTS, DEMO_CREDENTIALS } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import type { SignInInput } from "@/types/auth";
 
@@ -42,7 +43,7 @@ type SignUpFormValues = z.infer<typeof signUpSchema>;
 const storyPoints = [
   {
     title: "Sesi kekal selepas reload",
-    body: "Frontend simpan session pada browser ini supaya dashboard terus pulih bila anda buka semula.",
+    body: "Better Auth simpan session pada browser ini supaya dashboard terus pulih bila anda buka semula.",
     icon: ShieldCheck,
   },
   {
@@ -127,11 +128,21 @@ function AuthStory({ mode }: { mode: AuthMode }) {
               <strong className="text-sm uppercase tracking-[0.16em]">Demo access</strong>
             </div>
             <p className="mt-3 text-sm text-[color:var(--dl-slate)]">
-              Guna akaun demo ini untuk cepat semak flow semasa backend auth sebenar belum disambung.
+              Guna akaun demo backend ini untuk cepat semak flow ahli atau portal NADI tanpa perlu cipta pengguna baharu dahulu.
             </p>
-            <div className="mt-4 grid gap-2 rounded-[1rem] bg-white/82 p-3 text-sm">
-              <code>{DEMO_CREDENTIALS.email}</code>
-              <code>{DEMO_CREDENTIALS.password}</code>
+            <div className="mt-4 grid gap-2 text-sm">
+              {DEMO_ACCOUNTS.map((account) => (
+                <div className="grid gap-2 rounded-[1rem] bg-white/82 p-3" key={account.email}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <strong>{account.name}</strong>
+                    <Badge tone={account.role === "nadi_staff" ? "maroon" : "gold"}>
+                      {account.role === "nadi_staff" ? "NADI staff" : "Ahli"}
+                    </Badge>
+                  </div>
+                  <code>{account.email}</code>
+                  <code>{account.password}</code>
+                </div>
+              ))}
             </div>
           </div>
         ) : null}
@@ -140,7 +151,7 @@ function AuthStory({ mode }: { mode: AuthMode }) {
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-[color:var(--dl-slate)]">
           <Landmark aria-hidden="true" size={16} />
-          <span>BM-first copy · session demo lokal · ready untuk sambung Better Auth kemudian.</span>
+          <span>BM-first copy · Better Auth hidup · akaun demo seeded untuk terus uji flow.</span>
         </div>
       </CardContent>
     </Card>
@@ -160,14 +171,21 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
   });
 
   const mutation = useMutation({
-    mutationFn: (values: SignInInput) => authClient.signIn(values),
-    onSuccess: ({ session }) => {
-      queryClient.setQueryData(["auth", "session"], session);
+    mutationFn: async (values: SignInInput) => {
+      const result = await authClient.signIn.email({
+        email: values.email,
+        password: values.password,
+      });
+      if (result.error) throw new Error(result.error.message ?? "Email or password is incorrect.");
+      return result;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
       toast.success(pageCopy["sign-in"].toast);
       startTransition(() => router.push(nextPath));
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat masuk sekarang.");
+      toast.error(formatErrorMessage(error, "Couldn't sign in right now."));
     },
   });
 
@@ -245,20 +263,37 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
   });
 
   const mutation = useMutation({
-    mutationFn: (values: SignUpFormValues) =>
-      authClient.signUp({
-        name: values.name,
-        kampungName: values.kampungName,
+    mutationFn: async (values: SignUpFormValues) => {
+      // Resolve kampungId from name — default to Felda Gedangsa if not found
+      const kampungRes = await fetch(
+        `${API_BASE}/api/v1/kampungs?q=${encodeURIComponent(values.kampungName)}&limit=1`,
+      );
+      const kampungBody = (await kampungRes.json()) as {
+        data?: { kampungs?: { id: string }[] };
+      };
+      const kampungId =
+        kampungBody?.data?.kampungs?.[0]?.id ?? "cmoekukcx000i3ygufgjh8q08";
+
+      // kampungId is an additionalField on the server — cast needed until
+      // inferAdditionalFields plugin is configured on the client.
+      const result = await (authClient.signUp.email as unknown as (
+        opts: Record<string, unknown>,
+      ) => Promise<{ error: { message?: string } | null }>)({
         email: values.email,
         password: values.password,
-      }),
-    onSuccess: ({ session }) => {
-      queryClient.setQueryData(["auth", "session"], session);
+        name: values.name,
+        kampungId,
+      });
+      if (result.error) throw new Error(result.error.message ?? "Couldn't create the account.");
+      return result;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
       toast.success(pageCopy["sign-up"].toast);
       startTransition(() => router.push(nextPath));
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat cipta akaun sekarang.");
+      toast.error(formatErrorMessage(error, "Couldn't create the account right now."));
     },
   });
 

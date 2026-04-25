@@ -1,5 +1,7 @@
 import { PoolDetailPage } from "@/components/duitlater/pool-detail-page";
 
+export const dynamic = "force-dynamic";
+
 export default async function PoolDetailRoute({
   params,
 }: {

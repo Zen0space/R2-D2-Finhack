@@ -1,55 +1,27 @@
 "use client";
 
-import {
-  createContext,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import {
-  defaultDesignLanguage,
-  designLanguageStorageKey,
-  isDesignLanguage,
-  type DesignLanguage,
-} from "@/lib/design-language/config";
-
-type DesignLanguageContextValue = {
-  designLanguage: DesignLanguage;
-  setDesignLanguage: (value: DesignLanguage) => void;
-};
-
-const DesignLanguageContext = createContext<DesignLanguageContextValue | null>(null);
+import { useAtom } from "jotai";
+import { useEffect, type ReactNode } from "react";
+import { designLanguageAtom } from "@/store/ui";
+import type { DesignLanguage } from "@/lib/design-language/config";
 
 export function DesignLanguageProvider({ children }: { children: ReactNode }) {
-  const [designLanguage, setDesignLanguage] = useState<DesignLanguage>(defaultDesignLanguage);
+  const [designLanguage] = useAtom(designLanguageAtom);
 
-  useEffect(() => {
-    const storedValue = window.localStorage.getItem(designLanguageStorageKey);
-
-    if (isDesignLanguage(storedValue)) {
-      setDesignLanguage(storedValue);
-    }
-  }, []);
-
+  // Mirror the active design language onto <html data-design-language>.
+  // useEffect is the right tool here — this is a true DOM-mutation side
+  // effect that has no event-handler equivalent and must run after paint.
   useEffect(() => {
     document.documentElement.dataset.designLanguage = designLanguage;
-    window.localStorage.setItem(designLanguageStorageKey, designLanguage);
   }, [designLanguage]);
 
-  return (
-    <DesignLanguageContext.Provider value={{ designLanguage, setDesignLanguage }}>
-      {children}
-    </DesignLanguageContext.Provider>
-  );
+  return <>{children}</>;
 }
 
-export function useDesignLanguage() {
-  const context = useContext(DesignLanguageContext);
-
-  if (!context) {
-    throw new Error("useDesignLanguage must be used within DesignLanguageProvider.");
-  }
-
-  return context;
+export function useDesignLanguage(): {
+  designLanguage: DesignLanguage;
+  setDesignLanguage: (value: DesignLanguage) => void;
+} {
+  const [designLanguage, setDesignLanguage] = useAtom(designLanguageAtom);
+  return { designLanguage, setDesignLanguage };
 }
