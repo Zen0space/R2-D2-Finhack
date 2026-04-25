@@ -35,7 +35,7 @@ services:
       - "3000"
 
   app:
-    image: ghcr.io/zen0space/duitlater-backend:latest
+    image: ghcr.io/zen0space/duitlater-backend:${BACKEND_TAG:-latest}
     container_name: duitlater-prod-app
     restart: unless-stopped
     env_file:

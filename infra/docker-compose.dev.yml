@@ -1,25 +1,28 @@
-# DuitLater · dev stack (dev branch → dev.duitlater.com)
-# Run on VPS: docker compose -f infra/docker-compose.dev.yml -p dev up -d
-# Joins the `duitlater_web` network created by the prod stack — Caddy in prod routes both subdomains.
-# Bring prod up first so the network and Caddy exist.
+# DuitLater · dev API stack (dev branch → dev.api.duitlater.com)
+# Backend + Postgres only. Frontend joins once packages/frontend/Dockerfile lands.
+#
+# First-time: docker compose -f infra/docker-compose.dev.yml -p dev up -d
+# Subsequent: docker compose -f infra/docker-compose.dev.yml -p dev pull app && up -d app
 
 services:
-  frontend:
-    # TODO(akmal): swap to `image: ghcr.io/zen0space/duitlater-frontend:dev` once packages/frontend/Dockerfile lands.
-    build:
-      context: ..
-      dockerfile: packages/frontend/Dockerfile
-    container_name: duitlater-dev-frontend
+  caddy:
+    image: caddy:2-alpine
+    container_name: duitlater-dev-caddy
     restart: unless-stopped
-    env_file:
-      - ../packages/frontend/.env.dev
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - caddy_dev_data:/data
+      - caddy_dev_config:/config
     networks:
       - web
-    expose:
-      - "3000"
+    depends_on:
+      - app
 
   app:
-    image: ghcr.io/zen0space/duitlater-backend:dev
+    image: ghcr.io/zen0space/duitlater-backend:${BACKEND_TAG:-dev}
     container_name: duitlater-dev-app
     restart: unless-stopped
     env_file:
@@ -54,8 +57,10 @@ services:
 
 volumes:
   duitlater_dev_postgres_data:
+  caddy_dev_data:
+  caddy_dev_config:
 
 networks:
   web:
-    name: duitlater_web
-    external: true
+    name: duitlater_dev_web
+    driver: bridge
