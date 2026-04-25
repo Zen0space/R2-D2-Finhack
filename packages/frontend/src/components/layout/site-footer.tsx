@@ -4,7 +4,6 @@ import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/bran
 const productLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/nadi/dashboard", label: "Portal NADI" },
-  { href: "/settings", label: "Settings" },
 ] as const;
 
 const team = [

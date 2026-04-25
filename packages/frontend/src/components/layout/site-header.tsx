@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, LogOut, Menu, Settings as SettingsIcon, ShieldCheck, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
@@ -18,7 +18,6 @@ type NavItem = { href: string; label: string; nadiOnly?: boolean };
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/nadi/dashboard", label: "NADI" },
-  { href: "/settings", label: "Settings" },
 ];
 
 export function SiteHeader() {
@@ -136,16 +135,6 @@ export function SiteHeader() {
                         </Link>
                       </li>
                     ) : null}
-                    <li>
-                      <Link
-                        href="/settings"
-                        role="menuitem"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-2 py-1.5 hover:bg-[var(--dl-paper-warm)]"
-                      >
-                        <SettingsIcon size={14} /> Settings
-                      </Link>
-                    </li>
                     <li className="mt-1 border-t-2 border-dashed border-[var(--dl-ink)]/30 pt-2">
                       <button
                         type="button"
