@@ -69,8 +69,41 @@ services:
       timeout: 5s
       retries: 5
 
+  prod-app:
+    image: ghcr.io/zen0space/duitlater-backend:${PROD_BACKEND_TAG:-latest}
+    container_name: duitlater-prod-app
+    restart: unless-stopped
+    env_file:
+      - ../packages/backend/.env.prod
+    networks:
+      - web
+    expose:
+      - "4000"
+    depends_on:
+      prod-postgres:
+        condition: service_healthy
+
+  prod-postgres:
+    image: postgres:17-alpine
+    container_name: duitlater-prod-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PROD_POSTGRES_USER:-duitlater}
+      POSTGRES_PASSWORD: ${PROD_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${PROD_POSTGRES_DB:-duitlater}
+    volumes:
+      - duitlater_prod_postgres_data:/var/lib/postgresql/data
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROD_POSTGRES_USER:-duitlater} -d ${PROD_POSTGRES_DB:-duitlater}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   duitlater_dev_postgres_data:
+  duitlater_prod_postgres_data:
   caddy_dev_data:
   caddy_dev_config:
 

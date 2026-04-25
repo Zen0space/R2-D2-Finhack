@@ -1,7 +1,8 @@
-# DuitLater · dev Caddyfile
-# Two subdomains:
-#   dev.<domain>     → Next.js frontend :3000
-#   api.dev.<domain> → Hono backend :4000  (no /api/ stripping — backend owns full path)
+# DuitLater · shared Caddyfile (dev + prod on one server)
+# Subdomains:
+#   dev.<domain>     → dev Next.js frontend :3000
+#   api.dev.<domain> → dev Hono backend :4000
+#   api.<domain>     → prod Hono backend :4000
 #
 # Set at deploy time: export DUITLATER_DOMAIN=duitlater.com
 
@@ -33,6 +34,23 @@ api.dev.{$DUITLATER_DOMAIN:localhost} {
         Referrer-Policy "strict-origin-when-cross-origin"
         -Server
         X-Robots-Tag "noindex, nofollow"
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}
+
+api.{$DUITLATER_DOMAIN:localhost} {
+    encode gzip zstd
+
+    reverse_proxy duitlater-prod-app:4000
+
+    header {
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
     }
 
     log {
