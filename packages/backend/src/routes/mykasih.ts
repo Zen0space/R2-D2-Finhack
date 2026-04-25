@@ -3,37 +3,15 @@ import { zValidator } from "@hono/zod-validator";
 import { Prisma, prisma } from "db";
 import { ApiError, errorResponse } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
+import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
 import { listProductsQuerySchema, getProductParamSchema } from "../validators/mykasih.js";
-import { log } from "../middleware/logger.js";
 
 const PAGE_SIZE = 20;
 const INSENSITIVE: Prisma.QueryMode = "insensitive";
 
 export const mykasihRouter = new Hono();
 
-mykasihRouter.onError((err, c) => {
-  if (err instanceof ApiError) {
-    return c.json(errorResponse(err), err.statusCode as 400 | 404 | 500);
-  }
-
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    switch (err.code) {
-      case "P2002":
-        return c.json(errorResponse(ApiError.badRequest("Resource already exists")), 400);
-      case "P2025":
-        return c.json(errorResponse(ApiError.notFound("Resource")), 404);
-      case "P2003":
-        return c.json(errorResponse(ApiError.badRequest("Related resource not found")), 400);
-    }
-  }
-
-  if (err instanceof Prisma.PrismaClientValidationError) {
-    return c.json(errorResponse(ApiError.badRequest("Invalid database input")), 400);
-  }
-
-  log("ERROR", `[mykasih] ${err instanceof Error ? err.message : String(err)}`);
-  return c.json(errorResponse(ApiError.internal()), 500);
-});
+mykasihRouter.onError(createFeatureErrorHandler("mykasih"));
 
 // GET /api/v1/mykasih/categories
 mykasihRouter.get("/categories", async (c) => {

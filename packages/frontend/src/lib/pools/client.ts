@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch as baseApiFetch, ApiRequestError } from "@/lib/api/errors";
 import { API_BASE } from "@/lib/auth/client";
 import type { MemberProfile } from "@/types/auth";
 import type {
@@ -23,22 +24,6 @@ import {
   listPoolsForNadi as listLocalNadiPools,
   toPoolListItem,
 } from "./storage";
-
-type ApiResponse<T> = {
-  success: boolean;
-  data: T;
-  meta?: Record<string, unknown>;
-};
-
-class ApiRequestError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-    this.name = "ApiRequestError";
-  }
-}
 
 type BackendMember = {
   id: string;
@@ -336,25 +321,8 @@ function buildTransactionFromLedger(
   };
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    credentials: "include",
-    ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
-  });
-
-  if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as {
-      error?: { message?: string };
-    };
-
-    throw new ApiRequestError(
-      body.error?.message ?? `Request failed (${response.status})`,
-      response.status,
-    );
-  }
-
-  return (await response.json()) as ApiResponse<T>;
+function apiFetch<T>(path: string, init?: RequestInit) {
+  return baseApiFetch<T>(`${API_BASE}${path}`, init);
 }
 
 async function fetchProduct(productId: string): Promise<BackendProduct | null> {

@@ -14,6 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { formatErrorMessage } from "@/lib/api/errors";
 import { authClient, API_BASE, DEMO_ACCOUNTS, DEMO_CREDENTIALS } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import type { SignInInput } from "@/types/auth";
@@ -184,7 +185,7 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
       startTransition(() => router.push(nextPath));
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat masuk sekarang.");
+      toast.error(formatErrorMessage(error, "Tak dapat masuk sekarang."));
     },
   });
 
@@ -292,7 +293,7 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
       startTransition(() => router.push(nextPath));
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat cipta akaun sekarang.");
+      toast.error(formatErrorMessage(error, "Tak dapat cipta akaun sekarang."));
     },
   });
 

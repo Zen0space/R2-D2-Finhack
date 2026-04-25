@@ -16,9 +16,9 @@ import { Prisma, prisma, type Pool, type PoolMember, type User } from "db";
 import { customAlphabet } from "nanoid";
 
 import { requireAuth } from "../middleware/require-auth.js";
-import { ApiError, errorResponse } from "../lib/errors.js";
+import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
-import { log } from "../middleware/logger.js";
+import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
 import {
   suggestItems,
   type CatalogueItem,
@@ -42,17 +42,7 @@ const DEFAULT_REPAYMENT_CYCLES = 6;
 
 poolsRouter.use("*", requireAuth);
 
-poolsRouter.onError((err, c) => {
-  if (err instanceof ApiError) {
-    return c.json(errorResponse(err), err.statusCode as 400 | 401 | 403 | 404 | 409 | 500);
-  }
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === "P2025") return c.json(errorResponse(ApiError.notFound("Pool")), 404);
-    if (err.code === "P2002") return c.json(errorResponse(ApiError.conflict("Conflict")), 409);
-  }
-  log("ERROR", `[pools] ${err instanceof Error ? err.message : String(err)}`);
-  return c.json(errorResponse(ApiError.internal()), 500);
-});
+poolsRouter.onError(createFeatureErrorHandler("pools"));
 
 // ---------------------------------------------------------------------------
 // Validators

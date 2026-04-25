@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, Truck } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/api/errors";
 import { useNadiPoolsQuery } from "@/hooks/use-pools-query";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { poolsClient } from "@/lib/pools/client";
@@ -42,7 +43,7 @@ export function NadiDashboardPage() {
       toast.success("Penghantaran telah disahkan. Pool kini bergerak ke state active.");
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat sahkan penghantaran sekarang.");
+      toast.error(formatErrorMessage(error, "Tak dapat sahkan penghantaran sekarang."));
     },
   });
 

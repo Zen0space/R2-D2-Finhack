@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition } from "react";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/api/errors";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +56,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
       startTransition(() => router.push(`/pools/${joinedPool.id}`));
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat sertai pool sekarang.");
+      toast.error(formatErrorMessage(error, "Tak dapat sertai pool sekarang."));
     },
   });
 

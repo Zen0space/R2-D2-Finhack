@@ -21,9 +21,9 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { prisma } from "db";
 
-import { ApiError, errorResponse } from "../lib/errors.js";
+import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
-import { log } from "../middleware/logger.js";
+import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
 
 // ---------------------------------------------------------------------------
 // Validators
@@ -71,13 +71,7 @@ const toWire = (row: NadiCentreRow) => ({
 
 export const nadiRouter = new Hono();
 
-nadiRouter.onError((err, c) => {
-  if (err instanceof ApiError) {
-    return c.json(errorResponse(err), err.statusCode as 400 | 404 | 500);
-  }
-  log("ERROR", `[nadi] ${err instanceof Error ? err.message : String(err)}`);
-  return c.json(errorResponse(ApiError.internal()), 500);
-});
+nadiRouter.onError(createFeatureErrorHandler("nadi"));
 
 // GET /api/v1/nadi/centres
 nadiRouter.get("/centres", zValidator("query", listCentresQuerySchema), async (c) => {

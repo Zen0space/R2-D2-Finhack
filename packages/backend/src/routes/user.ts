@@ -10,10 +10,13 @@ import { prisma } from "db";
 import { requireAuth } from "../middleware/require-auth.js";
 import { ApiError } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
+import { createFeatureErrorHandler } from "../lib/feature-error-handler.js";
 
 export const userRouter = new Hono();
 
 userRouter.use("*", requireAuth);
+
+userRouter.onError(createFeatureErrorHandler("user"));
 
 userRouter.get("/", async (c) => {
   const sessionUser = c.get("user");

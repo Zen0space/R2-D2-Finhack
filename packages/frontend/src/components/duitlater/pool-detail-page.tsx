@@ -15,8 +15,9 @@ import {
   Vote,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/api/errors";
 import { pendingSuggestionFilterAtom, pendingSuggestionIdAtom } from "@/store/pools";
 import { InviteQr } from "@/components/duitlater/invite-qr";
 import { PoolSuggestionsPanel } from "@/components/duitlater/pool-suggestions-panel";
@@ -76,12 +77,26 @@ function formatDateTime(value: string | null) {
 
 export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   const queryClient = useQueryClient();
-  const [lastVotePromptKey, setLastVotePromptKey] = useState<string | null>(null);
-  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
+  const [acknowledgedVotePromptKey, setAcknowledgedVotePromptKey] = useState<string | null>(null);
   const [pendingFilter, setPendingFilter] = useAtom(pendingSuggestionFilterAtom);
   const [pendingSuggestionId, setPendingSuggestionId] = useAtom(pendingSuggestionIdAtom);
   const { data: session, isLoading: isSessionLoading } = useSessionQuery();
   const { data: pool, isLoading: isPoolLoading } = usePoolDetailQuery(poolId);
+
+  // Modal-open state is derived: open whenever the pool is in voting AND the
+  // current vote round hasn't been acknowledged by this user. Closing the
+  // modal acks the round; entering voting again with a new round key
+  // (selectedSuggestionId / votingStartedAt) re-opens automatically.
+  const currentVotePromptKey =
+    pool && pool.state === "voting"
+      ? `${pool.id}:${pool.votingStartedAt ?? pool.selectedSuggestionId ?? "vote"}`
+      : null;
+  const hasVotePending = Boolean(
+    pool && session && pool.state === "voting" && !getMemberVote(pool, session.user.id),
+  );
+  const isVoteModalOpen =
+    hasVotePending && currentVotePromptKey !== null && currentVotePromptKey !== acknowledgedVotePromptKey;
+  const closeVoteModal = () => setAcknowledgedVotePromptKey(currentVotePromptKey);
 
   const lockMutation = useMutation({
     mutationFn: () => poolsClient.lock(poolId, session?.user.id ?? ""),
@@ -91,7 +106,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       toast.success("Pool dah dikunci. Combined cap telah dibekukan.");
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat lock pool sekarang.");
+      toast.error(formatErrorMessage(error, "Tak dapat lock pool sekarang."));
     },
   });
 
@@ -106,7 +121,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       toast.success("Penasihat dah susun shortlist BM untuk pool ini.");
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat jana cadangan sekarang.");
+      toast.error(formatErrorMessage(error, "Tak dapat jana cadangan sekarang."));
     },
     onSettled: () => {
       setPendingFilter(null);
@@ -124,7 +139,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       toast.success("Barang dipilih. Pool kini masuk ke fasa voting.");
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat pilih barang sekarang.");
+      toast.error(formatErrorMessage(error, "Tak dapat pilih barang sekarang."));
     },
     onSettled: () => {
       setPendingSuggestionId(null);
@@ -136,7 +151,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
     onSuccess: (updatedPool, vote) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
-      setIsVoteModalOpen(false);
+      closeVoteModal();
       toast.success(
         updatedPool.state === "approved"
           ? "Majoriti dicapai. Pool kini menunggu pengesahan dari NADI."
@@ -146,30 +161,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       );
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Tak dapat simpan undian sekarang.");
+      toast.error(formatErrorMessage(error, "Tak dapat simpan undian sekarang."));
     },
   });
-
-  useEffect(() => {
-    if (!session || !pool) {
-      return;
-    }
-
-    const nextVotePromptKey = `${pool.id}:${pool.votingStartedAt ?? pool.selectedSuggestionId ?? "vote"}`;
-    const hasVotePending = pool.state === "voting" && !getMemberVote(pool, session.user.id);
-
-    if (pool.state !== "voting") {
-      setIsVoteModalOpen(false);
-      return;
-    }
-
-    if (!hasVotePending || lastVotePromptKey === nextVotePromptKey) {
-      return;
-    }
-
-    setIsVoteModalOpen(true);
-    setLastVotePromptKey(nextVotePromptKey);
-  }, [lastVotePromptKey, pool, session]);
 
   if (isSessionLoading || isPoolLoading) {
     return (
@@ -616,7 +610,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                         className="w-full"
                         disabled={!canVoteNow || voteMutation.isPending}
                         size="lg"
-                        onClick={() => setIsVoteModalOpen(true)}
+                        onClick={() => setAcknowledgedVotePromptKey(null)}
                       >
                         <Vote aria-hidden="true" size={18} />
                         {voteMutation.isPending
@@ -930,7 +924,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                 <Button
                   className="w-full"
                   variant="ghost"
-                  onClick={() => setIsVoteModalOpen(false)}
+                  onClick={closeVoteModal}
                 >
                   Tutup dulu
                 </Button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api/errors";
 import { authClient, API_BASE } from "@/lib/auth/client";
 import type { MemberProfile, Session } from "@/types/auth";
 
@@ -48,13 +49,8 @@ export function useSessionQuery() {
       const { data: sessionData } = await authClient.getSession();
       if (!sessionData?.user) return null;
 
-      const res = await fetch(`${API_BASE}/api/v1/user`, {
-        credentials: "include",
-      });
-      if (!res.ok) return null;
-
-      const body = (await res.json()) as { success: boolean; data: UserApiData };
-      if (!body.success) return null;
+      const body = await apiFetch<UserApiData>(`${API_BASE}/api/v1/user`).catch(() => null);
+      if (!body) return null;
 
       return { user: mapToMemberProfile(body.data) };
     },
