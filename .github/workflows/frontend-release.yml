@@ -54,7 +54,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL || '/api' }}
+            NEXT_PUBLIC_API_URL=${{ github.ref == 'refs/heads/main' && 'https://api.duitlater.com' || 'https://api.dev.duitlater.com' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
