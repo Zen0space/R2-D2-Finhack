@@ -9,8 +9,12 @@
 
 (security_headers) {
     header {
-        # Force HTTPS for 1y across all subdomains
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        # Force HTTPS for 1y on this exact host only.
+        # NOTE: includeSubDomains is intentionally OFF — adding it locks
+        # the browser out of any *.duitlater.com subdomain that doesn't
+        # yet have a valid cert (chrome-error://, no override). Re-enable
+        # once every subdomain is confirmed HTTPS in production.
+        Strict-Transport-Security "max-age=31536000"
         # Block clickjacking
         X-Frame-Options "DENY"
         # Block MIME sniffing
