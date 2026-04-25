@@ -1,24 +1,37 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito_Sans } from "next/font/google";
+import { Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
-const appName = "Pusat Tabung";
+const appName = "DuitLater";
 const appDescription =
-  "A TNG-style web wallet PWA for tabung circles, member trust, and monthly rotations.";
+  "BM-first shared PayLater frontend for auth, allowance visibility, and Phase 1 member onboarding.";
 
-const nunito = Nunito_Sans({
+const display = Cormorant_Garamond({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  weight: ["500", "600", "700"],
+});
+
+const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   applicationName: appName,
   title: {
-    default: "Pusat Tabung",
-    template: "%s | Pusat Tabung",
+    default: "DuitLater",
+    template: "%s | DuitLater",
   },
   description: appDescription,
   manifest: "/manifest.webmanifest",
@@ -37,13 +50,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: appName,
-    title: "Pusat Tabung",
+    title: "DuitLater",
     description: appDescription,
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1976d2",
+  themeColor: "#C8941F",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -51,8 +64,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className={nunito.variable}>
+    <html lang="ms">
+      <body className={`${display.variable} ${sans.variable} ${mono.variable}`}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

@@ -1,13 +1,13 @@
 {
-  "name": "Pusat Tabung TNG PWA",
-  "short_name": "Pusat Tabung",
-  "description": "A TNG-style web wallet PWA for tabung circles, member trust, and monthly rotations.",
+  "name": "DuitLater",
+  "short_name": "DuitLater",
+  "description": "BM-first shared PayLater frontend for auth, allowance visibility, and member onboarding.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f5f8fc",
-  "theme_color": "#1976d2",
+  "background_color": "#f8f4ec",
+  "theme_color": "#c8941f",
   "icons": [
     {
       "src": "/icons/pusat-tabung.svg",

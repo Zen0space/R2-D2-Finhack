@@ -1,5 +1,5 @@
-import { HomePage } from "@/components/home/home-page";
+import { LandingPage } from "@/components/duitlater/landing-page";
 
 export default function Page() {
-  return <HomePage />;
+  return <LandingPage />;
 }
