@@ -39,11 +39,13 @@ RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
 
 # standalone output includes server.js + pruned node_modules
+# In a monorepo the standalone tree nests under the package path,
+# so server.js lives at /app/packages/frontend/server.js — static and
+# public assets must sit next to it, not at /app.
 COPY --from=builder --chown=nextjs:nodejs /app/packages/frontend/.next/standalone ./
-# static assets must live next to where server.js expects them
-COPY --from=builder --chown=nextjs:nodejs /app/packages/frontend/.next/static     ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/packages/frontend/public           ./public
+COPY --from=builder --chown=nextjs:nodejs /app/packages/frontend/.next/static     ./packages/frontend/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/packages/frontend/public           ./packages/frontend/public
 
 USER nextjs
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "packages/frontend/server.js"]
