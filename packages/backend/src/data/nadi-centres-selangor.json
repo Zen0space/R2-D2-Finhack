@@ -1,0 +1,352 @@
+[
+  {
+    "id": "selangor-pangsapuri-saujana-ria-wangsa-permai",
+    "name": "PANGSAPURI SAUJANA RIA WANGSA PERMAI",
+    "state": "Selangor",
+    "district_hint": "bukit lanjan",
+    "raw_position": 1
+  },
+  {
+    "id": "selangor-pangsapuri-desa-1",
+    "name": "PANGSAPURI DESA 1",
+    "state": "Selangor",
+    "district_hint": "bukit lanjan",
+    "raw_position": 2
+  },
+  {
+    "id": "selangor-ppr-sri-meranti-sri-damansara",
+    "name": "PPR SRI MERANTI SRI DAMANSARA",
+    "state": "Selangor",
+    "district_hint": "bukit lanjan",
+    "raw_position": 3
+  },
+  {
+    "id": "selangor-taman-ahmad-razali-ampang",
+    "name": "TAMAN AHMAD RAZALI, AMPANG",
+    "state": "Selangor",
+    "district_hint": "bukit antarabangsa",
+    "raw_position": 4
+  },
+  {
+    "id": "selangor-taman-pinggiran-delima",
+    "name": "TAMAN PINGGIRAN DELIMA",
+    "state": "Selangor",
+    "district_hint": "dusun tua",
+    "raw_position": 5
+  },
+  {
+    "id": "selangor-bandar-tasik-kesuma",
+    "name": "BANDAR TASIK KESUMA",
+    "state": "Selangor",
+    "district_hint": "semenyih",
+    "raw_position": 6
+  },
+  {
+    "id": "selangor-sungai-buaya",
+    "name": "SUNGAI BUAYA",
+    "state": "Selangor",
+    "district_hint": "batang kali",
+    "raw_position": 7
+  },
+  {
+    "id": "selangor-kampung-sungai-masin",
+    "name": "KAMPUNG SUNGAI MASIN",
+    "state": "Selangor",
+    "district_hint": "batang kali",
+    "raw_position": 8
+  },
+  {
+    "id": "selangor-taman-bunga-raya",
+    "name": "TAMAN BUNGA RAYA",
+    "state": "Selangor",
+    "district_hint": "batang kali",
+    "raw_position": 9
+  },
+  {
+    "id": "selangor-taman-seri-serendah",
+    "name": "TAMAN SERI SERENDAH",
+    "state": "Selangor",
+    "district_hint": "batang kali",
+    "raw_position": 10
+  },
+  {
+    "id": "selangor-taman-kelisa",
+    "name": "TAMAN KELISA",
+    "state": "Selangor",
+    "district_hint": "batang kali",
+    "raw_position": 11
+  },
+  {
+    "id": "selangor-kg-desa-permai",
+    "name": "KG DESA PERMAI",
+    "state": "Selangor",
+    "district_hint": "sungai panjang",
+    "raw_position": 12
+  },
+  {
+    "id": "selangor-kampung-tebuk-haji-yusuf",
+    "name": "KAMPUNG TEBUK HAJI YUSUF",
+    "state": "Selangor",
+    "district_hint": "sungai panjang",
+    "raw_position": 13
+  },
+  {
+    "id": "selangor-kampung-sungai-haji-dorani",
+    "name": "KAMPUNG SUNGAI HAJI DORANI",
+    "state": "Selangor",
+    "district_hint": "sungai panjang",
+    "raw_position": 14
+  },
+  {
+    "id": "selangor-kg-baru-nelayan",
+    "name": "KG BARU NELAYAN",
+    "state": "Selangor",
+    "district_hint": "sungai panjang",
+    "raw_position": 15
+  },
+  {
+    "id": "selangor-kampung-tengah-peket-100",
+    "name": "KAMPUNG TENGAH PEKET 100",
+    "state": "Selangor",
+    "district_hint": "sungai panjang",
+    "raw_position": 16
+  },
+  {
+    "id": "selangor-pasir-panjang",
+    "name": "PASIR PANJANG",
+    "state": "Selangor",
+    "district_hint": "sungai panjang",
+    "raw_position": 17
+  },
+  {
+    "id": "selangor-felda-sungai-tengi",
+    "name": "FELDA SUNGAI TENGI",
+    "state": "Selangor",
+    "district_hint": "hulu bernam",
+    "raw_position": 18
+  },
+  {
+    "id": "selangor-felda-gedangsa",
+    "name": "FELDA GEDANGSA",
+    "state": "Selangor",
+    "district_hint": "hulu bernam",
+    "raw_position": 19
+  },
+  {
+    "id": "selangor-felda-soeharto",
+    "name": "FELDA SOEHARTO",
+    "state": "Selangor",
+    "district_hint": "hulu bernam",
+    "raw_position": 20
+  },
+  {
+    "id": "selangor-kalumpang",
+    "name": "KALUMPANG",
+    "state": "Selangor",
+    "district_hint": "hulu bernam",
+    "raw_position": 21
+  },
+  {
+    "id": "selangor-taman-lembah-damai",
+    "name": "TAMAN LEMBAH DAMAI",
+    "state": "Selangor",
+    "district_hint": "kuala kubu baharu",
+    "raw_position": 22
+  },
+  {
+    "id": "selangor-pekan-kuala-kubu-baru",
+    "name": "PEKAN KUALA KUBU BARU",
+    "state": "Selangor",
+    "district_hint": "kuala kubu baharu",
+    "raw_position": 23
+  },
+  {
+    "id": "selangor-taman-keruing-rasa",
+    "name": "TAMAN KERUING RASA",
+    "state": "Selangor",
+    "district_hint": "kuala kubu baharu",
+    "raw_position": 24
+  },
+  {
+    "id": "selangor-kota-raja",
+    "name": "KOTA RAJA",
+    "state": "Selangor",
+    "district_hint": "sentosa",
+    "raw_position": 25
+  },
+  {
+    "id": "selangor-kanchong-darat",
+    "name": "KANCHONG DARAT",
+    "state": "Selangor",
+    "district_hint": "morib",
+    "raw_position": 26
+  },
+  {
+    "id": "selangor-teluk-panglima-garang",
+    "name": "TELUK PANGLIMA GARANG",
+    "state": "Selangor",
+    "district_hint": "sijangkang",
+    "raw_position": 27
+  },
+  {
+    "id": "selangor-kampung-orang-asli-sungai-judah",
+    "name": "KAMPUNG ORANG ASLI SUNGAI JUDAH",
+    "state": "Selangor",
+    "district_hint": "sijangkang",
+    "raw_position": 28
+  },
+  {
+    "id": "selangor-kampung-labohan-dagang",
+    "name": "KAMPUNG LABOHAN DAGANG",
+    "state": "Selangor",
+    "district_hint": "dengkil",
+    "raw_position": 29
+  },
+  {
+    "id": "selangor-taman-harmoni",
+    "name": "TAMAN HARMONI",
+    "state": "Selangor",
+    "district_hint": "tanjong sepat",
+    "raw_position": 30
+  },
+  {
+    "id": "selangor-kampung-kundang",
+    "name": "KAMPUNG KUNDANG",
+    "state": "Selangor",
+    "district_hint": "tanjong sepat",
+    "raw_position": 31
+  },
+  {
+    "id": "selangor-pekan-ijok",
+    "name": "PEKAN IJOK",
+    "state": "Selangor",
+    "district_hint": "ijok",
+    "raw_position": 32
+  },
+  {
+    "id": "selangor-taman-seri-cahaya",
+    "name": "TAMAN SERI CAHAYA",
+    "state": "Selangor",
+    "district_hint": "ijok",
+    "raw_position": 33
+  },
+  {
+    "id": "selangor-felda-bukit-cherakah",
+    "name": "FELDA BUKIT CHERAKAH",
+    "state": "Selangor",
+    "district_hint": "jeram",
+    "raw_position": 34
+  },
+  {
+    "id": "selangor-kampung-batu-19-jeram",
+    "name": "KAMPUNG BATU 19 JERAM",
+    "state": "Selangor",
+    "district_hint": "jeram",
+    "raw_position": 35
+  },
+  {
+    "id": "selangor-taman-saujana-utama",
+    "name": "TAMAN SAUJANA UTAMA",
+    "state": "Selangor",
+    "district_hint": "paya jaras",
+    "raw_position": 36
+  },
+  {
+    "id": "selangor-kg-kubu-gajah",
+    "name": "KG KUBU GAJAH",
+    "state": "Selangor",
+    "district_hint": "paya jaras",
+    "raw_position": 37
+  },
+  {
+    "id": "selangor-sungai-sireh-tanjung-karang",
+    "name": "SUNGAI SIREH TANJUNG KARANG",
+    "state": "Selangor",
+    "district_hint": "sungai burong",
+    "raw_position": 38
+  },
+  {
+    "id": "selangor-batu-1-sapintas",
+    "name": "BATU 1 SAPINTAS",
+    "state": "Selangor",
+    "district_hint": "sabak",
+    "raw_position": 39
+  },
+  {
+    "id": "selangor-taman-sb-perdana",
+    "name": "TAMAN SB PERDANA",
+    "state": "Selangor",
+    "district_hint": "sabak",
+    "raw_position": 40
+  },
+  {
+    "id": "selangor-bagan-nakhoda-omar",
+    "name": "BAGAN NAKHODA OMAR",
+    "state": "Selangor",
+    "district_hint": "sungai air tawar",
+    "raw_position": 41
+  },
+  {
+    "id": "selangor-kampung-parit-baru-baruh",
+    "name": "KAMPUNG PARIT BARU BARUH",
+    "state": "Selangor",
+    "district_hint": "sungai air tawar",
+    "raw_position": 42
+  },
+  {
+    "id": "selangor-kampung-baru-seri-sentosa",
+    "name": "KAMPUNG BARU SERI SENTOSA",
+    "state": "Selangor",
+    "district_hint": "sekinchan",
+    "raw_position": 43
+  },
+  {
+    "id": "selangor-kampung-sungai-leman",
+    "name": "KAMPUNG SUNGAI LEMAN",
+    "state": "Selangor",
+    "district_hint": "sekinchan",
+    "raw_position": 44
+  },
+  {
+    "id": "selangor-hulu-chuchoh",
+    "name": "HULU CHUCHOH",
+    "state": "Selangor",
+    "district_hint": "sungai pelek",
+    "raw_position": 45
+  },
+  {
+    "id": "selangor-taman-tenteram",
+    "name": "TAMAN TENTERAM",
+    "state": "Selangor",
+    "district_hint": "sungai pelek",
+    "raw_position": 46
+  },
+  {
+    "id": "selangor-seksyen-17-petaling-jaya",
+    "name": "SEKSYEN 17 Petaling Jaya",
+    "state": "Selangor",
+    "district_hint": "petaling jaya",
+    "raw_position": 47
+  },
+  {
+    "id": "selangor-kampung-sungai-kayu-ara",
+    "name": "Kampung Sungai Kayu Ara",
+    "state": "Selangor",
+    "district_hint": "taman sri medan",
+    "raw_position": 48
+  },
+  {
+    "id": "selangor-pj-ss3",
+    "name": "PJ SS3",
+    "state": "Selangor",
+    "district_hint": "taman sri medan",
+    "raw_position": 49
+  },
+  {
+    "id": "selangor-ppr-sri-menanti-sri-damansara",
+    "name": "PPR Sri Menanti Sri Damansara",
+    "state": "Selangor",
+    "district_hint": "taman sri medan",
+    "raw_position": 50
+  }
+]

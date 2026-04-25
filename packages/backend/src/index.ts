@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { requestLogger, log } from "./middleware/logger.js";
 import { mykasihRouter } from "./routes/mykasih.js";
+import { nadiRouter } from "./routes/nadi.js";
 import { ApiError, errorResponse } from "./lib/errors.js";
 
 const app = new Hono();
@@ -46,6 +47,7 @@ app.get("/api/v1/health", (c) => {
 });
 
 app.route("/api/v1/mykasih", mykasihRouter);
+app.route("/api/v1/nadi", nadiRouter);
 
 const port = Number(process.env.PORT) || 4000;
 
