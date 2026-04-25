@@ -6,6 +6,7 @@ import { requestLogger, log } from "./middleware/logger.js";
 import { mykasihRouter } from "./routes/mykasih.js";
 import { nadiRouter } from "./routes/nadi.js";
 import { ApiError, errorResponse } from "./lib/errors.js";
+import { prisma } from "db";
 
 const app = new Hono();
 
@@ -38,6 +39,17 @@ app.use(
   })
 );
 
+// Simple ping — used by Caddy health checks + Cloudflare LB
+app.get("/health", async (c) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return c.json({ ok: true, db: "connected", env: process.env.NODE_ENV ?? "development" });
+  } catch {
+    return c.json({ ok: false, db: "disconnected" }, 503);
+  }
+});
+
+// Kept for backward compat
 app.get("/api/v1/health", (c) => {
   return c.json({
     status: "ok",
