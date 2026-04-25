@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito_Sans } from "next/font/google";
 import type { ReactNode } from "react";
-import { Providers } from "./providers";
+import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
 const appName = "Pusat Tabung";
@@ -53,7 +53,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className={nunito.variable}>
-        <Providers>{children}</Providers>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
