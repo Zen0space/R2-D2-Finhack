@@ -1,24 +1,59 @@
 # Infra — DuitLater Deployment
 
-**Docker · Caddy · EC2 · AWS S3 · Elastic IP**
+**Docker · Caddy · GHCR · EC2 · Elastic IP · two-environment topology**
+
+> **Deploying?** Use **[RELEASE.md](./RELEASE.md)** — the full AWS runbook (provision → first deploy → recurring releases → rollback → troubleshooting). This file is the topology overview and file map.
 
 ---
 
-## Files (to create Saturday)
+## Files
 
 ```
 infra/
-├── docker-compose.dev.yml       # Postgres only · for laptops
-├── docker-compose.prod.yml      # Caddy + frontend + app + postgres · for EC2
-├── Caddyfile                    # reverse proxy + SSL config
-├── secrets/
-│   └── pg_password.txt          # gitignored, EC2 only
-├── ec2/
-│   ├── launch-instance.sh       # AWS CLI launch helper
-│   ├── security-group.json      # SG rules (22 team-IPs · 80 · 443)
-│   └── user-data.sh             # cloud-init: install Docker
-└── deploy.sh                    # one-shot: ssh + git pull + compose up + migrate
+├── Caddyfile                       # reverse proxy: routes 2 subdomains to 2 stacks
+├── docker-compose.local.yml        # laptop dev — Postgres only
+├── docker-compose.dev.yml          # VPS dev stack  (dev branch  → dev.duitlater.com)
+├── docker-compose.prod.yml         # VPS prod stack (main branch → duitlater.com)
+└── README.md
 ```
+
+Pre-baked secrets (gitignored, EC2 only):
+- `../packages/backend/.env.prod`, `../packages/backend/.env.dev`
+- `../packages/frontend/.env.prod`, `../packages/frontend/.env.dev`
+
+---
+
+## Topology
+
+```
+                 duitlater.com  ─────┐
+                                      ├──► Caddy (in prod stack) ──► routes by Host
+            dev.duitlater.com  ─────┘
+                                            │
+       ┌────────────────────────────────────┴────────────────────────────┐
+       │                                                                  │
+   docker compose -p prod                              docker compose -p dev
+   ├ duitlater-prod-frontend                           ├ duitlater-dev-frontend
+   ├ duitlater-prod-app    (image :latest)             ├ duitlater-dev-app  (image :dev)
+   └ duitlater-prod-postgres                           └ duitlater-dev-postgres
+
+   shared docker network: duitlater_web (created by prod, joined by dev as external)
+```
+
+Caddy lives in the **prod** stack and proxies to both projects via container DNS (`duitlater-prod-app`, `duitlater-dev-app`, …). Bring prod up before dev.
+
+---
+
+## Image strategy
+
+| Branch | Workflow | Image tags pushed | Compose pulls |
+|---|---|---|---|
+| `main` | `.github/workflows/backend-release.yml` | `:latest` + `:sha-<short>` | `docker-compose.prod.yml` → `:latest` |
+| `dev`  | same workflow                            | `:dev`    + `:dev-sha-<short>` | `docker-compose.dev.yml` → `:dev` |
+
+Backend image: `ghcr.io/zen0space/duitlater-backend`.
+
+> **TODO (Akmal):** add `packages/frontend/Dockerfile` + `frontend-release.yml`. Until then, prod and dev compose `build:` the frontend from source on the VPS.
 
 ---
 
@@ -27,51 +62,89 @@ infra/
 | Item | Value |
 |---|---|
 | Instance type | t3.medium (2 vCPU · 4 GB RAM) |
-| AMI | Ubuntu 24.04 LTS · `ami-0d3e5ee74e79c8ca7` (ap-southeast-1) |
+| AMI | Ubuntu 24.04 LTS |
 | Storage | gp3 EBS · 30 GB |
 | Region | ap-southeast-1 (Singapore) |
-| Elastic IP | required for stable address |
+| Elastic IP | required |
 
-## Security Group Inbound
+**Security Group inbound:** 22 (team IPs) · 80 · 443.
 
-| Port | Source | Purpose |
-|---|---|---|
-| 22 | Team IPs only | SSH |
-| 80 | 0.0.0.0/0 | HTTP (auto-redirects to 443) |
-| 443 | 0.0.0.0/0 | HTTPS |
-
-## DNS
-
+**DNS:**
 ```
-duitlater.yourdomain.com   A   <ELASTIC_IP>
+duitlater.com         A   <ELASTIC_IP>
+dev.duitlater.com     A   <ELASTIC_IP>
 ```
 
-## Deploy Sequence (first time)
+---
+
+## Deploy — first time
 
 ```bash
 ssh ubuntu@<ELASTIC_IP>
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER && newgrp docker
 
-git clone <repo-url> duitlater && cd duitlater/infra
-mkdir -p secrets
-openssl rand -base64 32 > secrets/pg_password.txt
-chmod 600 secrets/pg_password.txt
+# Clone repo (only used for compose files + frontend build context for now)
+git clone <repo-url> duitlater && cd duitlater
 
-cp ../backend/.env.example ../backend/.env.prod
-nano ../backend/.env.prod     # fill all values
+# Authenticate to GHCR (read-only PAT with `read:packages` scope)
+echo "$GHCR_PAT" | docker login ghcr.io -u <github-username> --password-stdin
 
-docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml exec app npm run db:migrate
+# Provision env files (gitignored — author by hand on the box)
+cp packages/backend/.env.example  packages/backend/.env.prod
+cp packages/backend/.env.example  packages/backend/.env.dev
+cp packages/frontend/.env.example packages/frontend/.env.prod
+cp packages/frontend/.env.example packages/frontend/.env.dev
+nano packages/backend/.env.prod packages/backend/.env.dev packages/frontend/.env.prod packages/frontend/.env.dev
+
+export DUITLATER_DOMAIN=duitlater.com
+
+# Bring prod up first (creates the duitlater_web network + Caddy)
+docker compose -f infra/docker-compose.prod.yml -p prod pull
+docker compose -f infra/docker-compose.prod.yml -p prod up -d --build   # --build needed only until frontend image lands
+docker compose -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
+
+# Then dev (joins the network)
+docker compose -f infra/docker-compose.dev.yml -p dev pull
+docker compose -f infra/docker-compose.dev.yml -p dev up -d --build
+docker compose -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
 ```
 
-## Deploy Sequence (subsequent)
+---
+
+## Deploy — subsequent (after a `main` or `dev` push)
+
+GitHub Actions builds + pushes the image. On the VPS:
 
 ```bash
-git pull && \
-docker compose -f docker-compose.prod.yml up -d --build && \
-docker compose -f docker-compose.prod.yml exec app npm run db:migrate
+# Prod (after main push)
+cd /home/ubuntu/duitlater && git pull
+docker compose -f infra/docker-compose.prod.yml -p prod pull
+docker compose -f infra/docker-compose.prod.yml -p prod up -d
+docker compose -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
+
+# Dev (after dev push)
+cd /home/ubuntu/duitlater && git pull
+docker compose -f infra/docker-compose.dev.yml -p dev pull
+docker compose -f infra/docker-compose.dev.yml -p dev up -d
+docker compose -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
 ```
+
+Both stacks live independently — restarting one does not touch the other.
+
+---
+
+## Local dev (laptop)
+
+```bash
+docker compose -f infra/docker-compose.local.yml up -d   # Postgres on :5432
+pnpm --filter backend dev                                # :4000
+pnpm --filter frontend dev                               # :3000
+```
+
+No Caddy, no images, no GHCR. See [docs/process/QUICKSTART.md](../docs/process/QUICKSTART.md).
+
+---
 
 ## Owner
 

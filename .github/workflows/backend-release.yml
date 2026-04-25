@@ -2,7 +2,7 @@ name: Backend — Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - 'packages/backend/**'
       - 'packages/db/**'
@@ -34,9 +34,13 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/duitlater-backend
+          # main → :latest + :sha-<short>
+          # dev  → :dev    + :dev-sha-<short>
           tags: |
-            type=raw,value=latest
-            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=sha,prefix=sha-,format=short,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=dev-sha-,format=short,enable=${{ github.ref == 'refs/heads/dev' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -51,5 +55,10 @@ jobs:
 
       - name: Print pull command
         run: |
-          echo "✅ Image pushed. Pull on VPS with:"
-          echo "   docker pull ghcr.io/${{ github.repository_owner }}/duitlater-backend:latest"
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "Prod image pushed. Pull on VPS:"
+            echo "   docker pull ghcr.io/${{ github.repository_owner }}/duitlater-backend:latest"
+          else
+            echo "Dev image pushed. Pull on VPS:"
+            echo "   docker pull ghcr.io/${{ github.repository_owner }}/duitlater-backend:dev"
+          fi

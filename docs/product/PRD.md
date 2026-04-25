@@ -453,9 +453,8 @@ R2-D2-Finhack/
 ├── docs/
 │   ├── product/  tech/  team/  process/  pitch/
 ├── maji-core/             # Team protocols, heroes, slash commands
-├── infra/                 # Caddyfile + infra docs
+├── infra/                 # Caddyfile + docker-compose.{local,dev,prod}.yml
 ├── scripts/               # setup.sh · kill-ports.sh
-├── docker-compose.yml
 ├── pnpm-workspace.yaml
 └── package.json           # root workspace (private, scripts only)
 ```

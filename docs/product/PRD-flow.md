@@ -235,7 +235,7 @@ R2-D2-Finhack/
 │   └── db/         Prisma schema · migrations · generated client
 ├── docs/{product,tech,team,process,pitch}/
 ├── maji-core/      protocols · heroes · slash commands
-└── infra/ scripts/ docker-compose.yml
+└── infra/ (Caddyfile + compose) · scripts/
 ```
 
 ---

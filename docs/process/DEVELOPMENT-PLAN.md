@@ -14,7 +14,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 - `npm init -y` · install dependencies per [TECH-STACK.md](./TECH-STACK.md) Section 11
 - `tsconfig.json` strict mode
 - `src/index.ts` — Hono server bound to :4000 with `/health` endpoint
-- `docker-compose.dev.yml` — Postgres only
+- `infra/docker-compose.local.yml` — Postgres only (laptop dev)
 - Drizzle config + initial empty migration applied
 
 **Frontend**
@@ -25,11 +25,11 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Infra**
 - `Dockerfile` for backend
 - `Dockerfile` for frontend (Next.js standalone)
-- `docker-compose.prod.yml` skeleton
+- `infra/docker-compose.prod.yml` + `infra/docker-compose.dev.yml` (VPS stacks, image-pull from GHCR)
 - `Caddyfile` placeholder
 
 **Testable outcome:**
-> Run `docker compose -f docker-compose.dev.yml up -d` → run `npm run dev` in both repos → open `http://localhost:3000` (DuitLater landing renders) and `curl http://localhost:4000/health` returns `{"ok": true}`.
+> Run `docker compose -f infra/docker-compose.local.yml up -d` → run `npm run dev` in both repos → open `http://localhost:3000` (DuitLater landing renders) and `curl http://localhost:4000/health` returns `{"ok": true}`.
 
 **Time estimate:** 60–90 minutes (Saturday 09:00 → 10:30) — pre-scaffolded; team verifies.
 

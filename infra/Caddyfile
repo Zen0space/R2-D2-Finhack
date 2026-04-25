@@ -1,27 +1,56 @@
 # DuitLater · Caddy reverse proxy
-# Pattern A: same-domain path-routing. No CORS across the hackathon.
-# Replace {$DUITLATER_DOMAIN} at deploy time (e.g. export DUITLATER_DOMAIN=duitlater.example.my).
+# Pattern A: same-domain path-routing per environment. No CORS.
+# Two subdomains route to two compose stacks via Docker DNS on the shared `duitlater_web` network.
+#
+# Set DUITLATER_DOMAIN at deploy time, e.g. export DUITLATER_DOMAIN=duitlater.com
+#   → prod served at         duitlater.com
+#   → dev  served at     dev.duitlater.com
 
 {$DUITLATER_DOMAIN:localhost} {
     encode gzip zstd
 
     # Backend API: strip /api prefix before forwarding
     handle_path /api/* {
-        reverse_proxy app:4000
+        reverse_proxy duitlater-prod-app:4000
     }
 
     # Frontend: Next.js standalone server handles everything else
     handle {
-        reverse_proxy frontend:3000
+        reverse_proxy duitlater-prod-frontend:3000
     }
 
-    # Basic security headers (expand before prod hand-off)
     header {
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
         -Server
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}
+
+dev.{$DUITLATER_DOMAIN:localhost} {
+    encode gzip zstd
+
+    handle_path /api/* {
+        reverse_proxy duitlater-dev-app:4000
+    }
+
+    handle {
+        reverse_proxy duitlater-dev-frontend:3000
+    }
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+        X-Robots-Tag "noindex, nofollow"
     }
 
     log {
