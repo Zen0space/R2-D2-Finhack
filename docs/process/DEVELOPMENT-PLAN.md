@@ -212,13 +212,55 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 ---
 
+## Phase 6b — Multi-Cloud Infrastructure + HA
+
+**Goal:** Deploy 3-server AWS HA cluster with Cloudflare auto-failover, Alibaba Cloud Function Compute for AI workloads, and cross-cloud Postgres backup — ready for live judging demo.
+
+**Runs parallel to Phase 6** — Mung handles infra, Ijam + MatNep handle pitch polish. Neither blocks the other.
+
+> Full step-by-step guide: [`docs/tech/multi-cloud-setup.md`](../tech/multi-cloud-setup.md). This phase is a condensed task tracker.
+
+**Bahagian A — AWS (3 EC2 + Cloudflare)**
+- Provision 3 × EC2 t3.medium ap-southeast-1, each with Elastic IP + shared Security Group
+- Install Docker + pnpm on all 3, GHCR login, clone repo, pull `:latest` backend image
+- Server 1: configure Postgres as primary (`wal_level=replica`, `max_wal_senders=5`, replication user)
+- Server 2 + 3: `pg_basebackup` from Server 1 → start in standby mode (`pg_is_in_recovery() = t`)
+- Cloudflare Pro: create 3 origin pools → health monitor (HTTPS GET `/api/health` · 30s · 2 retries) → Load Balancer with failover order [Pool A → B → C]
+- Run all 4 failover tests (Section A.8 of the guide)
+
+**Bahagian B — Alibaba Cloud (AI workloads)**
+- Create Alibaba Cloud account → get DashScope API key (Qwen-plus)
+- Create FC service `duitlater-fc` in ap-southeast-1
+- Deploy `penasihat-suggest` function (Node.js 18 · 512 MB · 10s timeout · HTTP trigger)
+- Deploy `nadi-summary` function (same specs)
+- Update `packages/backend/.env.prod` on all 3 EC2 with `ALIBABA_FUNCTION_COMPUTE_URL` + `ALIBABA_FUNCTION_COMPUTE_URL_NADI`
+- Test curl → FC returns BM suggestions via Qwen; Claude as fallback on 5xx
+
+**Bahagian C — Cross-cloud backup**
+- `pg_dump` cron on Server 1 (hourly → AWS S3 `duitlater-postgres-backups`)
+- S3 → Alibaba OSS mirror script (daily 02:00 UTC)
+- Run one restore drill: download from S3, restore to test container, verify tables
+
+**Testable outcome:**
+> All 3 pools showing "healthy" on Cloudflare LB dashboard · `https://duitlater.com/api/health` responds 200 · stop Server 1 app → within 90s traffic auto-routes to Server 2 · start Server 1 back → traffic returns · `POST /api/penasihat/suggest` response includes `provider="alibaba-qwen"` (or `"anthropic-claude"` on fallback) · Postgres backup present in S3.
+
+**Time estimate:** 4–6 hours (Sunday 13:00 → 19:00, parallel with Phase 5 tail + Phase 6)
+
+**Cut-line:** If Alibaba FC deploy slips, backend falls back to Claude API automatically — no demo blockage. If Cloudflare LB setup is incomplete, single-server deploy from `infra/RELEASE.md` is the fallback. Never let infra complexity block Phase 6 pitch polish.
+
+**Owner:** Mung (primary · all infra) · Ijam (Alibaba Cloud sponsor credit redemption)
+
+**Full guide:** [`docs/tech/multi-cloud-setup.md`](../tech/multi-cloud-setup.md) — Bahagian A through F, failover playbook, verification checklist, troubleshooting.
+
+---
+
 ## Phase 6 — NADI Portal + Pitch Polish
 
 **Goal:** NADI staff dashboard polished + pitch deck + demo video + on-stage rehearsal.
 
 **Tasks (parallel)**
 - **Akmal:** Polish NADI portal — kampung-level aggregate stats, no individual PII, pending deliveries, kampung trust score tile
-- **Mung:** Deploy to EC2 · run final migrations · seed demo data (NADI Felda Gedangsa kampung + 4-5 demo members + seeded pools at various states)
+- **Mung:** Multi-cloud infra complete (Phase 6b) · run final migrations on all 3 EC2 · seed demo data (NADI Felda Gedangsa kampung + 4-5 demo members + seeded pools at various states)
 - **Ijam:** Finalise 8-slide pitch deck · script the 4-min narration · rehearse twice
 - **MatNep:** Apply brand polish · typography hierarchy · slide composition · ensure DuitLater visual coherence
 - **Kairu:** Verify all 6 phases gates passed · cut scope ruthlessly if anything wobbly
@@ -281,6 +323,7 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 | 4 — Vote + TNG Approval + Purchase | ⏳ Pending | — | — | — |
 | 5 — Repayment + Kampung Trust | ⏳ Pending | — | — | — |
 | 5b — NADI Weekly Summary (AI) | ⏳ Pending | — | — | — |
+| 6b — Multi-Cloud Infra + HA | ⏳ Pending | — | — | — |
 | 6 — NADI Portal + Pitch Polish | ⏳ Pending | — | — | — |
 
 Update this table as phases complete. Symbols: ⏳ pending · 🟡 in progress · ✅ done · ⚠️ blocked.
