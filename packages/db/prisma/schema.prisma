@@ -11,3 +11,39 @@ model HealthCheck {
   message   String
   createdAt DateTime @default(now())
 }
+
+// ---------------------------------------------------------------------------
+// MyKasih product catalogue
+// ---------------------------------------------------------------------------
+
+enum MykasihCategory {
+  GROCERY
+  DAIRY
+  PRODUCE
+  HOUSEHOLD
+  PERSONAL_CARE
+  BABY
+  BEVERAGE
+  FROZEN
+}
+
+model MykasihProduct {
+  id          String          @id @default(cuid())
+  name        String
+  nameMs      String?
+  brand       String?
+  category    MykasihCategory
+  description String?
+  unit        String
+  priceRm     Decimal         @db.Decimal(10, 2)
+  subsidyRm   Decimal         @db.Decimal(10, 2)
+  imageUrl    String?
+  barcode     String?         @unique
+  stock       Int             @default(0)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([category])
+  @@index([isActive])
+}
