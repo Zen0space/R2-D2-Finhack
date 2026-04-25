@@ -187,6 +187,35 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 ---
 
+## Phase 5b — NADI Weekly Summary (AI)
+
+**Goal:** NADI staff get an AI-generated BM-first weekly summary with anomaly detection.
+
+**Backend**
+- Route: `POST /api/nadi/summary` — body `{ kampungId, weekStart }`, requires `nadi_staff` role
+- Backend assembles weekly context: pools formed, top items requested, kampung trust score Δ, late-payment events
+- Calls `services/nadi-summary.ts` → Claude API with structured-output prompt
+- Output JSON: `{ headline_bm, observations_bm: string[], anomalies_bm: string[], suggestion_bm }`
+- Anomaly detection: clusters of 3+ late payments same week → flagged as kampung-distress signal
+- Logged to `nadi_summaries` table (audit + provider observability)
+
+**Frontend**
+- NADI portal `/nadi/dashboard`: "Ringkasan Minggu" card showing the AI-generated summary
+- Headline + observations + anomalies + suggestion
+- "Refresh" button to regenerate (rate-limited)
+- Visible only to `nadi_staff` role
+
+**Testable outcome:**
+> NADI staff opens `/nadi/dashboard` · sees this week's summary card with: pools-formed count · top-requested item · kampung trust Δ · 0 or more anomalies in BM · BM-first action suggestion.
+
+**Time estimate:** 1.5–2 hours (Sunday 16:00 → 17:30, parallel with Phase 5 main flow if Mung shipped 5a early)
+
+**Cut-line:** if Phase 5 main repayment ledger ate the Sunday afternoon window, NADI summary degrades to hardcoded demo summary (still BM-first, still surfaces anomaly logic).
+
+**Owner:** Mung (NADI summary backend) · Akmal (NADI summary card) · Kairu (gate)
+
+---
+
 ## Phase 6 — NADI Portal + Pitch Polish
 
 **Goal:** NADI staff dashboard polished + pitch deck + demo video + on-stage rehearsal.
@@ -255,6 +284,7 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 | 3 — Penasihat + Catalogue | ⏳ Pending | — | — | — |
 | 4 — Vote + TNG Approval + Purchase | ⏳ Pending | — | — | — |
 | 5 — Repayment + Kampung Trust | ⏳ Pending | — | — | — |
+| 5b — NADI Weekly Summary (AI) | ⏳ Pending | — | — | — |
 | 6 — NADI Portal + Pitch Polish | ⏳ Pending | — | — | — |
 
 Update this table as phases complete. Symbols: ⏳ pending · 🟡 in progress · ✅ done · ⚠️ blocked.

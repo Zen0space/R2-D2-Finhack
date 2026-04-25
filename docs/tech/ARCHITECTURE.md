@@ -411,7 +411,7 @@ NADI portal is a route within the same frontend (`/nadi/*`), gated by the user's
 | caddy | caddy:2-alpine | 80, 443 | — | caddy_data, caddy_config |
 | frontend | custom (Next.js) | — | 3000 | — (stateless) |
 | app | custom (Hono) | — | 4000 | — (stateless) |
-| postgres | postgres:16-alpine | — | 5432 | postgres_data |
+| postgres | postgres:17-alpine | — | 5432 | postgres_data |
 
 ---
 
@@ -434,3 +434,91 @@ NADI portal is a route within the same frontend (`/nadi/*`), gated by the user's
 - **TNG PayLater** — for hackathon, simulated client returns success. Production: TNG sandbox API integration. Exposed via single backend service `services/tng.ts` for clean swap-out.
 - **Claude API** — `services/claude.ts` wraps Anthropic SDK. System prompt locked in `packages/backend/src/prompts/penasihat-suggest.md` (committed for review).
 - **MyKasih catalogue** — for hackathon, ~30 items seeded into `mykasih_catalogue` table from `packages/backend/src/db/seeds/catalogue.ts`. Production: sync job from MyKasih Foundation API (when partnership established).
+
+---
+
+## Production Scale Path
+
+DuitLater MVP is single-EC2-instance for 48-hour hackathon scope. The path to production scale is well-understood and can be executed without architectural rewrite:
+
+```mermaid
+graph LR
+    subgraph T0["MVP (hackathon)"]
+        EC2["Single EC2 t3.medium<br/>4 containers"]
+        DB1[("Single Postgres")]
+        EC2 --> DB1
+    end
+
+    subgraph T1["Pilot scale (1-5 NADI centres · 100s of pools)"]
+        EC2T1["EC2 t3.large<br/>+ CloudFront CDN"]
+        DBT1[("Postgres + read replica")]
+        Q1["Redis queue<br/>(async TNG callbacks)"]
+        EC2T1 --> DBT1
+        EC2T1 --> Q1
+    end
+
+    subgraph T2["National scale (188 NADI centres · 10k+ pools)"]
+        ALB["AWS ALB"]
+        ASG["Auto Scaling Group<br/>EC2 fleet"]
+        DBT2[("Aurora multi-AZ<br/>read replicas")]
+        Q2["SQS + Lambda"]
+        ALB --> ASG
+        ASG --> DBT2
+        ASG --> Q2
+    end
+
+    T0 --> T1 --> T2
+```
+
+| Bottleneck | MVP behaviour | Pilot fix | National fix |
+|---|---|---|---|
+| Compute | Single EC2 | Vertical scale → t3.large | Auto Scaling Group + ALB |
+| Database | Single Postgres | Add read replica · `repayments` reads scale out | Migrate to Aurora multi-AZ with auto-scaling readers |
+| AI inference | Synchronous Claude call (~2-6s) | Cache common suggestions | Claude API auto-scales transparently |
+| TNG webhooks | Inline processing | Redis queue (BullMQ) for async webhook handling | SQS + Lambda |
+| Static assets | Served from app | CloudFront CDN + S3 origin | Same · multi-region replication |
+| MyKasih catalogue | Seeded in DB | Sync job pulls from MyKasih API nightly | Real-time webhook from MyKasih on catalogue changes |
+
+**Key invariant:** Postgres remains canonical for the **append-only ledger** (contributions, payments, votes, kampung trust scores). All scale moves are around the ledger, not replacing it. Audit-ability + regulatory readiness preserved.
+
+---
+
+## Security Posture
+
+Security is layered, with each layer demonstrable in MVP:
+
+### Authentication & sessions
+- **argon2** password hashing (Better Auth default · OWASP-recommended)
+- **HttpOnly Secure SameSite=Lax** session cookies — no JS access to tokens
+- **Session rotation on auth event** — Better Auth handles automatically
+- **Role-based access control** — `member` vs `nadi_staff` enforced at route level
+
+### Webhook integrity
+- **HMAC verification** on TNG webhook callbacks before any state mutation
+- **Idempotency keys** prevent double-processing on TNG retries
+- Unverified webhooks **dropped without logging payload** (no leakage)
+
+### Money math
+- **All amounts in integer cents** — no floating-point drift
+- **`paylater_obligations` and `repayments` are append-only** — no destructive UPDATE, no DELETE
+- Corrections happen via compensating rows referencing originals
+
+### AI prompt privacy
+- **PII minimised in AI prompts** — only first name + numeric pool context + stated need passed to Claude. No raw financial transaction data in prompts.
+- System prompt locked in `packages/backend/src/prompts/penasihat-suggest.md` (committed for review)
+
+### Network security
+- **Postgres never publicly exposed** — Docker internal network only
+- **Frontend + backend bound to Docker network** — only Caddy speaks public
+- **HTTPS-only** in production via Caddy automatic SSL
+- **Rate limiting** via `hono-rate-limiter` on auth + AI endpoints (configurable per `RATE_LIMIT_*` env)
+
+### NADI portal scoping
+- NADI staff see **aggregate data only** — no individual member financial amounts
+- Pool member identity visible only within own pool roster
+- All NADI portal actions logged to audit trail (timestamp · user · action · scope)
+
+### Audit trail
+- `pool_transactions`, `paylater_obligations`, `repayments`, `kampung_trust_scores` — all append-only
+- NADI confirmation actions logged
+- Vote outcomes immutable after tally
