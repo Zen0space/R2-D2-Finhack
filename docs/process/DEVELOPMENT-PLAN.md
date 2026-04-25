@@ -10,26 +10,23 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Goal:** Empty repos to "hello world" hitting the stack.
 
-**Backend**
-- `npm init -y` · install dependencies per [TECH-STACK.md](./TECH-STACK.md) Section 11
-- `tsconfig.json` strict mode
-- `src/index.ts` — Hono server bound to :4000 with `/health` endpoint
-- `infra/docker-compose.local.yml` — Postgres only (laptop dev)
-- Drizzle config + initial empty migration applied
+**Backend** ✅ pre-scaffolded
+- `packages/backend/src/index.ts` — Hono server bound to :4000 with `/health` + env validation + pino logger
+- `packages/backend/Dockerfile` — Node 24-alpine, workspace-aware pnpm build
+- Prisma client generated via `pnpm --filter db generate`
 
-**Frontend**
-- `npx create-next-app` per [TECH-STACK.md](./TECH-STACK.md) Section 11
-- `npx shadcn init`
-- Single landing page renders (DuitLater branded)
+**Frontend** ✅ pre-scaffolded
+- Next.js 15 App Router + Tailwind v4 brand tokens + landing page at `/`
+- `packages/frontend/Dockerfile` — pending (Akmal)
 
-**Infra**
-- `Dockerfile` for backend
-- `Dockerfile` for frontend (Next.js standalone)
-- `infra/docker-compose.prod.yml` + `infra/docker-compose.dev.yml` (VPS stacks, image-pull from GHCR)
-- `Caddyfile` placeholder
+**Infra** ✅ pre-scaffolded
+- `infra/docker-compose.local.yml` — Postgres 17 only (laptop dev)
+- `infra/docker-compose.dev.yml` + `infra/docker-compose.prod.yml` — VPS stacks, image-pull from GHCR
+- `infra/Caddyfile` — two-subdomain routing (duitlater.com + dev.duitlater.com)
+- `backend-release.yml` — CI builds `:dev` / `:latest` images on push to `dev` / `main`
 
 **Testable outcome:**
-> Run `docker compose -f infra/docker-compose.local.yml up -d` → run `npm run dev` in both repos → open `http://localhost:3000` (DuitLater landing renders) and `curl http://localhost:4000/health` returns `{"ok": true}`.
+> `pnpm db:up` → `pnpm --filter db migrate` → `pnpm dev` → frontend renders at `http://localhost:3000` (DuitLater landing) and `curl http://localhost:4000/health` returns `{"ok":true,"service":"duitlater-backend","env":"development"}`.
 
 **Time estimate:** 60–90 minutes (Saturday 09:00 → 10:30) — pre-scaffolded; team verifies.
 
@@ -40,10 +37,10 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Goal:** A signed-in user sees their individual TNG PayLater allowance.
 
 **Backend**
-- Drizzle schema: `users`, `sessions` (Better Auth), `kampungs`
-- `users` table includes: `kampung_id` (FK), `individual_paylater_allowance_cents` (int, seeded per-user for demo), `role` (`member` | `nadi_staff`)
-- Migration applied
-- Better Auth configured with Postgres adapter
+- Prisma schema (`packages/db/prisma/schema.prisma`): `User`, `Session` (Better Auth), `Kampung` models
+- `User` includes: `kampungId` (FK), `individualPayLaterAllowanceCents` (int, seeded per-user for demo), `role` (`member` | `nadi_staff`)
+- Migration: `pnpm --filter db migrate`
+- Better Auth configured with Prisma adapter
 - Routes:
   - Better Auth handles sign-up / sign-in / sign-out
   - `GET /api/me` — returns current user + kampung + individual PayLater allowance
@@ -70,8 +67,8 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Goal:** A user can create a pool, invite 1–7 others, and lock the pool to compute combined cap.
 
 **Backend**
-- Schema additions: `pools` (id, name, kampung_id, stated_need_text, stated_need_category, target_budget_cents, combined_cap_cents, state)
-- Schema additions: `pool_members` (pool_id, user_id, joined_at, individual_allowance_at_lock_cents)
+- Prisma schema additions: `Pool` (id, name, kampungId, statedNeedText, statedNeedCategory, targetBudgetCents, combinedCapCents, state), `PoolMember` (poolId, userId, joinedAt, individualAllowanceAtLockCents)
+- Migration: `pnpm --filter db migrate`
 - Routes:
   - `POST /api/pools` — create pool (initiator becomes member 1)
   - `POST /api/pools/:id/invite` — generate 8-char code (nanoid), valid until pool full or initiator closes
@@ -101,12 +98,12 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Goal:** A locked pool gets ranked item suggestions from the MyKasih catalogue, in BM, grounded in the pool's combined cap and stated need.
 
 **Backend**
-- Schema additions: `mykasih_catalogue` (id, name_bm, name_en, category, price_cents, image_url, description_bm) — seeded with ~30 items (rice 100kg, cooking oil 12L, generator 2.5kVA, sewing machine, school supply pack, agricultural sprayer, water filter, basic stove, knapsack sprayer, chainsaw, etc.)
-- Schema additions: `pool_suggestions` (pool_id, suggested_at, items_json — array of suggestion objects)
-- Migration: seed catalogue from a seed file
+- Prisma schema additions: `MykasihProduct` (id, nameBm, nameEn, category, priceCents, imageUrl, descriptionBm) — **94 products already seeded** across 8 categories (rice, cooking oil, generators, sewing machines, school supplies, agricultural tools, water filters, appliances)
+- Prisma schema additions: `PoolSuggestion` (poolId, suggestedAt, itemsJson)
+- Migration: `pnpm --filter db migrate` (catalogue seed runs as part of migration)
 - Routes:
   - `GET /api/catalogue` — list catalogue items (with category filter)
-  - `POST /api/penasihat/suggest` — body `{ poolId }`; backend assembles pool context (cap, stated need, current month for seasonal); calls Claude API with structured-output prompt; returns top 5 items with BM reasoning + allocation%; caches result on `pool_suggestions` for 30 min
+  - `POST /api/penasihat/suggest` — body `{ poolId }`; backend assembles pool context (cap, stated need, current month for seasonal); calls Claude API with structured-output prompt; returns top 5 items with BM reasoning + allocation%; caches result on `PoolSuggestion` for 30 min
 
 **Frontend**
 - On locked pool detail: "Cadangkan barang" button → calls suggest endpoint
@@ -128,9 +125,8 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Goal:** Pool members vote on the suggested item; majority triggers simulated TNG PayLater approval; purchase commits.
 
 **Backend**
-- Schema additions: `pool_votes` (pool_id, user_id, suggestion_item_id, vote `yes | no`, voted_at)
-- Schema additions: `pool_transactions` (id, pool_id, item_id, total_amount_cents, approved_at, delivered_at)
-- Schema additions: `paylater_obligations` (id, transaction_id, user_id, share_amount_cents, share_pct)
+- Prisma schema additions: `PoolVote` (poolId, userId, suggestionItemId, vote `YES | NO`, votedAt), `PoolTransaction` (id, poolId, itemId, totalAmountCents, approvedAt, deliveredAt), `PaylaterObligation` (id, transactionId, userId, shareAmountCents, sharePct)
+- Migration: `pnpm --filter db migrate`
 - Routes:
   - `POST /api/pools/:id/vote` — body `{ vote }`; one vote per member per voting cycle
   - On all members voted (or majority reached + 24h elapsed): backend tallies; if majority yes, transitions pool to `approved`, creates `pool_transactions` + `paylater_obligations` rows
@@ -160,8 +156,8 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Goal:** Members repay their monthly share; ledger reflects; kampung trust score updates.
 
 **Backend**
-- Schema additions: `repayments` (id, obligation_id, user_id, cycle_number, amount_cents, paid_at, tng_reference)
-- Schema additions: `kampung_trust_scores` (kampung_id, score, last_updated_at, signal_count)
+- Prisma schema additions: `Repayment` (id, obligationId, userId, cycleNumber, amountCents, paidAt, tngReference), `KampungTrustScore` (kampungId, score, lastUpdatedAt, signalCount)
+- Migration: `pnpm --filter db migrate`
 - Routes:
   - `POST /api/repayments/pay` — body `{ obligationId, cycleNumber }`; simulates TNG payment; creates repayments row; recalculates kampung trust
   - `GET /api/pools/:id/ledger` — append-only repayment log (pool members + cycles + status)
@@ -197,7 +193,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 - Calls `services/nadi-summary.ts` → Claude API with structured-output prompt
 - Output JSON: `{ headline_bm, observations_bm: string[], anomalies_bm: string[], suggestion_bm }`
 - Anomaly detection: clusters of 3+ late payments same week → flagged as kampung-distress signal
-- Logged to `nadi_summaries` table (audit + provider observability)
+- Logged to `NadiSummary` table (audit + provider observability)
 
 **Frontend**
 - NADI portal `/nadi/dashboard`: "Ringkasan Minggu" card showing the AI-generated summary
@@ -263,8 +259,8 @@ If by Sunday 14:00 Phase 5 isn't done:
 The following will trigger Kairu's Tangga Hidup to crack on contact:
 
 - "Backend in Phase X, frontend in Phase X+1"
-- "useEffect for data fetching"
-- "as any" type casts
+- `useEffect` for data fetching (use TanStack Query)
+- `as any` type casts
 - "We'll add migrations later"
 - "Just disable Better Auth for now to ship"
 - "We'll handle errors in Phase 7"
@@ -289,4 +285,4 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 
 Update this table as phases complete. Symbols: ⏳ pending · 🟡 in progress · ✅ done · ⚠️ blocked.
 
-Phase advancement gated by `/maji-gate` (Kairu's ladder). Testable outcome must pass on a machine other than the author's. See [maji-core/protocols/phase-gate.md](./maji-core/protocols/phase-gate.md).
+Phase advancement gated by `/maji-gate` (Kairu's ladder). Testable outcome must pass on a machine other than the author's. See [maji-core/protocols/phase-gate.md](../../maji-core/protocols/phase-gate.md).
