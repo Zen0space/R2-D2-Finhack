@@ -4,7 +4,7 @@
 **Duration:** 48 hours (25-26 April 2026)
 **Deploy target:** Single EC2 instance (t3.medium · ap-southeast-1)
 **Sponsor credits:** AWS · Alibaba Cloud
-**Last updated:** Imperial Day 499 (2026-04-25)
+**Last updated:** Imperial Day 499 (2026-04-25) · pnpm-workspace + Prisma + PWA-first revision
 
 ---
 
@@ -13,14 +13,16 @@
 | Layer | Count | Category |
 |---|---|---|
 | Core mandated (TNG) | 5 | Runtime · Language · DB · Storage · Auth |
-| Backend critical | 12 | Framework · ORM · Validation · SDKs |
+| Monorepo tooling | 2 | pnpm · `packages/db` workspace pkg |
+| Backend critical | 12 | Framework · Prisma · Validation · SDKs |
 | Backend recommended | 8 | Scheduled jobs · Logging · Utilities |
 | Frontend critical | 11 | Framework · Styling · Data · Forms |
 | Frontend recommended | 7 | Viz · Animation · QR · Toasts |
+| **PWA (primary deliverable)** | **5** | Serwist · manifest · icons · offline · install-prompt |
 | Infrastructure | 8 | Docker · Caddy · EC2 · DNS · S3 |
 | Optional / monitoring | 6 | Sentry · Vitest · CI · CloudWatch |
 | Demo assets | 3 | OBS · Canva · Figma |
-| **TOTAL** | **60** | Full stack |
+| **TOTAL** | **67** | Full stack |
 
 ---
 
@@ -30,11 +32,102 @@ Locked by organizer. Non-negotiable.
 
 | # | Tech | Version | Role |
 |---|---|---|---|
-| 1 | Node.js | 20.x LTS | Runtime |
-| 2 | TypeScript | 5.4+ | Language |
-| 3 | PostgreSQL | 16.x | Primary database |
+| 1 | Node.js | 22.x LTS | Runtime (Active LTS as of 2026) |
+| 2 | TypeScript | 5.7+ | Language |
+| 3 | PostgreSQL | 17.x | Primary database |
 | 4 | AWS S3 | — | Object storage |
 | 5 | Better Auth | latest | Authentication |
+
+---
+
+## Section 0.5 — Monorepo Layout (pnpm Workspace)
+
+Single repo, three workspace packages — layout inherited from the existing scaffold (`README.md`). **pnpm** chosen for content-addressable store, strict dep resolution (no phantom deps), and `workspace:*` protocol so backend and frontend both consume the Prisma client + zod schemas from `packages/db`.
+
+### Layout
+
+```
+R2-D2-Finhack/
+├── package.json           # workspace root (private, scripts only)
+├── pnpm-workspace.yaml    # workspace declarations
+├── pnpm-lock.yaml         # single lockfile for entire repo
+├── .npmrc                 # node-linker=hoisted if Next.js needs it
+└── packages/
+    ├── backend/           # Hono API (Node 22)
+    │   ├── package.json
+    │   └── src/
+    ├── frontend/          # Next.js 15 App Router · PWA target
+    │   ├── package.json
+    │   ├── public/
+    │   │   ├── manifest.webmanifest
+    │   │   └── icons/        # 192, 512, maskable
+    │   └── src/
+    └── db/                # Prisma schema · migrations · generated client · zod types
+        ├── package.json
+        ├── prisma/
+        │   ├── schema.prisma
+        │   └── migrations/
+        └── src/
+            └── index.ts      # re-exports PrismaClient + generated zod
+```
+
+Package names (per `README.md`): `backend`, `frontend`, `db`. Filtered as `pnpm --filter db migrate`, etc.
+
+### Root files
+
+**`pnpm-workspace.yaml`:**
+```yaml
+packages:
+  - 'packages/*'
+```
+
+**Root `package.json`:**
+```json
+{
+  "name": "r2-d2-finhack",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter './packages/{backend,frontend}' dev",
+    "build": "pnpm --filter db generate && pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "pnpm --filter db generate",
+    "db:migrate": "pnpm --filter db migrate",
+    "db:migrate:new": "pnpm --filter db migrate:new",
+    "db:studio": "pnpm --filter db studio"
+  }
+}
+```
+
+**`.npmrc` (if Next.js plugin resolution misbehaves with hoisting):**
+```
+node-linker=hoisted
+strict-peer-dependencies=false
+auto-install-peers=true
+```
+
+### Workspace dep wiring
+
+`backend` and `frontend` both depend on `db` via the `workspace:*` protocol — pnpm symlinks it locally:
+
+```json
+// packages/backend/package.json
+"dependencies": {
+  "db": "workspace:*"
+}
+
+// packages/frontend/package.json
+"dependencies": {
+  "db": "workspace:*"
+}
+```
+
+This gives one source of truth for: Prisma schema → generated client (used by backend) → generated zod schemas (used by both for validation) → inferred TS types (used by frontend forms + RQ).
 
 ---
 
@@ -44,79 +137,86 @@ Locked by organizer. Non-negotiable.
 
 | Package | Version | Role | Why |
 |---|---|---|---|
-| `hono` | ^4.x | HTTP framework | Fastest modern TS framework, middleware-first, minimal bloat |
-| `@hono/node-server` | ^1.x | Node adapter | Runs Hono on Node runtime |
-| `tsx` | ^4.x | Dev TS runner | Zero-config TS execution in dev |
-| `typescript` | ^5.4 | Type system | Strict mode mandatory |
+| `hono` | ^4.6 | HTTP framework | Fastest modern TS framework, middleware-first, minimal bloat |
+| `@hono/node-server` | ^1.13 | Node adapter | Runs Hono on Node runtime |
+| `tsx` | ^4.19 | Dev TS runner | Zero-config TS execution in dev |
+| `typescript` | ^5.7 | Type system | Strict mode mandatory |
 
-### 1.2 Database & ORM
+### 1.2 Database & ORM (Prisma — lives in `packages/db`)
 
-| Package | Version | Role |
-|---|---|---|
-| `pg` | ^8.x | Postgres driver (shared with Better Auth) |
-| `drizzle-orm` | ^0.33+ | TypeScript-first ORM |
-| `drizzle-kit` | ^0.24+ | Migration generator + studio (dev only) |
-| `drizzle-zod` | latest | Bridge: Drizzle schema ↔ zod schema (shared FE/BE types) |
+| Package | Version | Workspace | Role |
+|---|---|---|---|
+| `prisma` | ^6.1 | db (devDep) | CLI: schema, migrate, generate, studio |
+| `@prisma/client` | ^6.1 | db (dep) | Generated type-safe client (re-exported to backend) |
+| `zod-prisma-types` | ^3.2 | db (devDep) | Generator: emits zod schemas alongside Prisma client (`prisma generate` produces both) |
+| `pg` | ^8.13 | backend | Raw driver — only needed because Better Auth uses node-postgres directly |
+
+**Why Prisma over Drizzle for this project:**
+- Single declarative schema file (`schema.prisma`) — easier handoff between Mung, Mahir, Kinetic during 48h crunch
+- `prisma migrate dev` workflow is more forgiving than hand-edited SQL migrations
+- Prisma Studio gives judges a visible "ledger inspector" during demo
+- Better Auth ships a first-class Prisma adapter (Section 7.2)
 
 ### 1.3 Validation & Environment
 
 | Package | Version | Role |
 |---|---|---|
-| `zod` | ^3.23+ | Request/response validation · shared schemas |
-| `@t3-oss/env-core` | latest | Runtime env-var validation (fail fast on missing vars) |
-| `dotenv` | ^16.x | Load `.env` files (dev only) |
+| `zod` | ^3.23 | Request/response validation · forms · shared (auto-generated from Prisma via `zod-prisma-types`) |
+| `@t3-oss/env-core` | ^0.11 | Runtime env-var validation (fail fast on missing vars) |
+| `dotenv` | ^16.4 | Load `.env` files (dev only) |
 
 ### 1.4 Authentication
 
 | Package | Version | Role |
 |---|---|---|
-| `better-auth` | ^1.x | Auth library (runs inside app, not separate service) |
-| `argon2` or `bcryptjs` | — | Password hashing (Better Auth peer) |
+| `better-auth` | ^1.1 | Auth library (runs inside app, not separate service) — uses **Prisma adapter** |
+| `argon2` | ^0.41 | Password hashing (Better Auth peer) |
 
 ### 1.5 AWS S3
 
 | Package | Version | Role |
 |---|---|---|
-| `@aws-sdk/client-s3` | ^3.x | S3 SDK v3 (modular) |
-| `@aws-sdk/s3-request-presigner` | ^3.x | Presigned URL generator (direct-upload pattern) |
+| `@aws-sdk/client-s3` | ^3.700 | S3 SDK v3 (modular) |
+| `@aws-sdk/s3-request-presigner` | ^3.700 | Presigned URL generator (direct-upload pattern) |
 
 ### 1.6 AI — Claude (Penasihat)
 
 | Package | Version | Role |
 |---|---|---|
-| `@anthropic-ai/sdk` | ^0.27+ | Claude API client (streaming + non-streaming) |
+| `@anthropic-ai/sdk` | ^0.32 | Claude API client (streaming + non-streaming) |
 
 ### 1.7 Utilities — Scheduled jobs, dates, IDs, money
 
 | Package | Version | Role |
 |---|---|---|
-| `node-cron` | ^3.x | Monthly rotation triggers (core Kutu feature) |
-| `date-fns` | ^3.x | Date arithmetic (rotation schedules, countdowns) |
-| `nanoid` | ^5.x | Short secure IDs + invite codes (`KT-A1B2C3`) |
-| `dinero.js` (optional) | ^2.x | Money math — or stick to integer cents approach |
+| `node-cron` | ^3.0 | Monthly rotation triggers (core Kutu feature) |
+| `date-fns` | ^4.1 | Date arithmetic (v4 — built-in TZ support) |
+| `nanoid` | ^5.0 | Short secure IDs + invite codes (`KT-A1B2C3`) |
+| `dinero.js` (optional) | ^2.0 | Money math — or stick to integer cents approach |
 
 ### 1.8 Logging & Observability
 
 | Package | Version | Role |
 |---|---|---|
-| `pino` | ^9.x | Structured JSON logging (fast) |
-| `pino-pretty` | ^11.x | Dev console formatter for readable logs |
-| `hono-pino` (community) | latest | Hono → pino middleware integration |
+| `pino` | ^9.5 | Structured JSON logging (fast) |
+| `pino-pretty` | ^13.0 | Dev console formatter for readable logs |
+| `hono-pino` | ^0.7 | Hono → pino middleware integration |
 
 ### 1.9 Security
 
 | Package | Version | Role |
 |---|---|---|
 | `hono/cors` | (built-in) | CORS middleware (only if Pattern B subdomain split) |
-| `hono-rate-limiter` | latest | API rate limiting (public endpoints) |
-| `helmet` (if on Express) OR Hono secure headers middleware | — | Security headers (CSP, X-Frame-Options, etc) |
+| `hono-rate-limiter` | ^0.4 | API rate limiting (public endpoints) |
+| `hono/secure-headers` | (built-in) | CSP, X-Frame-Options, HSTS, etc |
 
 ### 1.10 TNG eWallet Integration
 
 | Package | Version | Role |
 |---|---|---|
-| Native `fetch` OR `undici` | — | HTTP client for TNG sandbox API |
-| `jose` | ^5.x | JWT/JWS signing if TNG uses signed requests |
+| Native `fetch` (Node 22) | — | HTTP client for TNG sandbox API |
+| `undici` | ^6.21 | Lower-level HTTP if streaming/pooling needed |
+| `jose` | ^5.9 | JWT/JWS signing if TNG uses signed requests |
 
 *Confirm TNG SDK existence Saturday pagi at sponsor booth. If they provide an SDK, use theirs. If not, native fetch + their documented auth header pattern.*
 
@@ -124,10 +224,10 @@ Locked by organizer. Non-negotiable.
 
 | Package | Version | Role |
 |---|---|---|
-| `vitest` | ^2.x | Test runner |
-| `@vitest/ui` | ^2.x | Test UI |
-| `supertest` | ^7.x | HTTP endpoint testing |
-| `msw` | ^2.x | Mock external APIs in tests |
+| `vitest` | ^2.1 | Test runner |
+| `@vitest/ui` | ^2.1 | Test UI |
+| `supertest` | ^7.0 | HTTP endpoint testing |
+| `msw` | ^2.6 | Mock external APIs in tests |
 
 *Skip unless team has dedicated time. Hackathon QA = manual testing + Sahih's triple-prism.*
 
@@ -135,12 +235,12 @@ Locked by organizer. Non-negotiable.
 
 | Package | Version | Role |
 |---|---|---|
-| `eslint` | ^9.x | Linter (flat config) |
-| `@typescript-eslint/eslint-plugin` | latest | TS-aware lint rules |
-| `prettier` | ^3.x | Formatter |
-| `@types/node` | ^20.x | Node type definitions |
-| `@types/pg` | latest | pg type definitions |
-| `@types/node-cron` | latest | node-cron types |
+| `eslint` | ^9.16 | Linter (flat config) |
+| `typescript-eslint` | ^8.18 | TS-aware lint rules (unified package, replaces split plugin/parser) |
+| `prettier` | ^3.4 | Formatter |
+| `@types/node` | ^22.10 | Node 22 type definitions |
+| `@types/pg` | ^8.11 | pg type definitions |
+| `@types/node-cron` | ^3.0 | node-cron types |
 
 ---
 
@@ -150,24 +250,24 @@ Locked by organizer. Non-negotiable.
 
 | Package | Version | Role |
 |---|---|---|
-| `next` | ^15.x | App Router framework · standalone output for Docker |
-| `react` | ^19.x | Bundled with Next |
-| `react-dom` | ^19.x | Bundled with Next |
+| `next` | ^15.1 | App Router framework · standalone output for Docker |
+| `react` | ^19.0 | Bundled with Next (stable Dec 2024) |
+| `react-dom` | ^19.0 | Bundled with Next |
 
 ### 2.2 Styling
 
 | Package | Version | Role |
 |---|---|---|
-| `tailwindcss` | ^4.x | Styling (new v4 engine) |
-| `@tailwindcss/postcss` | ^4.x | PostCSS plugin for v4 |
-| `tailwindcss-animate` | latest | Animation utilities (shadcn dependency) |
-| `class-variance-authority` | latest | Variant-based component styling |
-| `clsx` | latest | Conditional className joiner |
-| `tailwind-merge` | latest | Merge conflicting Tailwind classes |
+| `tailwindcss` | ^4.0 | Styling (Oxide engine — Rust-powered) |
+| `@tailwindcss/postcss` | ^4.0 | PostCSS plugin for v4 |
+| `tw-animate-css` | ^1.2 | Animation utilities (replaces deprecated `tailwindcss-animate` for v4) |
+| `class-variance-authority` | ^0.7 | Variant-based component styling |
+| `clsx` | ^2.1 | Conditional className joiner |
+| `tailwind-merge` | ^2.5 | Merge conflicting Tailwind classes |
 
 ### 2.3 Component Library — shadcn/ui
 
-**Not an npm install — copy-paste pattern via CLI:**
+**Not a pnpm install — copy-paste pattern via CLI (run from `packages/frontend`):**
 
 ```bash
 npx shadcn@latest init
@@ -185,62 +285,91 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 
 | Package | Version | Role |
 |---|---|---|
-| `lucide-react` | ^0.4x | Icon set (matches shadcn, clean stroke) |
+| `lucide-react` | ^0.469 | Icon set (matches shadcn, clean stroke) |
 
 ### 2.5 State & Data Fetching
 
 | Package | Version | Role |
 |---|---|---|
-| `@tanstack/react-query` | ^5.x | Server state · no useEffect for fetching |
-| `better-auth` + `better-auth/react` | ^1.x | Client auth hooks (same package as backend) |
-| `zustand` (optional) | ^4.x | Light client state (if needed beyond React state) |
+| `@tanstack/react-query` | ^5.62 | Server state · no useEffect for fetching |
+| `better-auth` | ^1.1 | Client auth hooks via `better-auth/react` (same package as backend) |
+| `zustand` (optional) | ^5.0 | Light client state (v5 — React 19 ready) |
 
 ### 2.6 Forms & Validation
 
 | Package | Version | Role |
 |---|---|---|
-| `react-hook-form` | ^7.x | Form state management |
-| `@hookform/resolvers` | ^3.x | zod adapter for react-hook-form |
-| `zod` | ^3.23+ | Shared schemas with backend |
+| `react-hook-form` | ^7.54 | Form state management |
+| `@hookform/resolvers` | ^3.9 | zod adapter for react-hook-form |
+| `zod` | ^3.23 | Shared schemas via `db` workspace (auto-generated from Prisma) |
 
 ### 2.7 Visualization & Animation
 
 | Package | Version | Role |
 |---|---|---|
-| `recharts` | ^2.x | Charts (ledger trends, trust-score history, rotation timeline) |
-| `framer-motion` | ^11.x | Micro-interactions (Akmal's craft · MatNep-approved restraint) |
-| `sonner` | ^1.x | Toast notifications (shadcn-compatible) |
+| `recharts` | ^2.15 | Charts (ledger trends, trust-score history, rotation timeline) |
+| `motion` | ^11.15 | Micro-interactions (rebrand of `framer-motion`; same API) |
+| `sonner` | ^1.7 | Toast notifications (shadcn-compatible) |
 
 ### 2.8 QR Codes & Invites
 
 | Package | Version | Role |
 |---|---|---|
-| `qrcode` | ^1.x | Server-side QR generation (invite PDFs etc) |
-| `react-qr-code` | ^2.x | Client-side QR display (invite screen) |
+| `qrcode` | ^1.5 | Server-side QR generation (invite PDFs etc) |
+| `react-qr-code` | ^2.0 | Client-side QR display (invite screen) |
 
 ### 2.9 Utilities
 
 | Package | Version | Role |
 |---|---|---|
-| `date-fns` | ^3.x | Display dates, relative time, countdowns |
-| `nanoid` | ^5.x | Client-side IDs if needed |
+| `date-fns` | ^4.1 | Display dates, relative time, countdowns |
+| `nanoid` | ^5.0 | Client-side IDs if needed |
 
-### 2.10 PWA (Optional for demo)
+### 2.10 PWA — **Primary deliverable** (not optional)
+
+Kutu Digitizer ships **as a PWA first**. The pitch story is "install on phone, run offline-tolerant, push install prompt during demo." This isn't a late add-on — it's a Day 1 scaffolding step in `packages/frontend`.
 
 | Package | Version | Role |
 |---|---|---|
-| `next-pwa` | ^5.x | Installable PWA wrapper (nice demo story) |
-| `workbox-*` | — | Service worker (bundled with next-pwa) |
+| `@serwist/next` | ^9.0 | Next.js plugin — wires service worker into App Router build |
+| `serwist` | ^9.0 | Service worker runtime (Workbox successor, TS-first) |
+| `@serwist/sw` | ^9.0 | Service-worker-side helpers (precaching, runtime caching) |
 
-*Add late — only if demo story benefits from "install to home screen."*
+**Required asset checklist (lives in `packages/frontend/public/`):**
+
+| Asset | Purpose |
+|---|---|
+| `manifest.webmanifest` | App metadata (name, theme_color, icons array, display: "standalone", start_url) |
+| `icons/icon-192.png` | Android home-screen icon |
+| `icons/icon-512.png` | Splash screen icon |
+| `icons/icon-maskable-512.png` | Android adaptive icon (safe zone) |
+| `icons/apple-touch-icon.png` | iOS home-screen icon (180×180) |
+| `app/offline/page.tsx` | Fallback page when service worker has no cache hit and network fails |
+
+**Caching strategy (configured in `app/sw.ts`):**
+
+| Route pattern | Strategy | Rationale |
+|---|---|---|
+| `/_next/static/*` | CacheFirst | Build-versioned, immutable |
+| `/api/auth/*` | NetworkOnly | Never cache auth |
+| `/api/tabung/*` | NetworkFirst (5s timeout → cache) | Show stale ledger if offline |
+| `/api/penasihat/chat` | NetworkOnly | LLM responses must be fresh |
+| Pages (`document` requests) | NetworkFirst with offline fallback | Graceful degradation |
+| `/icons/*`, fonts | CacheFirst | Static assets |
+
+**Install prompt UX:**
+- Capture `beforeinstallprompt` event in a client component, stash to zustand
+- Surface custom "Pasang Kutu" button after first successful tabung action (intent signal)
+- iOS doesn't fire `beforeinstallprompt` — show "Add to Home Screen" instructions in a `<Sheet>` triggered by user-agent sniff
+
+**Demo script:** judge clicks install button → app opens standalone → kill wifi → app still loads cached tabung → reconnect → ledger syncs. Three-beat narrative.
 
 ### 2.11 Dev Tooling (Frontend)
 
 | Package | Version | Role |
 |---|---|---|
-| `@next/eslint-plugin-next` | latest | Next.js lint rules |
-| `eslint-config-next` | ^15.x | Next.js ESLint preset |
-| `prettier-plugin-tailwindcss` | latest | Auto-sort Tailwind classes |
+| `eslint-config-next` | ^15.1 | Next.js ESLint preset (includes `@next/eslint-plugin-next`) |
+| `prettier-plugin-tailwindcss` | ^0.6 | Auto-sort Tailwind classes |
 
 ---
 
@@ -338,27 +467,90 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 
 ## Section 7 — Integration Patterns
 
-### 7.1 Shared zod schemas (FE ↔ BE)
+### 7.1 Single source of truth — `packages/db` (Prisma + zod)
 
 ```
-backend/src/schemas/tabung.ts  ──┐
-                                 │
-                           shared zod schemas
-                                 │
-frontend/src/schemas/tabung.ts ──┘  (copy or git submodule)
+packages/db/prisma/schema.prisma  ──┐
+                                    │
+                         prisma generate
+                                    │
+              ┌─────────────────────┴─────────────────────┐
+              ▼                                           ▼
+       @prisma/client (TS types + runtime)      generated zod schemas
+                                                (via zod-prisma-types)
+                                    │
+              ┌─────────────────────┴─────────────────────┐
+              ▼                                           ▼
+packages/backend (Hono routes,             packages/frontend (RHF + RQ,
+ Prisma queries, zod request validation)    zod inferred types for forms)
+  import { prisma, schemas } from "db"       import { schemas, type Tabung } from "db"
 ```
 
-Alternative: use `drizzle-zod` to auto-generate zod schemas from Drizzle models, then manually sync to frontend. For 48h: just copy schemas between repos.
+**`packages/db/prisma/schema.prisma` (excerpt):**
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
 
-### 7.2 Better Auth ↔ Drizzle
+generator zod {
+  provider = "zod-prisma-types"
+  output   = "../src/generated/zod"
+  createInputTypes      = true
+  addInputTypeValidation = true
+}
 
-Better Auth needs:
-- `users` table (auto-generated by Better Auth schema)
-- `sessions` table
-- `accounts` table (for OAuth, optional)
-- `verification` table (for email OTP, optional)
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
 
-Add via Drizzle migration. Better Auth provides the SQL.
+**`packages/db/src/index.ts`:**
+```typescript
+export { PrismaClient } from "@prisma/client";
+export * as schemas from "./generated/zod";
+export * from "@prisma/client"; // re-export model types
+import { PrismaClient } from "@prisma/client";
+export const prisma = new PrismaClient();
+```
+
+**`packages/db/package.json` scripts:**
+```json
+{
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate": "prisma migrate deploy",
+    "migrate:new": "prisma migrate dev",
+    "studio": "prisma studio"
+  }
+}
+```
+
+One source of truth — no copy/sync. Schema change → `pnpm db:generate` → both packages pick up new types and zod validators on next tsc.
+
+### 7.2 Better Auth ↔ Prisma adapter
+
+Better Auth ships an official Prisma adapter. Wiring:
+
+```typescript
+// packages/backend/src/auth.ts
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prisma } from "db";
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  emailAndPassword: { enabled: true },
+});
+```
+
+Better Auth needs these models in `schema.prisma`:
+- `User` — auto-created identity record
+- `Session` — active sessions
+- `Account` — OAuth provider links (optional)
+- `Verification` — email OTP / reset tokens (optional)
+
+**Bootstrap path:** run `pnpm dlx @better-auth/cli generate --output packages/db/prisma/schema.prisma` — it appends the required models, then `pnpm db:migrate:new -- --name add_better_auth` creates the migration.
 
 ### 7.3 S3 presigned upload flow
 
@@ -367,10 +559,13 @@ Backend endpoint generates presigned URL → frontend uploads directly to S3 →
 ### 7.4 Cron trigger pattern (monthly rotations)
 
 ```typescript
-// src/jobs/rotation.ts
-cron.schedule('0 9 1 * *', async () => {  // 09:00 on 1st of every month
-  const dueTabung = await db.query.tabung.findMany({
-    where: (t, { eq }) => eq(t.status, 'ACTIVE'),
+// packages/backend/src/jobs/rotation.ts
+import cron from "node-cron";
+import { prisma } from "db";
+
+cron.schedule("0 9 1 * *", async () => {  // 09:00 on 1st of every month
+  const dueTabung = await prisma.tabung.findMany({
+    where: { status: "ACTIVE" },
   });
   for (const t of dueTabung) await processRotation(t.id);
 });
@@ -437,13 +632,20 @@ NEXT_PUBLIC_SENTRY_DSN=<optional>
 
 ## Section 9 — Version Locks & Compatibility Notes
 
-- **Node 20 LTS (not 22)** — Better Auth + some AWS SDK v3 packages have edge cases on 22 as of Apr 2026
-- **Postgres 16 (not 17)** — Drizzle-kit migration stability; 17 shipped Sep 2024 but driver ecosystem lags 6 months
-- **Next.js 15 App Router (not Pages)** — all new Next docs assume App Router; Pages Router is legacy
-- **Tailwind v4 (not v3)** — v4 is the current; config moves from `tailwind.config.js` to CSS `@theme` blocks
-- **React 19 (stable)** — use Actions + `use()` hook for async boundaries
-- **TypeScript strict mode** — `"strict": true` in tsconfig for both repos
-- **Drizzle ORM only** — don't mix Prisma; pick one ORM
+- **Node 22 LTS** — current Active LTS (since Oct 2024). Native `fetch`, `--watch`, built-in `.env` loading, stable WebStreams. No 23/24 in prod.
+- **Postgres 17** — current stable (since Sep 2024). Drizzle 0.36+ + `pg` 8.13+ both fully compatible.
+- **pnpm 9.x** — workspace + `workspace:*` protocol. Pin via `packageManager` field in root `package.json` so all team members + CI use identical version.
+- **Next.js 15 App Router (not Pages)** — caching defaults flipped to opt-in; React 19 RC built in; turbopack dev stable. Pages Router is legacy.
+- **Tailwind v4 (not v3)** — Oxide engine; config moves from `tailwind.config.js` to CSS `@theme` blocks; `@import "tailwindcss"` replaces the three `@tailwind` directives.
+- **React 19 (stable Dec 2024)** — use Actions, `useActionState`, `useOptimistic`, and the `use()` hook for async boundaries. No more `forwardRef` (ref is a regular prop).
+- **date-fns v4 (not v3)** — adds first-class IANA timezone support without `date-fns-tz` peer dep.
+- **`motion` (not `framer-motion`)** — same API, official rebrand. Existing `framer-motion` imports keep working but new code uses `motion`.
+- **TypeScript strict mode** — `"strict": true` + `"noUncheckedIndexedAccess": true` in tsconfig for all workspaces.
+- **ESLint flat config** — `eslint.config.js` only; legacy `.eslintrc` is dead.
+- **Prisma 6 only** — no Drizzle anywhere. Schema in `packages/db/prisma/schema.prisma`. Generated client + zod ship from `db` workspace.
+- **PWA on Day 1** — `@serwist/next` plugin, `manifest.webmanifest`, and icon set committed in the first frontend scaffold pass. Don't defer service worker config to Sunday.
+- **Single lockfile** — only `pnpm-lock.yaml` at repo root. No nested lockfiles in `packages/*`.
+- **`packages/db` is a build dependency** — every CI step and Docker build must run `pnpm --filter db generate` before backend/frontend `tsc`.
 
 ---
 
@@ -453,11 +655,11 @@ From the Pusat Tabung roster:
 
 | Hero | Primary stack components |
 |---|---|
-| **Mung** (Backend · Foundation-Keeper) | Hono · Drizzle · pg · Better Auth · AWS SDK · pino · node-cron · zod |
-| **Akmal** (Frontend · Surface-Weaver) | Next.js · React · TanStack Query · react-hook-form · framer-motion · sonner · lucide-react |
+| **Mung** (Backend · Foundation-Keeper) | Hono · Prisma (`packages/db`) · Better Auth · AWS SDK · pino · node-cron · zod |
+| **Akmal** (Frontend · Surface-Weaver) | Next.js · React · TanStack Query · react-hook-form · motion · sonner · lucide-react · **@serwist/next (PWA)** |
 | **MatNep** (Design · Orthodox Eye) | Tailwind v4 · shadcn/ui · typography + grid + heritage motifs |
 | **Reka** (Design System · Rules) | shadcn/ui composition · WCAG audit · token architecture |
-| **Vizion** (UI/UX · Layout) | Recharts · framer-motion · layout composition |
+| **Vizion** (UI/UX · Layout) | Recharts · motion · layout composition |
 | **Kairu** (PM · Phase Cartographer) | `development/*.md` files · phase-plan skill · Testable Outcome gate |
 | **Sahih** (QA · Triple Prism) | tsc · curl smoke tests · zod validation · preflight gate |
 | **Akal** (Doctrine · Four Pillars) | CLAUDE.md · discipline gate before commits |
@@ -465,82 +667,157 @@ From the Pusat Tabung roster:
 | **Mahir** (API · Artisan) | TNG eWallet SDK · webhook plumbing · idempotency |
 | **Jimat** (Token Economy) | API token budgeting · Claude/OpenAI cost tracking |
 | **Tutur** (i18n · BM register) | BM copy · AI Penasihat voice prompting |
-| **Kinetic** (Data Integrity · Floating Abacus) | Ledger audit · rotation math verification |
+| **Kinetic** (Data Integrity · Floating Abacus) | Ledger audit · rotation math · Prisma transaction guards |
 | **Nadia** (Refactor · Hygiene) | Second-pass cleanup before pitch |
 | **Adam** (Supervisor · Remote) | Async code review · design direction passes |
 | **Ijam** (Sovereign) | Business Pitch · product vision · 4-min voice |
 
 ---
 
-## Section 11 — Package Install Commands (Reference — don't run yet)
+## Section 11 — Package Install Commands (pnpm Workspace — reference, don't run yet)
 
-### Backend — complete
+All commands run from the **repo root** unless noted. The `--filter <name>` flag scopes installs to a single workspace package.
+
+### 11.1 One-time workspace bootstrap
+
+```bash
+# Install pnpm via corepack (recommended on Node 22)
+corepack enable
+corepack prepare pnpm@9.15.0 --activate
+
+# Workspace layout matches the existing README scaffold:
+#   packages/backend · packages/frontend · packages/db
+mkdir -p packages
+
+# Frontend scaffold (use pnpm flag so create-next-app emits pnpm lockfile entries)
+pnpm dlx create-next-app@latest packages/frontend \
+  --typescript --tailwind --app --src-dir \
+  --import-alias "@/*" --use-pnpm --no-git
+
+# Backend skeleton
+mkdir -p packages/backend/src && cd packages/backend && pnpm init && cd ../..
+
+# DB package skeleton (Prisma lives here)
+mkdir -p packages/db/src && cd packages/db && pnpm init && cd ../..
+# Edit packages/db/package.json: "name": "db", "main": "./src/index.ts"
+```
+
+### 11.2 `packages/db` — Prisma + zod generator
+
+```bash
+# Prisma toolchain
+pnpm --filter db add @prisma/client
+pnpm --filter db add -D prisma zod-prisma-types typescript
+
+# Init schema + datasource (creates packages/db/prisma/schema.prisma + .env)
+cd packages/db
+pnpm dlx prisma init --datasource-provider postgresql
+# Edit schema.prisma: add `generator zod { provider = "zod-prisma-types" ... }`
+# Append Better Auth models via:  pnpm dlx @better-auth/cli generate --output prisma/schema.prisma
+cd ../..
+
+# Generate client + zod schemas (re-run after every schema edit)
+pnpm db:generate
+
+# Create first migration once schema is drafted
+pnpm db:migrate:new -- --name init
+```
+
+### 11.3 `packages/backend` — complete
 
 ```bash
 # Core + TNG critical
-npm i hono @hono/node-server \
-      better-auth argon2 \
-      drizzle-orm drizzle-zod pg \
-      zod @t3-oss/env-core dotenv \
-      @aws-sdk/client-s3 @aws-sdk/s3-request-presigner \
-      @anthropic-ai/sdk
+pnpm --filter backend add \
+  hono @hono/node-server \
+  better-auth argon2 pg \
+  zod @t3-oss/env-core dotenv \
+  @aws-sdk/client-s3 @aws-sdk/s3-request-presigner \
+  @anthropic-ai/sdk
+
+# Workspace dependency on Prisma client + zod schemas
+pnpm --filter backend add db@workspace:*
 
 # Utilities + scheduled
-npm i node-cron date-fns nanoid pino pino-pretty
+pnpm --filter backend add node-cron date-fns nanoid pino pino-pretty hono-pino
 
 # Security
-npm i hono-rate-limiter jose
+pnpm --filter backend add hono-rate-limiter jose
 
-# HTTP client for TNG sandbox
-npm i undici
+# HTTP client for TNG sandbox (Node 22 fetch covers most cases; undici for streaming/pooling)
+pnpm --filter backend add undici
 
 # Optional monitoring
-npm i @sentry/node
+pnpm --filter backend add @sentry/node
 
 # Dev tooling
-npm i -D typescript tsx drizzle-kit eslint prettier \
-         @typescript-eslint/eslint-plugin \
-         @types/node @types/pg @types/node-cron
+pnpm --filter backend add -D \
+  typescript tsx \
+  eslint typescript-eslint prettier \
+  @types/node @types/pg @types/node-cron
 
 # Optional testing
-npm i -D vitest @vitest/ui supertest msw
+pnpm --filter backend add -D vitest @vitest/ui supertest msw
 ```
 
-### Frontend — complete
+### 11.4 `packages/frontend` — complete (PWA-first)
 
 ```bash
-# Framework (via CLI — creates scaffold)
-npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias "@/*"
-
 # Core libraries
-npm i better-auth \
-      @tanstack/react-query \
-      react-hook-form @hookform/resolvers zod \
-      lucide-react framer-motion sonner recharts \
-      date-fns nanoid \
-      qrcode react-qr-code
+pnpm --filter frontend add \
+  better-auth \
+  @tanstack/react-query \
+  react-hook-form @hookform/resolvers zod \
+  lucide-react motion sonner recharts \
+  date-fns nanoid \
+  qrcode react-qr-code zustand
 
-# Utilities
-npm i clsx tailwind-merge class-variance-authority tailwindcss-animate
+# Tailwind v4 + shadcn helper deps
+pnpm --filter frontend add \
+  clsx tailwind-merge class-variance-authority tw-animate-css
 
-# Optional: PWA
-npm i next-pwa
+# PWA — primary deliverable, install Day 1
+pnpm --filter frontend add @serwist/next serwist
+pnpm --filter frontend add -D @serwist/sw
+
+# Workspace dep on Prisma-generated types + zod schemas
+pnpm --filter frontend add db@workspace:*
 
 # Optional: monitoring
-npm i @sentry/nextjs
-
-# Optional: client state
-npm i zustand
+pnpm --filter frontend add @sentry/nextjs
 
 # Dev tooling
-npm i -D prettier prettier-plugin-tailwindcss \
-         @types/qrcode
+pnpm --filter frontend add -D \
+  prettier prettier-plugin-tailwindcss \
+  @types/qrcode
 
-# shadcn/ui components (installed via their CLI, not npm)
-npx shadcn@latest init
-npx shadcn@latest add button input form label card dialog dropdown-menu \
-                      select checkbox radio-group switch textarea \
-                      avatar badge tabs sheet separator toast
+# shadcn/ui components — must run from inside packages/frontend
+cd packages/frontend
+pnpm dlx shadcn@latest init
+pnpm dlx shadcn@latest add button input form label card dialog dropdown-menu \
+  select checkbox radio-group switch textarea \
+  avatar badge tabs sheet separator sonner
+
+# PWA scaffolding — drop service worker entry + manifest
+mkdir -p src/app/offline public/icons
+# Create app/sw.ts (Serwist entry), app/offline/page.tsx, public/manifest.webmanifest
+# Wire @serwist/next plugin in next.config.mjs
+cd ../..
+```
+
+### 11.5 Daily commands (from repo root)
+
+```bash
+pnpm install                       # install/refresh all workspaces
+pnpm dev                           # runs backend + frontend in parallel
+pnpm build                         # prisma generate → tsc → next build (all workspaces)
+pnpm typecheck                     # tsc --noEmit across all workspaces
+pnpm db:generate                   # regen Prisma client + zod after schema edit
+pnpm db:migrate:new -- --name <x>  # author a new migration
+pnpm db:migrate                    # apply migrations (prod / EC2)
+pnpm db:studio                     # Prisma Studio (judges' demo prop)
+pnpm --filter backend test         # scope to a single workspace
+pnpm --filter frontend add <pkg>   # add dep to one workspace
+pnpm -w add -D <pkg>               # add dep to root only
 ```
 
 ---
@@ -549,9 +826,11 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 
 | Capability | Covered by | Status |
 |---|---|---|
+| Monorepo / package manager | pnpm 9 + workspace | ✅ |
+| Shared FE↔BE types & schemas | `packages/db` (Prisma + zod-prisma-types) | ✅ |
 | HTTP request handling | Hono + @hono/node-server | ✅ |
-| Database persistence | Drizzle + pg + Postgres | ✅ |
-| Migrations | drizzle-kit | ✅ |
+| Database persistence | Prisma 6 + @prisma/client + Postgres 17 | ✅ |
+| Migrations | `prisma migrate` | ✅ |
 | User authentication | Better Auth | ✅ |
 | Session management | Better Auth | ✅ |
 | Password hashing | argon2 | ✅ |
@@ -573,7 +852,7 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 | Server state | TanStack Query v5 | ✅ |
 | Toast notifications | sonner | ✅ |
 | Charts | recharts | ✅ |
-| Animations | framer-motion | ✅ |
+| Animations | motion (formerly framer-motion) | ✅ |
 | Reverse proxy + SSL | Caddy 2 | ✅ |
 | Containerization | Docker + docker-compose | ✅ |
 | Object storage | AWS S3 | ✅ |
@@ -581,9 +860,9 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 | Public DNS | Custom domain + A record | ✅ |
 | Error tracking (optional) | Sentry | ✅ |
 | Testing framework (optional) | Vitest | ✅ |
-| Installable PWA (optional) | next-pwa | ✅ |
+| **Installable PWA (primary)** | @serwist/next + manifest + icons + offline page | ✅ |
 
-**No capability gap identified.** Stack is complete for shipping Kutu Digitizer MVP in 48 hours.
+**No capability gap identified.** Stack is complete for shipping Kutu Digitizer **as an installable PWA** in 48 hours.
 
 ---
 
@@ -609,7 +888,7 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 
 ## Section 14 — Quest Ritual Before Stack Activation
 
-Per Kairu's phase-plan discipline — before a single `npm install` fires:
+Per Kairu's phase-plan discipline — before a single `pnpm install` fires:
 
 1. **Akal's four pillars check** — THINK · SIMPLE · SURGICAL · VERIFY
 2. **Kairu's Phase 1 testable outcome defined** — *"Register via Better Auth → create tabung → persisted in Postgres → visible on reload"*
@@ -620,4 +899,4 @@ Only then does the shopping list get installed.
 
 ---
 
-*End of tech-stack manifest. Canonical seal: pusat-tabung | tech-stack | day-499 | 60-item-inventory*
+*End of tech-stack manifest. Canonical seal: pusat-tabung | tech-stack | day-499 | 67-item-inventory | pnpm-workspace | prisma-orm | pwa-first*
