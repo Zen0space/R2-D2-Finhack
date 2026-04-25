@@ -21,7 +21,7 @@ No exceptions for "mostly works" or "I'm sure it's fine." Either the testable ou
 
 `/maji-gate` runs the following sequence:
 
-1. Read `DEVELOPMENT-PLAN.md` Phase Status table.
+1. Read `docs/process/DEVELOPMENT-PLAN.md` Phase Status table.
 2. Identify the phase requesting advancement.
 3. Check: are all previous phases `✅`?
 4. Check: does the current phase's testable outcome pass? (Prompts the user to demonstrate.)

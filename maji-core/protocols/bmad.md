@@ -6,7 +6,7 @@
 
 ## The phases
 
-Phases are defined in [DEVELOPMENT-PLAN.md](../../DEVELOPMENT-PLAN.md) at the repo root. maji-core treats the **Phase Status table** in that file as the live phase registry.
+Phases are defined in [docs/process/DEVELOPMENT-PLAN.md](../../docs/process/DEVELOPMENT-PLAN.md) at the repo root. maji-core treats the **Phase Status table** in that file as the live phase registry.
 
 The product (DuitLater) is submitted to the **Financial Inclusion track** (TNG FINHACK 2026). Single-product, single-track. Test bed: NADI Felda Gedangsa, Hulu Selangor.
 
@@ -60,7 +60,7 @@ Cut decisions are logged to `team-ledger.md` with timestamp, decider, and reason
 
 ## Single-owner phase model
 
-Each phase has exactly one **owner** (per [TEAM.md](../../TEAM.md) Phase Ownership table). The owner holds the gate; they call the phase complete, they escalate blockers, they decide cut-line invocation for their phase.
+Each phase has exactly one **owner** (per [docs/team/TEAM.md](../../docs/team/TEAM.md) Phase Ownership table). The owner holds the gate; they call the phase complete, they escalate blockers, they decide cut-line invocation for their phase.
 
 Support members work on the phase but do not own the gate.
 

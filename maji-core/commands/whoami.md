@@ -33,7 +33,7 @@ If file does not exist → tell them to run `/maji-onboard` first:
 
 ### Step 4 — Detect current phase
 
-Read `DEVELOPMENT-PLAN.md` Phase Status table. Find the current phase (same rule as onboard).
+Read `docs/process/DEVELOPMENT-PLAN.md` Phase Status table. Find the current phase (same rule as onboard).
 
 ### Step 5 — Print the status block
 

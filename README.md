@@ -52,9 +52,14 @@ R2-D2-Finhack/
 │   ├── backend/           # Hono API server (Node 22)
 │   ├── frontend/          # Next.js 15 App Router + PWA
 │   └── db/                # Prisma schema, migrations, seed
-├── infra/                 # Caddyfile + infra docs
+├── docs/
+│   ├── product/           # PRD, BRAND, WORLD
+│   ├── tech/              # ARCHITECTURE, TECH-STACK, stack manifest
+│   ├── team/              # TEAM, AGENTS, ONBOARDING
+│   ├── process/           # DEVELOPMENT-PLAN, QUICKSTART
+│   └── pitch/             # pitch deck, narration, product manifest
 ├── maji-core/             # Team protocols, heroes, commands
-├── docs/                  # Product docs, pitch deck
+├── infra/                 # Caddyfile + infra docs
 ├── scripts/               # Dev scripts (setup, kill-ports)
 ├── docker-compose.yml
 ├── pnpm-workspace.yaml
@@ -134,9 +139,9 @@ pnpm --filter backend add <pkg>   # add dep to one package
 
 - [ ] GitHub repo link
 - [ ] Working prototype at public URL
-- [ ] 4-minute pitch deck → [docs/pitch-deck.md](./docs/pitch-deck.md)
+- [ ] 4-minute pitch deck → [docs/pitch/pitch-deck.md](./docs/pitch/pitch-deck.md)
 - [ ] 4-minute demo video
-- [ ] On-stage pitch → [docs/pitch-narration.md](./docs/pitch-narration.md)
+- [ ] On-stage pitch → [docs/pitch/pitch-narration.md](./docs/pitch/pitch-narration.md)
 
 ---
 

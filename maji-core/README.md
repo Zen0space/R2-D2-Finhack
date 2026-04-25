@@ -10,7 +10,7 @@ maji-core is a portable, file-based team coordinator that lives inside this repo
 
 1. **Onboards each team member** with a consistent greeting + role card + current-phase task.
 2. **Persists personal memory** per member (session count, current phase, last blocker, personal notes).
-3. **Detects BMAD phase** by reading `DEVELOPMENT-PLAN.md` Phase Status table.
+3. **Detects BMAD phase** by reading `docs/process/DEVELOPMENT-PLAN.md` Phase Status table.
 4. **Enforces phase gates** — a phase cannot advance until the previous phase's testable outcome is verified.
 5. **Logs collaboration** — when two members pair, both see it in their next `/maji-whoami`.
 6. **Tracks team decisions** via a shared `team-ledger.md`.
@@ -69,7 +69,7 @@ Different IDEs handle slash commands differently. **All four work** — but the 
 2. Open the repo in your IDE of choice (Claude Code, Cursor, Codex, or any AI chat).
 3. Type `/maji-onboard` and follow the prompts.
 
-If your tool does not support slash commands natively, read [AGENTS.md](../AGENTS.md) at repo root — it instructs any AI to recognize `/maji-*` commands by reading this folder.
+If your tool does not support slash commands natively, read [AGENTS.md](../docs/team/AGENTS.md) at repo root — it instructs any AI to recognize `/maji-*` commands by reading this folder.
 
 ---
 

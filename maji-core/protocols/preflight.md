@@ -16,8 +16,8 @@ A maji-core command needs these files present and well-formed:
 | `maji-core/heroes/kairu.md` | exists |
 | `maji-core/heroes/matnep.md` | exists |
 | `maji-core/protocols/schema.md` | exists |
-| `DEVELOPMENT-PLAN.md` | exists at repo root · contains a "Phase Status" header |
-| `TEAM.md` | exists at repo root · contains a "Phase Ownership" table |
+| `docs/process/DEVELOPMENT-PLAN.md` | exists at repo root · contains a "Phase Status" header |
+| `docs/team/TEAM.md` | exists at repo root · contains a "Phase Ownership" table |
 | `maji-core/memory/team-ledger.md` | exists · is a markdown file |
 | `maji-core/memory/members/` | folder exists (may be empty) |
 

@@ -12,11 +12,11 @@ Run the pre-flight check per [`protocols/preflight.md`](../protocols/preflight.m
 
 ### Step 1 — Read phase state
 
-Read `DEVELOPMENT-PLAN.md` Phase Status table at repo root. Extract all 7 rows (Phase 0 through Phase 6) with their Status column symbols.
+Read `docs/process/DEVELOPMENT-PLAN.md` Phase Status table at repo root. Extract all 7 rows (Phase 0 through Phase 6) with their Status column symbols.
 
 ### Step 2 — Read team assignments
 
-Read `TEAM.md` Phase Ownership table. Build a map of `{phase_number → lead, support}`.
+Read `docs/team/TEAM.md` Phase Ownership table. Build a map of `{phase_number → lead, support}`.
 
 ### Step 3 — Read personal memory for all onboarded members
 
@@ -98,6 +98,6 @@ Same as onboard: BM-first, jimat penuh. No decoration. No "here's what's happeni
 
 ## What NOT to do
 
-- Do NOT invent phase status. If `DEVELOPMENT-PLAN.md` has not been updated, report what's actually there.
+- Do NOT invent phase status. If `docs/process/DEVELOPMENT-PLAN.md` has not been updated, report what's actually there.
 - Do NOT claim a phase is ✅ based on artifacts alone. The table is the source of truth.
 - Do NOT write to any file. This command is read-only.

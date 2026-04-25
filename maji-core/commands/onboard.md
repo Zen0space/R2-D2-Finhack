@@ -98,12 +98,12 @@ Card: /team/{name}.png (frontend/public/team/{name}.png)
 
 ## Step 5 — Current phase + their task
 
-Read the Phase Status table in `DEVELOPMENT-PLAN.md` at repo root. Identify the current phase as:
+Read the Phase Status table in `docs/process/DEVELOPMENT-PLAN.md` at repo root. Identify the current phase as:
 
 - The row where Status column contains 🟡 (in progress), OR
 - The first row with ⏳ after the last ✅ row (if no 🟡).
 
-Then read `TEAM.md` Phase Ownership table. Find this member's role in the current phase (Lead, Support, or —).
+Then read `docs/team/TEAM.md` Phase Ownership table. Find this member's role in the current phase (Lead, Support, or —).
 
 Print:
 
@@ -198,7 +198,7 @@ Read existing `maji-core/memory/members/<lowercase-name>.json`. Update:
 
 - `lastSession` → current ISO-8601 timestamp
 - `sessionsCount` → increment by 1
-- `currentPhase` → detected phase from `DEVELOPMENT-PLAN.md`
+- `currentPhase` → detected phase from `docs/process/DEVELOPMENT-PLAN.md`
 
 If `currentPhase` changed since last session, acknowledge:
 
@@ -246,4 +246,4 @@ Welcome to R2-D2. Jom bawa kutu ke stage.
 - Do NOT offer to add new members. Refuse gracefully.
 - Do NOT pretend to be the member ("As Mung, I will..."). You are assisting them, not playing them.
 - Do NOT commit any files during onboarding. Writing `memory/members/<name>.json` is the only write.
-- Do NOT fabricate phase content. Read from `DEVELOPMENT-PLAN.md` and `TEAM.md` — if those files don't contain what you need, say so.
+- Do NOT fabricate phase content. Read from `docs/process/DEVELOPMENT-PLAN.md` and `docs/team/TEAM.md` — if those files don't contain what you need, say so.

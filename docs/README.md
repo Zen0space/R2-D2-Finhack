@@ -1,46 +1,37 @@
-# Docs — Kutu Digitizer
+# docs — DuitLater
 
-**Pitch · demo · references · supplementary materials**
-
----
-
-## Files (build during hackathon)
+All project documentation, organised by concern.
 
 ```
 docs/
-├── pitch-deck.pdf              # 8-slide deck for 4-min pitch
-├── pitch-deck.figma            # source (export to PDF)
-├── demo-video.mp4              # 4-min walkthrough recording
-├── demo-script.md              # narration script for demo video
-├── pitch-narration.md          # 4-min on-stage script for Ijam
-├── faq.md                      # judge-anticipated questions + answers
-├── one-pager.pdf               # leave-behind summary for sponsor booth
-└── references/
-    ├── moneyfellows-comparable.md      # $31M ROSCA precedent
-    ├── esusu-comparable.md             # $130M trust-score precedent
-    ├── stokfella-research.md
-    └── nusantara-kutu-practice.md      # cultural anchor doc
+├── product/                 # Product definition
+│   ├── PRD.md               # Product Requirements Document
+│   ├── BRAND.md             # Brand voice, visual direction, naming
+│   └── WORLD.md             # Product world-building & context
+│
+├── tech/                    # Technical documentation
+│   ├── ARCHITECTURE.md      # System architecture + decisions
+│   ├── TECH-STACK.md        # Stack choices with rationale
+│   └── tech-stack-manifest.md  # Full 67-item stack inventory
+│
+├── team/                    # Team & onboarding
+│   ├── TEAM.md              # Roles, phase ownership, decision log
+│   ├── AGENTS.md            # AI assistant onboarding spec
+│   └── ONBOARDING.md        # Claude Code team onboarding guide
+│
+├── process/                 # Development process
+│   ├── DEVELOPMENT-PLAN.md  # BMAD phase plan + live status table
+│   └── QUICKSTART.md        # First 10 minutes on the repo
+│
+└── pitch/                   # Pitch & demo assets
+    ├── pitch-deck.md         # 8-slide deck outline
+    ├── pitch-narration.md    # 4-min on-stage script (Ijam)
+    ├── product-manifest.md   # Product manifest with visual flows
+    └── product-manifest.pdf  # Rendered PDF of product manifest
 ```
 
 ---
 
-## Pitch Deck Outline (8 slides · 4 min · Financial Inclusion Track)
-
-| # | Slide | Time |
-|---|---|---|
-| 1 | Title — DuitLater · *Sendiri tak mampu, ramai-ramai boleh* | 10s |
-| 2 | The Gap — Mak Cik Aminah's RM 300 PayLater · need is RM 1,800 · combined RM 2,000 | 35s |
-| 3 | The Solution — 4 steps · Form pool · Combine PayLater · Penasihat · Vote & buy | 40s |
-| 4 | The Test Bed — NADI Felda Gedangsa, Hulu Selangor (Felda smallholder + MCMC NADI) | 25s |
-| 5 | Demo — live walkthrough (sign-up · pool · suggestion · vote · NADI · repayment) | 70s |
-| 6 | Stack — minimal (Node · TS · Postgres · TNG · Claude) | 15s |
-| 7 | Lineage — MoneyFellows · Esusu · Stokfella · Easypaisa Pool Buy | 15s |
-| 8 | Ask — TNG sandbox · MCMC NADI framework · MyKasih merchant network | 25s |
-
-Total: 240s strict. Cut repayment sub-demo first if demo runs long (Slide 5 fallback).
-
----
-
-## Owner
-
-Ijam (pitch + script) · MatNep (deck design) · all hands (demo polish)
+**Root-level files** (must stay at repo root):
+- `README.md` — project entry point
+- `CLAUDE.md` — Claude Code project instructions (read from root)

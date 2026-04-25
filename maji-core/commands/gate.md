@@ -14,11 +14,11 @@ Run the pre-flight check per [`protocols/preflight.md`](../protocols/preflight.m
 
 > Phase mana kau nak gate? (0, 1, 2, 3, 4, 5, atau 6)
 
-If the user doesn't specify, default to the current 🟡 phase from `DEVELOPMENT-PLAN.md`.
+If the user doesn't specify, default to the current 🟡 phase from `docs/process/DEVELOPMENT-PLAN.md`.
 
 ### Step 2 — Verify previous phases are ✅
 
-Read `DEVELOPMENT-PLAN.md` Phase Status table. Check: are all phases with lower numbers than the target phase marked ✅?
+Read `docs/process/DEVELOPMENT-PLAN.md` Phase Status table. Check: are all phases with lower numbers than the target phase marked ✅?
 
 If NO → REFUSE:
 
@@ -59,7 +59,7 @@ Wait for the user to confirm the verifier's name.
 
 ### Step 5 — Check verifier is NOT the primary author/lead
 
-Read `TEAM.md` Phase Ownership table. If the named verifier is also the primary lead for this phase → REFUSE:
+Read `docs/team/TEAM.md` Phase Ownership table. If the named verifier is also the primary lead for this phase → REFUSE:
 
 ```
 🚫  REFUSE — verifier same as primary lead
@@ -102,7 +102,7 @@ Confirm? (yes / no)
 
 On confirm:
 
-1. **Update `DEVELOPMENT-PLAN.md`** — change the Phase Status row for Phase {N}:
+1. **Update `docs/process/DEVELOPMENT-PLAN.md`** — change the Phase Status row for Phase {N}:
    - Status: 🟡 → ✅
    - Completed: set to current date
    - Tested by: set to verifier
@@ -119,7 +119,7 @@ On confirm:
    ✅  Phase {N} advanced. {NEXT_PHASE} is now unlocked.
 
    Reminder: commit the changes.
-     git add DEVELOPMENT-PLAN.md maji-core/memory/team-ledger.md
+     git add docs/process/DEVELOPMENT-PLAN.md maji-core/memory/team-ledger.md
      git commit -m "Phase {N} ✅ — {PHASE_NAME_SLUG}"
    ```
 
