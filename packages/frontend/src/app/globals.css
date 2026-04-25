@@ -14,6 +14,139 @@
   --dl-amber: #d4811c;
   --dl-error: #8b1f1f;
   --dl-shadow: 0 22px 52px rgba(56, 38, 10, 0.12);
+  --dl-body-font: var(--font-sans), "Segoe UI", sans-serif;
+  --dl-heading-font: var(--font-display), Georgia, serif;
+  --dl-mono-font: var(--font-mono), "SFMono-Regular", monospace;
+  --dl-bg-accent-primary: rgba(122, 46, 46, 0.14);
+  --dl-bg-accent-secondary: rgba(200, 148, 31, 0.12);
+  --dl-bg-grid: rgba(200, 148, 31, 0.05);
+  --dl-overlay-accent-primary: rgba(255, 255, 255, 0.6);
+  --dl-overlay-accent-secondary: rgba(200, 148, 31, 0.06);
+  --dl-panel-bg: rgba(255, 255, 255, 0.86);
+  --dl-panel-border: var(--dl-sand);
+  --dl-panel-shadow: var(--dl-shadow);
+  --dl-panel-blur: 18px;
+  --dl-card-bg: rgba(255, 255, 255, 0.86);
+  --dl-card-border: var(--dl-sand);
+  --dl-card-shadow: var(--dl-shadow);
+  --dl-radius-control: 1rem;
+  --dl-radius-card: 1.75rem;
+  --dl-input-bg: rgba(255, 255, 255, 0.92);
+  --dl-input-border: var(--dl-sand);
+  --dl-input-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --dl-input-placeholder: rgba(90, 90, 90, 0.72);
+  --dl-focus-color: var(--dl-gold);
+  --dl-focus-ring: rgba(200, 148, 31, 0.14);
+  --dl-focus-outline: rgba(200, 148, 31, 0.6);
+  --dl-button-primary-bg: var(--dl-gold);
+  --dl-button-primary-border: transparent;
+  --dl-button-primary-text: var(--dl-ink);
+  --dl-button-primary-shadow: 0 12px 24px rgba(200, 148, 31, 0.18);
+  --dl-button-primary-hover-bg: var(--dl-gold-dark);
+  --dl-button-primary-hover-text: #ffffff;
+  --dl-button-secondary-bg: var(--dl-maroon);
+  --dl-button-secondary-border: transparent;
+  --dl-button-secondary-text: #ffffff;
+  --dl-button-secondary-shadow: none;
+  --dl-button-secondary-hover-bg: #5f2323;
+  --dl-button-outline-bg: rgba(255, 255, 255, 0.8);
+  --dl-button-outline-border: var(--dl-sand);
+  --dl-button-outline-text: var(--dl-ink);
+  --dl-button-outline-shadow: none;
+  --dl-button-outline-hover-border: var(--dl-gold);
+  --dl-button-outline-hover-text: var(--dl-gold-dark);
+  --dl-button-ghost-bg: transparent;
+  --dl-button-ghost-border: transparent;
+  --dl-button-ghost-text: var(--dl-maroon);
+  --dl-button-ghost-hover-bg: rgba(122, 46, 46, 0.08);
+  --dl-badge-gold-border: rgba(200, 148, 31, 0.34);
+  --dl-badge-gold-bg: rgba(200, 148, 31, 0.12);
+  --dl-badge-gold-text: var(--dl-gold-dark);
+  --dl-badge-maroon-border: rgba(122, 46, 46, 0.2);
+  --dl-badge-maroon-bg: rgba(122, 46, 46, 0.08);
+  --dl-badge-maroon-text: var(--dl-maroon);
+  --dl-badge-forest-border: rgba(47, 106, 63, 0.22);
+  --dl-badge-forest-bg: rgba(47, 106, 63, 0.1);
+  --dl-badge-forest-text: var(--dl-forest);
+  --dl-badge-neutral-border: var(--dl-sand);
+  --dl-badge-neutral-bg: rgba(255, 255, 255, 0.8);
+  --dl-badge-neutral-text: var(--dl-slate);
+  --dl-grain-line: linear-gradient(90deg, transparent, rgba(224, 216, 200, 0.95), transparent);
+  --dl-selection-bg: rgba(200, 148, 31, 0.2);
+}
+
+html[data-design-language="skeu"] {
+  --dl-gold: #f08321;
+  --dl-gold-dark: #fa3c00;
+  --dl-maroon: #fa3c00;
+  --dl-cream: #fff4ec;
+  --dl-surface: #ffffff;
+  --dl-ink: #111827;
+  --dl-slate: #5b6472;
+  --dl-sand: #ffd1b5;
+  --dl-forest: #16a34a;
+  --dl-amber: #d97706;
+  --dl-error: #dc2626;
+  --dl-shadow: 0 18px 34px rgba(17, 24, 39, 0.1);
+  --dl-body-font: var(--font-sans), "Segoe UI", sans-serif;
+  --dl-heading-font: var(--font-sans), "Segoe UI", sans-serif;
+  --dl-mono-font: var(--font-mono), "SFMono-Regular", monospace;
+  --dl-bg-accent-primary: rgba(250, 60, 0, 0.16);
+  --dl-bg-accent-secondary: rgba(240, 131, 33, 0.16);
+  --dl-bg-grid: rgba(240, 131, 33, 0.08);
+  --dl-overlay-accent-primary: rgba(255, 255, 255, 0.78);
+  --dl-overlay-accent-secondary: rgba(250, 60, 0, 0.08);
+  --dl-panel-bg: rgba(255, 255, 255, 0.97);
+  --dl-panel-border: rgba(250, 60, 0, 0.18);
+  --dl-panel-shadow: 0 10px 0 rgba(240, 131, 33, 0.18), 0 20px 32px rgba(17, 24, 39, 0.12);
+  --dl-panel-blur: 0px;
+  --dl-card-bg: rgba(255, 255, 255, 0.97);
+  --dl-card-border: rgba(250, 60, 0, 0.14);
+  --dl-card-shadow: 0 8px 0 rgba(240, 131, 33, 0.16), 0 16px 24px rgba(17, 24, 39, 0.12);
+  --dl-radius-control: 0.95rem;
+  --dl-radius-card: 1.4rem;
+  --dl-input-bg: rgba(255, 255, 255, 0.98);
+  --dl-input-border: rgba(250, 60, 0, 0.18);
+  --dl-input-shadow: inset 0 2px 3px rgba(17, 24, 39, 0.08), 0 1px 0 rgba(255, 255, 255, 0.8);
+  --dl-input-placeholder: rgba(75, 85, 99, 0.78);
+  --dl-focus-color: var(--dl-maroon);
+  --dl-focus-ring: rgba(250, 60, 0, 0.16);
+  --dl-focus-outline: rgba(250, 60, 0, 0.5);
+  --dl-button-primary-bg: var(--dl-maroon);
+  --dl-button-primary-border: rgba(17, 24, 39, 0.08);
+  --dl-button-primary-text: #ffffff;
+  --dl-button-primary-shadow: 0 6px 0 rgba(180, 53, 0, 0.26), 0 14px 22px rgba(250, 60, 0, 0.18);
+  --dl-button-primary-hover-bg: #db3500;
+  --dl-button-primary-hover-text: #ffffff;
+  --dl-button-secondary-bg: var(--dl-gold);
+  --dl-button-secondary-border: rgba(17, 24, 39, 0.08);
+  --dl-button-secondary-text: #ffffff;
+  --dl-button-secondary-shadow: 0 6px 0 rgba(180, 83, 9, 0.22), 0 14px 22px rgba(240, 131, 33, 0.18);
+  --dl-button-secondary-hover-bg: #db7418;
+  --dl-button-outline-bg: rgba(255, 255, 255, 0.92);
+  --dl-button-outline-border: rgba(250, 60, 0, 0.18);
+  --dl-button-outline-text: var(--dl-ink);
+  --dl-button-outline-shadow: 0 6px 0 rgba(250, 60, 0, 0.1);
+  --dl-button-outline-hover-border: var(--dl-maroon);
+  --dl-button-outline-hover-text: var(--dl-maroon);
+  --dl-button-ghost-bg: transparent;
+  --dl-button-ghost-border: transparent;
+  --dl-button-ghost-text: var(--dl-maroon);
+  --dl-button-ghost-hover-bg: rgba(250, 60, 0, 0.08);
+  --dl-badge-gold-border: rgba(240, 131, 33, 0.28);
+  --dl-badge-gold-bg: rgba(240, 131, 33, 0.14);
+  --dl-badge-gold-text: #b45309;
+  --dl-badge-maroon-border: rgba(250, 60, 0, 0.2);
+  --dl-badge-maroon-bg: rgba(250, 60, 0, 0.1);
+  --dl-badge-maroon-text: var(--dl-maroon);
+  --dl-badge-forest-border: rgba(22, 163, 74, 0.24);
+  --dl-badge-forest-bg: rgba(22, 163, 74, 0.1);
+  --dl-badge-forest-text: var(--dl-forest);
+  --dl-badge-neutral-border: rgba(250, 60, 0, 0.18);
+  --dl-badge-neutral-bg: rgba(255, 255, 255, 0.88);
+  --dl-badge-neutral-text: var(--dl-slate);
+  --dl-grain-line: linear-gradient(90deg, transparent, rgba(250, 60, 0, 0.2), transparent);
+  --dl-selection-bg: rgba(250, 60, 0, 0.18);
 }
 
 * {
@@ -31,17 +164,17 @@ body {
   margin: 0;
   color: var(--dl-ink);
   background:
-    radial-gradient(circle at top right, rgba(122, 46, 46, 0.14), transparent 28%),
-    linear-gradient(180deg, rgba(200, 148, 31, 0.12), transparent 24%),
+    radial-gradient(circle at top right, var(--dl-bg-accent-primary), transparent 28%),
+    linear-gradient(180deg, var(--dl-bg-accent-secondary), transparent 24%),
     repeating-linear-gradient(
       135deg,
-      rgba(200, 148, 31, 0.05) 0,
-      rgba(200, 148, 31, 0.05) 1px,
+      var(--dl-bg-grid) 0,
+      var(--dl-bg-grid) 1px,
       transparent 1px,
       transparent 14px
     ),
     var(--dl-cream);
-  font-family: var(--font-sans), "Segoe UI", sans-serif;
+  font-family: var(--dl-body-font);
   line-height: 1.5;
   text-rendering: optimizeLegibility;
 }
@@ -51,8 +184,8 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.6), transparent 22%),
-    radial-gradient(circle at 100% 100%, rgba(200, 148, 31, 0.06), transparent 24%);
+    radial-gradient(circle at 0% 0%, var(--dl-overlay-accent-primary), transparent 22%),
+    radial-gradient(circle at 100% 100%, var(--dl-overlay-accent-secondary), transparent 24%);
   pointer-events: none;
   opacity: 0.85;
 }
@@ -74,7 +207,7 @@ h2,
 h3,
 h4 {
   margin: 0;
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--dl-heading-font);
   line-height: 1.02;
   letter-spacing: -0.03em;
 }
@@ -86,7 +219,7 @@ p {
 code,
 pre,
 .data-figure {
-  font-family: var(--font-mono), "SFMono-Regular", monospace;
+  font-family: var(--dl-mono-font);
   font-variant-numeric: tabular-nums;
 }
 
@@ -100,10 +233,10 @@ main {
 }
 
 .panel-surface {
-  border: 1px solid var(--dl-sand);
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: var(--dl-shadow);
-  backdrop-filter: blur(18px);
+  border: 1px solid var(--dl-panel-border);
+  background: var(--dl-panel-bg);
+  box-shadow: var(--dl-panel-shadow);
+  backdrop-filter: blur(var(--dl-panel-blur));
 }
 
 .section-kicker {
@@ -124,16 +257,53 @@ main {
 .grain-line {
   height: 1px;
   width: 100%;
-  background: linear-gradient(90deg, transparent, rgba(224, 216, 200, 0.95), transparent);
+  background: var(--dl-grain-line);
+}
+
+.landing-geist {
+  font-family: var(--font-geist-mono), "SFMono-Regular", monospace;
+}
+
+.landing-geist h1,
+.landing-geist h2,
+.landing-geist h3,
+.landing-geist h4,
+.landing-geist .section-kicker,
+.landing-geist .data-figure {
+  font-family: var(--font-geist-mono), "SFMono-Regular", monospace;
+  letter-spacing: -0.04em;
+}
+
+html[data-design-language="skeu"] h1,
+html[data-design-language="skeu"] h2,
+html[data-design-language="skeu"] h3,
+html[data-design-language="skeu"] h4 {
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+html[data-design-language="skeu"] .section-kicker {
+  letter-spacing: 0.18em;
+}
+
+html[data-design-language="skeu"] .landing-geist,
+html[data-design-language="skeu"] .landing-geist h1,
+html[data-design-language="skeu"] .landing-geist h2,
+html[data-design-language="skeu"] .landing-geist h3,
+html[data-design-language="skeu"] .landing-geist h4,
+html[data-design-language="skeu"] .landing-geist .section-kicker,
+html[data-design-language="skeu"] .landing-geist .data-figure {
+  font-family: var(--dl-body-font);
+  letter-spacing: -0.025em;
 }
 
 ::selection {
   color: var(--dl-ink);
-  background: rgba(200, 148, 31, 0.2);
+  background: var(--dl-selection-bg);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(200, 148, 31, 0.6);
+  outline: 2px solid var(--dl-focus-outline);
   outline-offset: 2px;
 }
 

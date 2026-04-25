@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
+import { Cormorant_Garamond, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/components/providers/app-providers";
+import { defaultDesignLanguage } from "@/lib/design-language/config";
 import "./globals.css";
 
 const appName = "DuitLater";
@@ -24,6 +25,12 @@ const sans = Inter({
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
+});
+
+const landingMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
@@ -64,8 +71,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ms">
-      <body className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html data-design-language={defaultDesignLanguage} lang="ms">
+      <body className={`${display.variable} ${sans.variable} ${mono.variable} ${landingMono.variable}`}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

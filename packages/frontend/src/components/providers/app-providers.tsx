@@ -5,6 +5,7 @@ import { Provider as JotaiProvider } from "jotai";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Toaster } from "sonner";
+import { DesignLanguageProvider } from "@/components/providers/design-language-provider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -22,8 +23,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <JotaiProvider>
       <QueryClientProvider client={queryClient}>
-        {children}
-        <Toaster richColors position="top-center" />
+        <DesignLanguageProvider>
+          {children}
+          <Toaster richColors position="top-center" />
+        </DesignLanguageProvider>
       </QueryClientProvider>
     </JotaiProvider>
   );

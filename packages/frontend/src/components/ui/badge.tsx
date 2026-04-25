@@ -7,13 +7,13 @@ const badgeVariants = cva(
   {
     variants: {
       tone: {
-        gold: "border-[color:rgba(200,148,31,0.34)] bg-[color:rgba(200,148,31,0.12)] text-[color:var(--dl-gold-dark)]",
+        gold: "border-[color:var(--dl-badge-gold-border)] bg-[color:var(--dl-badge-gold-bg)] text-[color:var(--dl-badge-gold-text)]",
         maroon:
-          "border-[color:rgba(122,46,46,0.2)] bg-[color:rgba(122,46,46,0.08)] text-[color:var(--dl-maroon)]",
+          "border-[color:var(--dl-badge-maroon-border)] bg-[color:var(--dl-badge-maroon-bg)] text-[color:var(--dl-badge-maroon-text)]",
         forest:
-          "border-[color:rgba(47,106,63,0.22)] bg-[color:rgba(47,106,63,0.1)] text-[color:var(--dl-forest)]",
+          "border-[color:var(--dl-badge-forest-border)] bg-[color:var(--dl-badge-forest-bg)] text-[color:var(--dl-badge-forest-text)]",
         neutral:
-          "border-[color:var(--dl-sand)] bg-white/80 text-[color:var(--dl-slate)]",
+          "border-[color:var(--dl-badge-neutral-border)] bg-[color:var(--dl-badge-neutral-bg)] text-[color:var(--dl-badge-neutral-text)]",
       },
     },
     defaultVariants: {

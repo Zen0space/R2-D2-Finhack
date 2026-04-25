@@ -8,6 +8,7 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
+  SwatchBook,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -143,6 +144,13 @@ export function DashboardPage() {
                   <Plus aria-hidden="true" size={16} />
                   Cipta pool
                 </Button>
+                <Link
+                  className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
+                  href="/settings"
+                >
+                  <SwatchBook aria-hidden="true" size={16} />
+                  Settings
+                </Link>
                 <Button
                   className="w-full sm:w-auto"
                   variant="outline"
