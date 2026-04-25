@@ -62,12 +62,13 @@ Drop to full prose for:
 
 | Path | Primary owner | Notes |
 |---|---|---|
-| `backend/**` | Mung | Hono + Drizzle + Postgres + Better Auth + AWS S3 |
-| `frontend/**` | Akmal | Next.js 15 + Tailwind v4 + shadcn/ui + TanStack Query |
+| `packages/backend/**` | Mung | Hono + Prisma + Postgres + Better Auth + AWS S3 |
+| `packages/frontend/**` | Akmal | Next.js 15 + Tailwind v4 + shadcn/ui + TanStack Query |
+| `packages/db/**` | Mung | Prisma schema, migrations, seed |
 | `docker-compose.*.yml` · `infra/**` | Mung | containerization + Caddy |
-| `DEVELOPMENT-PLAN.md` | Kairu | phase status is the live registry |
-| `TEAM.md` · `BRAND.md` | MatNep co-owns with Ijam | brand + typography + team roster |
-| `docs/pitch-*.md` | Ijam | pitch content + narration |
+| `docs/process/DEVELOPMENT-PLAN.md` | Kairu | phase status is the live registry |
+| `docs/team/TEAM.md` · `docs/product/BRAND.md` | MatNep co-owns with Ijam | brand + typography + team roster |
+| `docs/pitch/*.md` | Ijam | pitch content + narration |
 | `maji-core/memory/team-ledger.md` | Shared · append-only | never delete entries |
 
 Full ownership: [maji-core/heroes/*.md](./maji-core/heroes/) — one file per team member.

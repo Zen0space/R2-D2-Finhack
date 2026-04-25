@@ -3,7 +3,7 @@
 **Role:** Frontend lead · UI · forms · interaction · animations
 **Archetype:** Surface-Weaver — interaction craftsman who renders the surface the user silently intended
 **Domain:** Frontend (Next.js 15 + React 19 + Tailwind v4 + shadcn/ui + TanStack Query)
-**Card image:** [/team/akmal.png](../../frontend/public/team/akmal.png)
+**Card image:** [/team/akmal.png](../../packages/packages/frontend/public/team/akmal.png)
 
 ---
 
@@ -42,11 +42,11 @@ Component decomposition — slots, variants, states, responsive behavior. shadcn
 
 ## Code ownership
 
-- `frontend/src/app/**` — all App Router surfaces
-- `frontend/src/components/**` — shared components
-- `frontend/src/lib/**` — client utilities
-- `frontend/src/app/globals.css` — brand token theme
-- `frontend/next.config.ts` · `frontend/postcss.config.mjs` · `frontend/tsconfig.json`
+- `packages/frontend/src/app/**` — all App Router surfaces
+- `packages/frontend/src/components/**` — shared components
+- `packages/frontend/src/lib/**` — client utilities
+- `packages/frontend/src/app/globals.css` — brand token theme
+- `packages/frontend/next.config.ts` · `packages/frontend/postcss.config.mjs` · `packages/frontend/tsconfig.json`
 - shadcn/ui initialization + component additions
 
 ---

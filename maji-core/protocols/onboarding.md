@@ -45,7 +45,7 @@ Code ownership:
   • {OWNERSHIP_1}
   • {OWNERSHIP_2}
 
-Card image: /team/{name}.png (frontend/public/team/)
+Card image: /team/{name}.png (packages/frontend/public/team/)
 ```
 
 ### Step 4 · Current phase + task

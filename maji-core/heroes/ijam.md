@@ -3,7 +3,7 @@
 **Role:** Business pitch lead · on-stage voice · stakeholder framing
 **Archetype:** Narrative Spine — the voice that carries the product's "why" under four-minute pressure
 **Domain:** Pitch · product narrative · external communication
-**Card image:** [/team/ijam.png](../../frontend/public/team/ijam.png)
+**Card image:** [/team/ijam.png](../../packages/packages/frontend/public/team/ijam.png)
 
 ---
 

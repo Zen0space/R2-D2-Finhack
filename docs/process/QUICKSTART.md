@@ -108,10 +108,10 @@ Then wire Better Auth + `/api/me` endpoint that returns the current user's indiv
 
 | Symptom | Fix |
 |---|---|
-| `DATABASE_URL is required` | `cp .env.example .env` in `backend/` |
-| Port 5432 already in use | Another Postgres is running. Stop it, or change port in `docker-compose.dev.yml` |
-| `npm install` fails on `argon2` | Needs build-essentials + python. On macOS: `xcode-select --install`. On Ubuntu: `sudo apt install -y build-essential python3` |
-| Next.js complains about Turbopack | Remove `--turbo` from `dev` script in `frontend/package.json` — fallback to webpack |
+| `DATABASE_URL is required` | `cp .env.example .env` in `packages/backend/` |
+| Port 5432 already in use | Another Postgres is running. Stop it, or change port in `docker-compose.yml` |
+| `pnpm install` fails on `argon2` | Needs build-essentials + python. On macOS: `xcode-select --install`. On Ubuntu: `sudo apt install -y build-essential python3` |
+| Next.js complains about Turbopack | Remove `--turbo` from `dev` script in `packages/frontend/package.json` — fallback to webpack |
 | Frontend shows default colors, not brand palette | Check `globals.css` imported `"tailwindcss"` and PostCSS picked up `@tailwindcss/postcss` |
 
 ---
