@@ -2,7 +2,7 @@
 
 **File:** `maji-core/memory/members/<codename>.json`
 **Storage:** committed to git (one file per team member · team sees on pull)
-**Filename:** lowercase codename + `.json` (e.g., `mung.json`, `matnep.json`)
+**Filename:** lowercase codename + `.json` (e.g., `moon.json`, `matnep.json`)
 
 This document is the single source of truth for the JSON shape. All slash commands that read or write a member's memory must follow this schema exactly.
 
@@ -12,7 +12,7 @@ This document is the single source of truth for the JSON shape. All slash comman
 
 ```ts
 type MemberMemory = {
-  name: string;                  // Capitalized display name — "Mung", "MatNep"
+  name: string;                  // Capitalized display name — "Moon", "MatNep"
   codename: string;              // Lowercase identifier — must match filename
   firstOnboarded: string | null; // ISO-8601 · null if stub created by /maji-pair before onboard
   lastSession: string | null;    // ISO-8601 · null if not yet onboarded
@@ -50,8 +50,8 @@ type Note = {
 
 ```json
 {
-  "name": "Mung",
-  "codename": "mung",
+  "name": "Moon",
+  "codename": "moon",
   "firstOnboarded": "2026-04-25T09:10:00+08:00",
   "lastSession": "2026-04-25T14:32:00+08:00",
   "sessionsCount": 4,
@@ -94,7 +94,7 @@ A stub is a JSON record created by `/maji-pair` when the partner has not yet run
   "currentPhase": null,
   "phasesCompleted": [],
   "activePair": {
-    "partner": "mung",
+    "partner": "moon",
     "task": "Phase 1 auth schema + form handshake",
     "startedAt": "2026-04-25T13:55:00+08:00"
   },
@@ -115,12 +115,12 @@ A stub is detected by `firstOnboarded === null`. When the member runs `/maji-onb
 
 ## Invariants (must always hold)
 
-1. **Codename matches filename.** `members/mung.json` must have `"codename": "mung"`.
+1. **Codename matches filename.** `members/moon.json` must have `"codename": "moon"`.
 2. **Codename is lowercase ASCII.** `[a-z]+` only. No spaces, no caps.
 3. **`name` is `codename` capitalized** with proper diacritic handling (e.g., `matnep` → `MatNep`).
 4. **`phasesCompleted` is append-only within a member's life.** Once a phase is added, it stays. No removals. No duplicates (a `Set`-like discipline applied during write).
-5. **`activePair.partner` must be a valid codename** in the whitelist (`ijam`, `mung`, `akmal`, `kairu`, `matnep`) — and must NOT equal `codename` (no self-pair).
-6. **`activePair` must be cross-consistent.** If `mung.json` has `activePair.partner: "akmal"`, then `akmal.json` must have `activePair.partner: "mung"` (with the same `task` and `startedAt`). Pair updates atomically write both files.
+5. **`activePair.partner` must be a valid codename** in the whitelist (`ijam`, `moon`, `akmal`, `kairu`, `matnep`) — and must NOT equal `codename` (no self-pair).
+6. **`activePair` must be cross-consistent.** If `moon.json` has `activePair.partner: "akmal"`, then `akmal.json` must have `activePair.partner: "moon"` (with the same `task` and `startedAt`). Pair updates atomically write both files.
 7. **`lastBlocker` is set by `/maji-handoff` if blocker reported, cleared by `/maji-unblock`.** Other commands never directly write `lastBlocker`.
 8. **All timestamps are ISO-8601 with timezone offset.** Prefer `+08:00` (Asia/Kuala_Lumpur).
 9. **`personalNotes` is append-only.** Never edit or delete a previous note. Member can add a correction note that references the previous one.
@@ -130,7 +130,7 @@ A stub is detected by `firstOnboarded === null`. When the member runs `/maji-onb
 ## Whitelist of valid codenames
 
 ```
-ijam · mung · akmal · kairu · matnep
+ijam · moon · akmal · kairu · matnep
 ```
 
 Five members. No additions. Any command that encounters a JSON file outside this whitelist treats it as garbage and refuses to read it.

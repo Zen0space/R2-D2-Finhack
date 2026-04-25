@@ -1,7 +1,7 @@
 # Multi-Cloud Setup & HA Failover Guide
 
 **DuitLater · TNG FINHACK 2026 · Financial Inclusion Track**
-**Audience:** Mung (Backend / Foundation-Keeper) — primary implementer
+**Audience:** Moon (Backend / Foundation-Keeper) — primary implementer
 **Companion to:** [`infra/RELEASE.md`](../../infra/RELEASE.md) (single-EC2 baseline runbook)
 **Status:** v1.0 · 2026-04-25
 
@@ -72,7 +72,7 @@ Failover = proses tukar dari server primary ke server backup. Boleh **automatik*
 
 **Untuk DuitLater:**
 - Web traffic failover = **automatik** (Cloudflare detect ~90s)
-- Database write failover = **manual** (Mung run satu command, ~10s)
+- Database write failover = **manual** (Moon run satu command, ~10s)
 
 ### 1.3 Active-Passive vs Active-Active
 
@@ -200,7 +200,7 @@ Pengguna → Cloudflare → Server 2 (now primary) → DB writes work → respon
 
 ### 3.1 Akaun & Akses
 
-| Yang Mung perlu | Sebab |
+| Yang Moon perlu | Sebab |
 |---|---|
 | AWS account dengan permission EC2 + EIP + S3 + IAM | Provision 3 server + backup bucket |
 | Cloudflare account (Pro plan minimum, $20/month) | Load Balancer feature kena Pro+ |
@@ -212,14 +212,14 @@ Pengguna → Cloudflare → Server 2 (now primary) → DB writes work → respon
 ### 3.2 Tools Tempatan
 
 ```bash
-# Mung install ni di laptop/workstation:
+# Moon install ni di laptop/workstation:
 brew install awscli                    # AWS CLI
 brew install cloudflared              # Cloudflare CLI (optional)
 pip3 install aliyun-cli               # Alibaba CLI
 brew install postgresql@17            # Postgres client (psql, pg_dump)
 ```
 
-### 3.3 Maklumat yang Mung kena pegang
+### 3.3 Maklumat yang Moon kena pegang
 
 Sebelum mula, sediakan dalam satu file selamat (e.g., 1Password atau secure notes):
 
@@ -509,7 +509,7 @@ Kalau semua ni jalan = replication setup OK.
 1. Login ke Cloudflare dashboard
 2. Add Site → enter `duitlater.com`
 3. Pilih Pro plan ($20/month)
-4. Cloudflare bagi 2 nameservers — update kat domain registrar Mung
+4. Cloudflare bagi 2 nameservers — update kat domain registrar Moon
 
 **Step 2: Initial DNS A records (proxied)**
 
@@ -706,7 +706,7 @@ Inside `duitlater-fc` service:
    Memory: 512 MB
    Timeout: 10 seconds
    Triggers: HTTP trigger
-       Authentication: anonymous (atau dengan key kalau Mung mahu lock)
+       Authentication: anonymous (atau dengan key kalau Moon mahu lock)
        HTTP methods: POST
        Disable web protection: yes (HTTP trigger akan handle)
    ```
@@ -714,7 +714,7 @@ Inside `duitlater-fc` service:
 
 **Step 3: Prepare zip**
 
-Pada laptop Mung:
+Pada laptop Moon:
 ```bash
 cd /path/to/R2-D2-Finhack/alibaba-function-compute/penasihat-suggest
 zip -r penasihat-suggest.zip index.js package.json
@@ -772,7 +772,7 @@ Sama dengan penasihat-suggest, tapi:
 - Code: take from `alibaba-function-compute/nadi-summary/index.js` (kalau ada · belum ditulis · atau tulis sekarang based on `backend/src/services/nadi-summary.ts`)
 - Different HTTP trigger URL
 
-Note: Mung boleh skip ni dulu kalau Phase 5b belum priority. Phase 3 (Penasihat suggester) lagi penting.
+Note: Moon boleh skip ni dulu kalau Phase 5b belum priority. Phase 3 (Penasihat suggester) lagi penting.
 
 ### B.5 Configure Backend `.env.prod` on All 3 EC2
 
@@ -1019,7 +1019,7 @@ Tiada manual action diperlukan untuk web tier. Pengguna mungkin nampak ~90 saat 
 
 ### D.2 Database Promotion (Manual)
 
-**Bila perlu:** Server 1 (primary) down + Mung nak Server 2 jadi primary supaya writes work balik.
+**Bila perlu:** Server 1 (primary) down + Moon nak Server 2 jadi primary supaya writes work balik.
 
 **Pre-conditions:**
 - Server 1 confirmed down (tak respond SSH or shutdown EC2)
@@ -1058,7 +1058,7 @@ curl -X POST https://duitlater.com/api/v1/some-write-endpoint \
 
 ### D.3 Recovery — Server 1 Up Balik
 
-Selepas Mung dah promote Server 2 jadi primary, kalau Server 1 up balik:
+Selepas Moon dah promote Server 2 jadi primary, kalau Server 1 up balik:
 
 **Problem:** Server 1's Postgres masih ingat dia primary (data lama). Server 2 sekarang primary (data baru). Cloudflare akan auto-route traffic balik ke Server 1 sebab priority 1, tapi Server 1's data **stale** — risiko data corruption.
 
@@ -1114,7 +1114,7 @@ Cloudflare priority: traffic balik ke Server 1 (priority 1, healthy). Tapi Serve
 
 ### D.4 Failback (Optional · Post-hackathon)
 
-Kalau Mung nak revert kembali (Server 1 jadi primary lagi):
+Kalau Moon nak revert kembali (Server 1 jadi primary lagi):
 
 ```bash
 # 1. Pause writes (announce maintenance window)
@@ -1143,7 +1143,7 @@ ssh ubuntu@server-1-ip docker exec duitlater-prod-postgres \
 
 ## Bahagian E — Verification Checklist
 
-Mung tick satu-satu sebelum demo:
+Moon tick satu-satu sebelum demo:
 
 ### Pre-deploy
 - [ ] 3 EC2 (Server 1, 2, 3) provisioned, t3.medium, ap-southeast-1
@@ -1211,8 +1211,8 @@ Mung tick satu-satu sebelum demo:
 - [ ] `https://duitlater.com/api/v1/health` returns 200 from any browser
 - [ ] Pool formation flow works end-to-end
 - [ ] Penasihat suggestion API returns BM-first results within 6s
-- [ ] Failover playbook printed/saved offline (in case Mung phone tak ada signal)
-- [ ] AWS Console + Cloudflare dashboard tabs ready on Mung's laptop
+- [ ] Failover playbook printed/saved offline (in case Moon phone tak ada signal)
+- [ ] AWS Console + Cloudflare dashboard tabs ready on Moon's laptop
 
 ---
 
@@ -1420,7 +1420,7 @@ tail -f /var/log/duitlater-mirror.log
 
 ## Penutup
 
-Setup ni mungkin ambik **4-6 jam first time** untuk Mung implement penuh (provision EC2 + replication + Cloudflare + Alibaba FC + backup). Kalau dah ada experience dengan Postgres replication, lagi cepat (~3 jam).
+Setup ni mungkin ambik **4-6 jam first time** untuk Moon implement penuh (provision EC2 + replication + Cloudflare + Alibaba FC + backup). Kalau dah ada experience dengan Postgres replication, lagi cepat (~3 jam).
 
 **Demo strategy untuk hackathon judging:**
 1. Show normal flow — pengguna access `duitlater.com`, traffic to Server 1
@@ -1444,12 +1444,12 @@ Setup ni mungkin ambik **4-6 jam first time** untuk Mung implement penuh (provis
 
 **Sponsor alignment** = AWS (Gold) + Alibaba Cloud (Platinum) — both visible, both functionally critical.
 
-Kalau ada bahagian yang tak jelas atau perlu Mung clarify, catatkan dalam team-ledger atau ping di group. Failover playbook printout berguna untuk hari demo — print Bahagian D + Bahagian E sahaja untuk reference cepat.
+Kalau ada bahagian yang tak jelas atau perlu Moon clarify, catatkan dalam team-ledger atau ping di group. Failover playbook printout berguna untuk hari demo — print Bahagian D + Bahagian E sahaja untuk reference cepat.
 
 ---
 
 **Authored by:** Prime (AI orchestration)
-**Reviewer:** Mung (Backend Lead) · Kairu (PM gate)
+**Reviewer:** Moon (Backend Lead) · Kairu (PM gate)
 **Last updated:** 2026-04-25
 **Companion:** [`infra/RELEASE.md`](../../infra/RELEASE.md) (single-EC2 baseline)
 

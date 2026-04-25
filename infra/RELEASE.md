@@ -372,6 +372,6 @@ GHCR images stay; delete manually in GitHub → Packages if desired.
 
 ## Owner
 
-Mung (primary deploy operator) · Ijam (sponsor credit + AWS account holder)
+Moon (primary deploy operator) · Ijam (sponsor credit + AWS account holder)
 
 *Last updated: 2026-04-25 · post-monorepo restructure*

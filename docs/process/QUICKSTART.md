@@ -97,9 +97,9 @@ Then wire Better Auth + `/api/me` endpoint that returns the current user's indiv
 
 ## What still needs team authoring (not pre-scaffolded, by design)
 
-- `src/db/schema.ts` actual tables — Mung drafts in Phase 1 huddle
-- Better Auth config + middleware — Mung drafts in Phase 1
-- Tabung routes + frontend pages — Mung + Akmal in Phase 1
+- `src/db/schema.ts` actual tables — Moon drafts in Phase 1 huddle
+- Better Auth config + middleware — Moon drafts in Phase 1
+- Tabung routes + frontend pages — Moon + Akmal in Phase 1
 - shadcn/ui components — run `npx shadcn@latest init` when Phase 1 needs the first input/button
 
 ---

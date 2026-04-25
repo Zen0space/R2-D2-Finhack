@@ -58,7 +58,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Time estimate:** 3â€“4 hours (Saturday 10:30 â†’ 14:30)
 
-**Owner:** Mung (backend) Â· Akmal (frontend) Â· Kairu (gate)
+**Owner:** Moon (backend) Â· Akmal (frontend) Â· Kairu (gate)
 
 ---
 
@@ -89,7 +89,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Time estimate:** 3 hours (Saturday 14:30 â†’ 17:30)
 
-**Owner:** Akmal (frontend lead) Â· Mung (backend) Â· Kairu (gate)
+**Owner:** Akmal (frontend lead) Â· Moon (backend) Â· Kairu (gate)
 
 ---
 
@@ -116,7 +116,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Time estimate:** 4 hours (Saturday 17:30 â†’ 22:30)
 
-**Owner:** Mung (Penasihat backend + catalogue) Â· Akmal (suggestion UI) Â· Ijam (catalogue curation + Penasihat prompt review)
+**Owner:** Moon (Penasihat backend + catalogue) Â· Akmal (suggestion UI) Â· Ijam (catalogue curation + Penasihat prompt review)
 
 ---
 
@@ -145,7 +145,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Time estimate:** 4 hours (Sunday 09:00 â†’ 13:00)
 
-**Owner:** Mung (vote tally + transaction logic) Â· Akmal (vote UI + NADI portal) Â· Kairu (gate Â· cut-line aware)
+**Owner:** Moon (vote tally + transaction logic) Â· Akmal (vote UI + NADI portal) Â· Kairu (gate Â· cut-line aware)
 
 **Cut-line:** if running long, replace simulated TNG approval with hardcoded success (skip the simulated call entirely). Reduce voting from real-time poll to manual refresh. NADI portal can be cut to a single-page read-only summary if Phase 6 has parallel Akmal time.
 
@@ -179,7 +179,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Time estimate:** 4 hours (Sunday 13:00 â†’ 17:00)
 
-**Owner:** Mung (ledger + trust calc) Â· Akmal (ledger UI + trust widget) Â· Kairu (gate)
+**Owner:** Moon (ledger + trust calc) Â· Akmal (ledger UI + trust widget) Â· Kairu (gate)
 
 ---
 
@@ -204,11 +204,11 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Testable outcome:**
 > NADI staff opens `/nadi/dashboard` Â· sees this week's summary card with: pools-formed count Â· top-requested item Â· kampung trust Î” Â· 0 or more anomalies in BM Â· BM-first action suggestion.
 
-**Time estimate:** 1.5â€“2 hours (Sunday 16:00 â†’ 17:30, parallel with Phase 5 main flow if Mung shipped 5a early)
+**Time estimate:** 1.5â€“2 hours (Sunday 16:00 â†’ 17:30, parallel with Phase 5 main flow if Moon shipped 5a early)
 
 **Cut-line:** if Phase 5 main repayment ledger ate the Sunday afternoon window, NADI summary degrades to hardcoded demo summary (still BM-first, still surfaces anomaly logic).
 
-**Owner:** Mung (NADI summary backend) Â· Akmal (NADI summary card) Â· Kairu (gate)
+**Owner:** Moon (NADI summary backend) Â· Akmal (NADI summary card) Â· Kairu (gate)
 
 ---
 
@@ -216,7 +216,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Goal:** Deploy 3-server AWS HA cluster with Cloudflare auto-failover, Alibaba Cloud Function Compute for AI workloads, and cross-cloud Postgres backup â€” ready for live judging demo.
 
-**Runs parallel to Phase 6** â€” Mung handles infra, Ijam + MatNep handle pitch polish. Neither blocks the other.
+**Runs parallel to Phase 6** â€” Moon handles infra, Ijam + MatNep handle pitch polish. Neither blocks the other.
 
 > Full step-by-step guide: [`docs/tech/multi-cloud-setup.md`](../tech/multi-cloud-setup.md). This phase is a condensed task tracker.
 
@@ -248,7 +248,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Cut-line:** If Alibaba FC deploy slips, backend falls back to Claude API automatically â€” no demo blockage. If Cloudflare LB setup is incomplete, single-server deploy from `infra/RELEASE.md` is the fallback. Never let infra complexity block Phase 6 pitch polish.
 
-**Owner:** Mung (primary Â· all infra) Â· Ijam (Alibaba Cloud sponsor credit redemption)
+**Owner:** Moon (primary Â· all infra) Â· Ijam (Alibaba Cloud sponsor credit redemption)
 
 **Full guide:** [`docs/tech/multi-cloud-setup.md`](../tech/multi-cloud-setup.md) â€” Bahagian A through F, failover playbook, verification checklist, troubleshooting.
 
@@ -260,7 +260,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Tasks (parallel)**
 - **Akmal:** Polish NADI portal â€” kampung-level aggregate stats, no individual PII, pending deliveries, kampung trust score tile
-- **Mung:** Multi-cloud infra complete (Phase 6b) Â· run final migrations on all 3 EC2 Â· seed demo data (NADI Felda Gedangsa kampung + 4-5 demo members + seeded pools at various states)
+- **Moon:** Multi-cloud infra complete (Phase 6b) Â· run final migrations on all 3 EC2 Â· seed demo data (NADI Felda Gedangsa kampung + 4-5 demo members + seeded pools at various states)
 - **Ijam:** Finalise 8-slide pitch deck Â· script the 4-min narration Â· rehearse twice
 - **MatNep:** Apply brand polish Â· typography hierarchy Â· slide composition Â· ensure DuitLater visual coherence
 - **Kairu:** Verify all 6 phases gates passed Â· cut scope ruthlessly if anything wobbly
@@ -316,8 +316,8 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 
 | Phase | Status | Started | Completed | Tested by |
 |---|---|---|---|---|
-| 0 — Stack Activation | ✅ done | 2026-04-25 ~06:30 | 2026-04-25 | Mung |
-| 1 — Auth + Individual PayLater | ✅ done | 2026-04-25 | 2026-04-26 | Mung · Akmal |
+| 0 — Stack Activation | ✅ done | 2026-04-25 ~06:30 | 2026-04-25 | Moon |
+| 1 — Auth + Individual PayLater | ✅ done | 2026-04-25 | 2026-04-26 | Moon · Akmal |
 | 2 — Pool Formation + Lock | 🟡 In progress (frontend) | 2026-04-25 | — | — |
 | 3 — Penasihat + Catalogue | 🟡 In progress (frontend) | 2026-04-26 | — | — |
 | 4 — Vote + TNG Approval + Purchase | ✅ done (frontend slice) | 2026-04-26 | 2026-04-26 | Akmal |

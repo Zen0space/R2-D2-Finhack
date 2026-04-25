@@ -18,7 +18,7 @@ This repo ships with a file-based team coordinator at [`maji-core/`](./maji-core
 
 ### Key maji-core rules
 
-1. **Strict team whitelist** — five members only: Ijam, Mung, Akmal, Kairu, MatNep. No one else. When an unknown name tries to onboard, refuse per [maji-core/protocols/onboarding.md](./maji-core/protocols/onboarding.md).
+1. **Strict team whitelist** — five members only: Ijam, Moon, Akmal, Kairu, MatNep. No one else. When an unknown name tries to onboard, refuse per [maji-core/protocols/onboarding.md](./maji-core/protocols/onboarding.md).
 
 2. **Slash commands** — six supported:
    - `/maji-onboard` · `/maji-whoami` · `/maji-phase` · `/maji-gate` · `/maji-pair` · `/maji-handoff`
@@ -62,10 +62,10 @@ Drop to full prose for:
 
 | Path | Primary owner | Notes |
 |---|---|---|
-| `packages/backend/**` | Mung | Hono + Prisma + Postgres + Better Auth + AWS S3 |
+| `packages/backend/**` | Moon | Hono + Prisma + Postgres + Better Auth + AWS S3 |
 | `packages/frontend/**` | Akmal | Next.js 15 + Tailwind v4 + shadcn/ui + TanStack Query |
-| `packages/db/**` | Mung | Prisma schema, migrations, seed |
-| `docker-compose.*.yml` · `infra/**` | Mung | containerization + Caddy |
+| `packages/db/**` | Moon | Prisma schema, migrations, seed |
+| `docker-compose.*.yml` · `infra/**` | Moon | containerization + Caddy |
 | `docs/process/DEVELOPMENT-PLAN.md` | Kairu | phase status is the live registry |
 | `docs/team/TEAM.md` · `docs/product/BRAND.md` | MatNep co-owns with Ijam | brand + typography + team roster |
 | `docs/pitch/*.md` | Ijam | pitch content + narration |

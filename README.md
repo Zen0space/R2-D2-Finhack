@@ -55,7 +55,7 @@ Zero foreign reliance. All partners aligned by existing mandate. Pitch is a real
 - **Kampung trust score** — collectivist incentive; kampung-level reliability affects future pool capacity (not individual punishment-based)
 - **NADI portal** — centre staff dashboard for monitoring pool health, kampung-level stats, MySARA item delivery confirmation
 
-Built by team **R2-D2** (KrackedDevs): Ijam · Mung · Akmal · Kairu · MatNep.
+Built by team **R2-D2** (KrackedDevs): Ijam · Moon · Akmal · Kairu · MatNep.
 
 ---
 
@@ -80,7 +80,7 @@ In your AI chat, type:
 /maji-onboard
 ```
 
-The AI will greet you in BM, ask your name, match it against the **R2-D2 whitelist** (Ijam · Mung · Akmal · Kairu · MatNep — strict), show your role card with the current BMAD phase task, and create your personal memory file.
+The AI will greet you in BM, ask your name, match it against the **R2-D2 whitelist** (Ijam · Moon · Akmal · Kairu · MatNep — strict), show your role card with the current BMAD phase task, and create your personal memory file.
 
 If your IDE doesn't autocomplete `/maji-onboard`, just type it in chat — Cursor / Codex / generic AI all read [`AGENTS.md`](./AGENTS.md) and execute the flow.
 
@@ -143,12 +143,12 @@ Full specs: [maji-core/commands/](./maji-core/commands/).
 
 | Phase | Goal | Lead |
 |---|---|---|
-| 0 | Stack activation · `/health` + frontend renders | Mung + Akmal |
-| 1 | Auth + individual PayLater allowance display | Mung + Akmal |
-| 2 | Pool formation · invite · 2–8 members lock | Akmal + Mung |
-| 3 | Combined PayLater + MyKasih catalogue browse + AI Penasihat suggestion | Mung + Akmal |
-| 4 | Pool vote + TNG approval flow + purchase + delivery confirm | Mung + Kairu |
-| 5 | Repayment ledger + kampung trust score | Mung + Akmal |
+| 0 | Stack activation · `/health` + frontend renders | Moon + Akmal |
+| 1 | Auth + individual PayLater allowance display | Moon + Akmal |
+| 2 | Pool formation · invite · 2–8 members lock | Akmal + Moon |
+| 3 | Combined PayLater + MyKasih catalogue browse + AI Penasihat suggestion | Moon + Akmal |
+| 4 | Pool vote + TNG approval flow + purchase + delivery confirm | Moon + Kairu |
+| 5 | Repayment ledger + kampung trust score | Moon + Akmal |
 | 6 | NADI portal (institutional dashboard) + pitch polish | Ijam + MatNep |
 
 Phase status: [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md). Methodology: [maji-core/protocols/bmad.md](./maji-core/protocols/bmad.md).

@@ -21,7 +21,7 @@ Run the pre-flight check per [`protocols/preflight.md`](../protocols/preflight.m
 Run this check before greeting:
 
 - List files in `maji-core/memory/members/` (excluding `.gitkeep`).
-- If the folder contains at least one `<name>.json` AND the user has NOT told you who they are yet, greet as returning + ask which member they are (e.g., "Welcome back ke Kutu Digitizer. Kau Mung, Akmal, Kairu, MatNep, atau Ijam?").
+- If the folder contains at least one `<name>.json` AND the user has NOT told you who they are yet, greet as returning + ask which member they are (e.g., "Welcome back ke Kutu Digitizer. Kau Moon, Akmal, Kairu, MatNep, atau Ijam?").
 - If the folder is empty, or the user is a specific name that has no JSON yet, treat as first-time.
 
 ---
@@ -41,7 +41,7 @@ Do NOT display any hero content until they answer.
 Match the typed name case-insensitively against the files in `maji-core/heroes/`:
 
 - `ijam`
-- `mung`
+- `moon`
 - `akmal`
 - `kairu`
 - `matnep`
@@ -50,7 +50,7 @@ Match the typed name case-insensitively against the files in `maji-core/heroes/`
 
 Respond:
 
-> Nama kau tak dalam team R2-D2. Team ni tertutup — Ijam, Mung, Akmal, Kairu, MatNep sahaja. Kalau ada silap, hubungi Ijam.
+> Nama kau tak dalam team R2-D2. Team ni tertutup — Ijam, Moon, Akmal, Kairu, MatNep sahaja. Kalau ada silap, hubungi Ijam.
 
 Do NOT proceed. Do NOT add the person. Do NOT offer alternatives. End the session.
 
@@ -244,6 +244,6 @@ Welcome to R2-D2. Jom bawa kutu ke stage.
 
 - Do NOT reveal the member whitelist before they answer the name question.
 - Do NOT offer to add new members. Refuse gracefully.
-- Do NOT pretend to be the member ("As Mung, I will..."). You are assisting them, not playing them.
+- Do NOT pretend to be the member ("As Moon, I will..."). You are assisting them, not playing them.
 - Do NOT commit any files during onboarding. Writing `memory/members/<name>.json` is the only write.
 - Do NOT fabricate phase content. Read from `docs/process/DEVELOPMENT-PLAN.md` and `docs/team/TEAM.md` — if those files don't contain what you need, say so.

@@ -52,12 +52,12 @@ The product's "why" delivered in 30 seconds. Translates from engineer register t
 
 | Phase | Lead | Support |
 |---|---|---|
-| 0 | Mung + Akmal | Kairu gate |
-| 1 | Mung + Akmal | **Ijam — copy review** |
-| 2 | Akmal + Mung | — |
-| 3 | Mung | Akmal |
-| 4 | Mung + Kairu | **Ijam — logic narrative for pitch** |
-| 5 | Akmal + Mung | **Ijam — Penasihat prompt framing** |
+| 0 | Moon + Akmal | Kairu gate |
+| 1 | Moon + Akmal | **Ijam — copy review** |
+| 2 | Akmal + Moon | — |
+| 3 | Moon | Akmal |
+| 4 | Moon + Kairu | **Ijam — logic narrative for pitch** |
+| 5 | Akmal + Moon | **Ijam — Penasihat prompt framing** |
 | 6 | **Ijam + MatNep lead** | Kairu verify |
 
 ---

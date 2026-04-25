@@ -55,12 +55,12 @@ If a phase wants to claim ✅ but its testable outcome line above does NOT pass,
 
 | Phase | Owner | Verifier |
 |---|---|---|
-| 0 | Mung + Akmal | Kairu |
-| 1 | Mung + Akmal | Kairu |
-| 2 | Akmal + Mung | Kairu |
-| 3 | Mung + Akmal | Ijam |
-| 4 | Mung + Kairu | Ijam |
-| 5 | Mung + Akmal | Kairu |
+| 0 | Moon + Akmal | Kairu |
+| 1 | Moon + Akmal | Kairu |
+| 2 | Akmal + Moon | Kairu |
+| 3 | Moon + Akmal | Ijam |
+| 4 | Moon + Kairu | Ijam |
+| 5 | Moon + Akmal | Kairu |
 | 6 | Ijam + MatNep | Kairu |
 
 The verifier runs the testable outcome on their own machine. If it works, they mark the phase ✅. If it does not work, they log the specific failure in `team-ledger.md` and the phase stays 🟡.

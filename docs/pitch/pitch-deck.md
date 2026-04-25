@@ -21,7 +21,7 @@ Narration: [pitch-narration.md](./pitch-narration.md). This file is slide conten
 > Sendiri tak mampu, ramai-ramai boleh.
 
 **Footer metadata** (Inter 14pt, slate)
-- Team R2-D2 — Ijam · Mung · Akmal · Kairu · MatNep
+- Team R2-D2 — Ijam · Moon · Akmal · Kairu · MatNep
 - Track: **Financial Inclusion**
 - TNG FINHACK 2026
 
@@ -172,7 +172,7 @@ Narration: [pitch-narration.md](./pitch-narration.md). This file is slide conten
 
 **Team footer** (Inter 14pt, slate)
 - Pitch · Ijam (zarulijam@gmail.com)
-- Technical · Mung (backend) · Akmal (frontend) · Kairu (PM) · MatNep (design)
+- Technical · Moon (backend) · Akmal (frontend) · Kairu (PM) · MatNep (design)
 - Repo · github.com/Ijam18/duitlater
 
 **Footer signature** (Cormorant Garamond italic 18pt, centered, maroon)

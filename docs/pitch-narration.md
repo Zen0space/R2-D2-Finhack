@@ -154,7 +154,7 @@ Timing shown in `[mm:ss]` cues. Bracketed stage directions are notes, not spoken
 
 - 5 min before: breath cycle, shoulders down
 - 2 min before: clipboard check — remote works, demo URL loaded, sound tested, NADI staff login pre-loaded, pool members pre-seeded
-- 30 sec before: one look at Mung + Akmal — team nod
+- 30 sec before: one look at Moon + Akmal — team nod
 - On stage: find one judge's eyes for slide 1 open. Don't break eye contact for the first sentence.
 
 ---

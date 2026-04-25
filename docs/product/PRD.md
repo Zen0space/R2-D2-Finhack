@@ -9,7 +9,7 @@
 | **Document version** | 2.0 (DuitLater) |
 | **Last updated** | 2026-04-25 |
 | **Document owner** | Ijam (Narrative Spine) |
-| **Engineering owner** | Mung (Foundation-Keeper) |
+| **Engineering owner** | Moon (Foundation-Keeper) |
 | **Design owner** | MatNep (Orthodox Eye) |
 | **PM owner** | Kairu (Ladder-Keeper) |
 
@@ -580,7 +580,7 @@ Phase advancement gated by `/maji-gate`. See [maji-core/protocols/phase-gate.md]
 | Member | Role | Codename | Domain |
 |---|---|---|---|
 | **Ijam** (Zarul Izham) | Business Pitch Lead · Product Owner | *Narrative Spine* | Pitch · positioning · stakeholder framing |
-| **Mung** | Backend Lead | *Foundation-Keeper* | Hono · Prisma · Postgres · Better Auth · TNG simulated · MyKasih catalogue |
+| **Moon** | Backend Lead | *Foundation-Keeper* | Hono · Prisma · Postgres · Better Auth · TNG simulated · MyKasih catalogue |
 | **Akmal** | Frontend Lead | *Surface-Weaver* | Next.js 15 · Tailwind v4 · shadcn/ui · TanStack Query · Jotai · pool UI · NADI portal |
 | **Kairu** | Product Manager | *Ladder-Keeper* | Phase plan · testable outcomes · scope guard |
 | **MatNep** | Classical Designer | *Orthodox Eye* | BRAND · pitch deck · typography · accessibility |

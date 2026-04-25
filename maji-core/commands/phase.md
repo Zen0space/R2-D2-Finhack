@@ -37,12 +37,12 @@ Read `maji-core/memory/team-ledger.md`. Find any `BLOCKER` entries not followed 
 BMAD Phase Status — Kutu Digitizer · R2-D2
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  ✅  Phase 0 — Stack Activation           (Mung + Akmal · Kairu)
-  🟡  Phase 1 — Auth + First Tabung        (Mung + Akmal · Kairu)
-  ⏳  Phase 2 — Member Invite + Join       (Akmal + Mung · MatNep)
-  ⏳  Phase 3 — Contribution Flow          (Mung · Akmal)
-  ⏳  Phase 4 — Rotation Payout            (Mung + Kairu · Ijam)
-  ⏳  Phase 5 — AI Penasihat               (Akmal + Mung · Ijam)
+  ✅  Phase 0 — Stack Activation           (Moon + Akmal · Kairu)
+  🟡  Phase 1 — Auth + First Tabung        (Moon + Akmal · Kairu)
+  ⏳  Phase 2 — Member Invite + Join       (Akmal + Moon · MatNep)
+  ⏳  Phase 3 — Contribution Flow          (Moon · Akmal)
+  ⏳  Phase 4 — Rotation Payout            (Moon + Kairu · Ijam)
+  ⏳  Phase 5 — AI Penasihat               (Akmal + Moon · Ijam)
   ⏳  Phase 6 — Pitch Polish               (Ijam + MatNep · Kairu)
 
 Current phase: 🟡 Phase 1 (Auth + First Tabung)
@@ -57,8 +57,8 @@ Team state (based on last sessions)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Ijam    · session #{N} · last {relativeTime} · Phase {X}
-  Mung    · session #{N} · last {relativeTime} · Phase {X} 🤝 pair with Akmal
-  Akmal   · session #{N} · last {relativeTime} · Phase {X} 🤝 pair with Mung
+  Moon    · session #{N} · last {relativeTime} · Phase {X} 🤝 pair with Akmal
+  Akmal   · session #{N} · last {relativeTime} · Phase {X} 🤝 pair with Moon
   Kairu   · session #{N} · last {relativeTime} · Phase {X}
   MatNep  · session #{N} · last {relativeTime} · Phase {X}
 ```

@@ -1,6 +1,6 @@
 {
-  "name": "Mung",
-  "codename": "mung",
+  "name": "Moon",
+  "codename": "moon",
   "firstOnboarded": "2026-04-25T20:04:52+08:00",
   "lastSession": "2026-04-25T20:07:20+08:00",
   "sessionsCount": 2,
@@ -12,7 +12,7 @@
   "personalNotes": [
     {
       "at": "2026-04-25T20:04:52+08:00",
-      "note": "Real name is Moon; Maji codename is Mung."
+      "note": "Real name is Moon; Maji codename is Moon."
     }
   ]
 }

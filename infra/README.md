@@ -148,4 +148,4 @@ No Caddy, no images, no GHCR. See [docs/process/QUICKSTART.md](../docs/process/Q
 
 ## Owner
 
-Mung (primary) · Ijam (sponsor credit redemption)
+Moon (primary) · Ijam (sponsor credit redemption)
