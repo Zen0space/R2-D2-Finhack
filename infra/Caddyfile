@@ -1,0 +1,31 @@
+# Kutu Digitizer · Caddy reverse proxy
+# Pattern A: same-domain path-routing. No CORS across the hackathon.
+# Replace {$KUTU_DOMAIN} at deploy time (e.g. export KUTU_DOMAIN=kutu.example.my).
+
+{$KUTU_DOMAIN:localhost} {
+    encode gzip zstd
+
+    # Backend API: strip /api prefix before forwarding
+    handle_path /api/* {
+        reverse_proxy app:4000
+    }
+
+    # Frontend: Next.js standalone server handles everything else
+    handle {
+        reverse_proxy frontend:3000
+    }
+
+    # Basic security headers (expand before prod hand-off)
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}

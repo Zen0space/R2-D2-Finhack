@@ -1,0 +1,59 @@
+---
+description: maji-core team coordinator rules for Kutu Digitizer
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# maji-core — team coordinator (Cursor rule)
+
+This repo has a file-based team coordinator at `maji-core/`. All AI assistance via Cursor must honor it.
+
+## Core rules
+
+1. **Team whitelist is strict** — only `ijam`, `mung`, `akmal`, `kairu`, `matnep`. Refuse unknown names attempting to onboard.
+
+2. **Slash commands** map to prompt templates in `maji-core/commands/`:
+   - `/maji-onboard` → `maji-core/commands/onboard.md`
+   - `/maji-whoami` → `maji-core/commands/whoami.md`
+   - `/maji-phase` → `maji-core/commands/phase.md`
+   - `/maji-gate` → `maji-core/commands/gate.md`
+   - `/maji-pair` → `maji-core/commands/pair.md`
+   - `/maji-handoff` → `maji-core/commands/handoff.md`
+
+   When a user types `/maji-<name>`, read the matching file and follow its flow exactly.
+
+3. **Personal memory is SHARED (committed)** — `maji-core/memory/members/*.json` is committed to git. When a member's JSON is updated by a command, prompt them to `git add` + `git commit` + `git push` so the team gets the update on next pull.
+
+4. **All commits are manual** — `team-ledger.md` and `members/*.json` both committed manually by the user. Never run `git commit` automatically.
+
+5. **Kairu's ladder does not bend** — a phase can only advance to ✅ via `/maji-gate` passing with an independent verifier and concrete evidence. See `maji-core/protocols/phase-gate.md`.
+
+## Coding discipline
+
+Follow `maji-core/protocols/akal.md` — THINK, SIMPLE, SURGICAL, VERIFY.
+
+## Register
+
+BM-first with natural EN code-switch. Jimat penuh default (concise, high-signal, fragments over full sentences). Drop to full prose for security / irreversible / onboarding / confusion. See `maji-core/protocols/jimat.md`.
+
+## File ownership snapshot
+
+- `backend/**` → Mung (Foundation-Keeper)
+- `frontend/**` → Akmal (Surface-Weaver)
+- `DEVELOPMENT-PLAN.md` → Kairu (Ladder-Keeper)
+- `BRAND.md` + design surfaces → MatNep (Orthodox Eye)
+- `docs/pitch-*` → Ijam (Narrative Spine)
+
+Full per-member cards: `maji-core/heroes/`.
+
+## Do NOT
+
+- Add a sixth team member.
+- Fabricate phase status — read `DEVELOPMENT-PLAN.md`.
+- Run `git commit` automatically for anything maji-core touches.
+- Reference any external canonical lore (no "Sovereign", "Majitopia", etc.) in user-facing output.
+
+## First entry point for any contributor
+
+If in doubt, open `maji-core/README.md`.

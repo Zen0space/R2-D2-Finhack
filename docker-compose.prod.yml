@@ -1,0 +1,75 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: kutu-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - kutu_web
+    depends_on:
+      - frontend
+      - app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kutu-frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env.prod
+    networks:
+      - kutu_web
+    expose:
+      - "3000"
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kutu-app
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.prod
+    networks:
+      - kutu_web
+    expose:
+      - "4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: kutu-postgres
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kutu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-kutu_digitizer}
+    volumes:
+      - kutu_postgres_data:/var/lib/postgresql/data
+    networks:
+      - kutu_web
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kutu} -d ${POSTGRES_DB:-kutu_digitizer}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  kutu_postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  kutu_web:
+    driver: bridge

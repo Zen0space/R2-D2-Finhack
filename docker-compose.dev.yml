@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kutu-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kutu
+      POSTGRES_PASSWORD: kutu_dev
+      POSTGRES_DB: kutu_digitizer
+    ports:
+      - "5432:5432"
+    volumes:
+      - kutu_postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kutu -d kutu_digitizer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  kutu_postgres_dev_data:
