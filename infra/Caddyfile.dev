@@ -7,16 +7,29 @@
 #
 # Set at deploy time: export DUITLATER_DOMAIN=duitlater.com
 
+(security_headers) {
+    header {
+        # Force HTTPS for 1y across all subdomains
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        # Block clickjacking
+        X-Frame-Options "DENY"
+        # Block MIME sniffing
+        X-Content-Type-Options "nosniff"
+        # Limit what referrer info leaks across origins
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Disable browser features we don't use
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        # Hide upstream server fingerprint
+        -Server
+    }
+}
+
 {$DUITLATER_DOMAIN:localhost} {
     encode gzip zstd
 
     reverse_proxy duitlater-prod-frontend:3000
 
-    header {
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
-    }
+    import security_headers
 
     log {
         output stdout
@@ -29,12 +42,8 @@ dev.{$DUITLATER_DOMAIN:localhost} {
 
     reverse_proxy duitlater-dev-frontend:3000
 
-    header {
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
-        X-Robots-Tag "noindex, nofollow"
-    }
+    import security_headers
+    header X-Robots-Tag "noindex, nofollow"
 
     log {
         output stdout
@@ -47,12 +56,8 @@ api.dev.{$DUITLATER_DOMAIN:localhost} {
 
     reverse_proxy duitlater-dev-app:4000
 
-    header {
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
-        X-Robots-Tag "noindex, nofollow"
-    }
+    import security_headers
+    header X-Robots-Tag "noindex, nofollow"
 
     log {
         output stdout
@@ -65,11 +70,7 @@ api.{$DUITLATER_DOMAIN:localhost} {
 
     reverse_proxy duitlater-prod-app:4000
 
-    header {
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
-    }
+    import security_headers
 
     log {
         output stdout

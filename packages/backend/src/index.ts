@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 import { serve } from "@hono/node-server";
 import { requestLogger, log } from "./middleware/logger.js";
 import { auth } from "./lib/auth.js";
@@ -37,6 +38,7 @@ app.notFound((c) => {
 });
 
 app.use("*", requestLogger);
+app.use("*", secureHeaders());
 app.use(
   "*",
   cors({
