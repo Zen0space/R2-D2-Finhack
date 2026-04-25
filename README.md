@@ -86,10 +86,20 @@ This auto-installs Node 22 via nvm if missing, installs pnpm, installs all deps,
 ### Start dev
 
 ```bash
-pnpm db:up       # start Postgres in Docker
-pnpm db:migrate  # apply migrations
-pnpm dev         # backend (4000) + frontend (3000) in parallel
+# 1. Start Postgres (laptop only — single container on :5432)
+pnpm db:up
+# equivalent: docker compose -f infra/docker-compose.local.yml up -d
+
+# 2. Apply migrations
+pnpm db:migrate
+
+# 3. Run backend (:4000) + frontend (:3000) in parallel
+pnpm dev
 ```
+
+Stop Postgres when done: `pnpm db:down` (or `docker compose -f infra/docker-compose.local.yml down`).
+
+> Local dev runs Postgres in Docker and the apps on your host (`pnpm dev`). The other compose files in `infra/` (`docker-compose.dev.yml`, `docker-compose.prod.yml`) are for VPS deployments — see [`infra/RELEASE.md`](./infra/RELEASE.md).
 
 ---
 
