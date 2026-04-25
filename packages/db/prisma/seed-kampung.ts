@@ -9,14 +9,16 @@
  *   - districtHint→ from scraper
  *   - nadiCentreId→ scraper id (unique key for upsert)
  *
- * Run:
- *   pnpm --filter db tsx prisma/seed-kampung.ts
+ * Two ways to invoke:
+ *   1. Standalone CLI:   pnpm --filter db exec tsx prisma/seed-kampung.ts
+ *   2. Via seed-runner:  imported as { name, run } and gated by _seed_history.
  */
 
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../src/index.js";
 
 type NadiCentre = {
@@ -37,7 +39,9 @@ const DATA_PATH = join(
   "nadi-centres-selangor.json",
 );
 
-async function main() {
+export const name = "2026-04-25_kampungs_from_nadi";
+
+export async function run(client: PrismaClient = prisma) {
   console.log(`[seed-kampung] reading ${DATA_PATH}`);
   const raw = readFileSync(DATA_PATH, "utf-8");
   const centres = JSON.parse(raw) as NadiCentre[];
@@ -47,7 +51,7 @@ async function main() {
   let updated = 0;
 
   for (const centre of centres) {
-    const result = await prisma.kampung.upsert({
+    const result = await client.kampung.upsert({
       where: { nadiCentreId: centre.id },
       create: {
         name: centre.name,
@@ -69,8 +73,7 @@ async function main() {
 
   console.log(`[seed-kampung] created=${created}, updated=${updated}`);
 
-  // Sanity check — Felda Gedangsa must exist
-  const felda = await prisma.kampung.findUnique({
+  const felda = await client.kampung.findUnique({
     where: { nadiCentreId: "selangor-felda-gedangsa" },
   });
   console.log(
@@ -78,11 +81,18 @@ async function main() {
       ? `[seed-kampung] ✓ FELDA GEDANGSA seeded (id=${felda.id}, district=${felda.districtHint})`
       : `[seed-kampung] ✗ FELDA GEDANGSA missing!`,
   );
-
-  await prisma.$disconnect();
 }
 
-main().catch((err) => {
-  console.error("[seed-kampung] failed:", err);
-  process.exit(1);
-});
+// CLI entrypoint — only runs when invoked directly via tsx prisma/seed-kampung.ts
+const isDirectInvocation =
+  import.meta.url === `file://${process.argv[1]}` ||
+  process.argv[1]?.endsWith("seed-kampung.ts");
+
+if (isDirectInvocation) {
+  run()
+    .catch((err) => {
+      console.error("[seed-kampung] failed:", err);
+      process.exit(1);
+    })
+    .finally(() => prisma.$disconnect());
+}

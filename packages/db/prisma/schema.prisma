@@ -138,6 +138,24 @@ model Verification {
 }
 
 // ---------------------------------------------------------------------------
+// NADI centres (scraped reference data from nadi.my)
+// ---------------------------------------------------------------------------
+
+model NadiCentre {
+  id           String   @id // scraper id e.g. "selangor-felda-gedangsa"
+  name         String
+  state        String
+  districtHint String?
+  rawPosition  Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([state])
+  @@index([districtHint])
+  @@index([rawPosition])
+}
+
+// ---------------------------------------------------------------------------
 // Kampung (sourced from scraped NADI centres)
 // ---------------------------------------------------------------------------
 

@@ -1,9 +1,8 @@
 /**
  * NADI centre lookup API.
  *
- * Data source: scraped from https://www.nadi.my via tools/scrape-nadi.py.
- * Loaded once at boot from the bundled JSON dataset (no DB roundtrip per
- * request — these centres are reference data, not application state).
+ * Backed by the `nadi_centre` Postgres table (seeded from tools/scrape-nadi.py
+ * via packages/db/prisma/seed-nadi.ts).
  *
  * Used by the DuitLater frontend to:
  *   - populate the kampung selector during pool formation
@@ -20,38 +19,11 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { prisma } from "db";
 
 import { ApiError, errorResponse } from "../lib/errors.js";
 import { successResponse } from "../lib/response.js";
 import { log } from "../middleware/logger.js";
-
-// ---------------------------------------------------------------------------
-// Dataset
-// ---------------------------------------------------------------------------
-
-export type NadiCentre = {
-  id: string;
-  name: string;
-  state: string;
-  district_hint: string | null;
-  raw_position: number;
-};
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_PATH = join(__dirname, "..", "data", "nadi-centres-selangor.json");
-
-let centres: NadiCentre[] = [];
-
-try {
-  const raw = readFileSync(DATA_PATH, "utf-8");
-  centres = JSON.parse(raw) as NadiCentre[];
-  log("INFO", `[nadi] loaded ${centres.length} centres from ${DATA_PATH}`);
-} catch (err) {
-  log("ERROR", `[nadi] failed to load dataset: ${err instanceof Error ? err.message : err}`);
-}
 
 // ---------------------------------------------------------------------------
 // Validators
@@ -60,7 +32,7 @@ try {
 const listCentresQuerySchema = z.object({
   state: z.string().optional(),
   district: z.string().optional(),
-  q: z.string().optional(), // case-insensitive name search
+  q: z.string().optional(), // case-insensitive name/id search
   limit: z.coerce.number().int().positive().max(200).optional(),
   offset: z.coerce.number().int().min(0).optional(),
 });
@@ -71,6 +43,26 @@ const districtsQuerySchema = z.object({
 
 const idParamSchema = z.object({
   id: z.string().min(1),
+});
+
+// ---------------------------------------------------------------------------
+// Serialization — keep wire shape identical to the previous JSON-backed API
+// ---------------------------------------------------------------------------
+
+type NadiCentreRow = {
+  id: string;
+  name: string;
+  state: string;
+  districtHint: string | null;
+  rawPosition: number;
+};
+
+const toWire = (row: NadiCentreRow) => ({
+  id: row.id,
+  name: row.name,
+  state: row.state,
+  district_hint: row.districtHint,
+  raw_position: row.rawPosition,
 });
 
 // ---------------------------------------------------------------------------
@@ -88,77 +80,94 @@ nadiRouter.onError((err, c) => {
 });
 
 // GET /api/v1/nadi/centres
-nadiRouter.get("/centres", zValidator("query", listCentresQuerySchema), (c) => {
+nadiRouter.get("/centres", zValidator("query", listCentresQuerySchema), async (c) => {
   const { state, district, q, limit = 50, offset = 0 } = c.req.valid("query");
 
-  let result = centres;
+  const where = {
+    ...(state ? { state: { equals: state, mode: "insensitive" as const } } : {}),
+    ...(district
+      ? { districtHint: { contains: district, mode: "insensitive" as const } }
+      : {}),
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { id: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
 
-  if (state) {
-    const s = state.toLowerCase();
-    result = result.filter((centre) => centre.state.toLowerCase() === s);
-  }
-
-  if (district) {
-    const d = district.toLowerCase();
-    result = result.filter((centre) =>
-      centre.district_hint != null && centre.district_hint.toLowerCase().includes(d),
-    );
-  }
-
-  if (q) {
-    const needle = q.toLowerCase();
-    result = result.filter((centre) =>
-      centre.name.toLowerCase().includes(needle) ||
-      centre.id.toLowerCase().includes(needle),
-    );
-  }
-
-  const total = result.length;
-  const paged = result.slice(offset, offset + limit);
+  const [total, rows] = await Promise.all([
+    prisma.nadiCentre.count({ where }),
+    prisma.nadiCentre.findMany({
+      where,
+      orderBy: { rawPosition: "asc" },
+      skip: offset,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        state: true,
+        districtHint: true,
+        rawPosition: true,
+      },
+    }),
+  ]);
 
   return c.json(
     successResponse({
-      centres: paged,
-      meta: { total, limit, offset, returned: paged.length },
+      centres: rows.map(toWire),
+      meta: { total, limit, offset, returned: rows.length },
     }),
   );
 });
 
 // GET /api/v1/nadi/centres/:id
-nadiRouter.get("/centres/:id", zValidator("param", idParamSchema), (c) => {
+nadiRouter.get("/centres/:id", zValidator("param", idParamSchema), async (c) => {
   const { id } = c.req.valid("param");
-  const centre = centres.find((cc) => cc.id === id);
+  const centre = await prisma.nadiCentre.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      state: true,
+      districtHint: true,
+      rawPosition: true,
+    },
+  });
   if (!centre) {
     throw ApiError.notFound("NADI centre");
   }
-  return c.json(successResponse(centre));
+  return c.json(successResponse(toWire(centre)));
 });
 
 // GET /api/v1/nadi/states
-nadiRouter.get("/states", (c) => {
-  const states = Array.from(new Set(centres.map((cc) => cc.state))).sort();
-  const summary = states.map((state) => ({
-    state,
-    count: centres.filter((cc) => cc.state === state).length,
-  }));
+nadiRouter.get("/states", async (c) => {
+  const grouped = await prisma.nadiCentre.groupBy({
+    by: ["state"],
+    _count: { _all: true },
+    orderBy: { state: "asc" },
+  });
+  const summary = grouped.map((g) => ({ state: g.state, count: g._count._all }));
   return c.json(successResponse({ states: summary }));
 });
 
 // GET /api/v1/nadi/districts?state=Selangor
-nadiRouter.get("/districts", zValidator("query", districtsQuerySchema), (c) => {
+nadiRouter.get("/districts", zValidator("query", districtsQuerySchema), async (c) => {
   const { state } = c.req.valid("query");
-  const stateLc = state.toLowerCase();
 
-  const districts = centres
-    .filter((cc) => cc.state.toLowerCase() === stateLc && cc.district_hint != null)
-    .reduce<Map<string, number>>((acc, cc) => {
-      const key = cc.district_hint!;
-      acc.set(key, (acc.get(key) ?? 0) + 1);
-      return acc;
-    }, new Map());
+  const grouped = await prisma.nadiCentre.groupBy({
+    by: ["districtHint"],
+    where: {
+      state: { equals: state, mode: "insensitive" },
+      districtHint: { not: null },
+    },
+    _count: { _all: true },
+  });
 
-  const list = Array.from(districts.entries())
-    .map(([district_hint, count]) => ({ district_hint, count }))
+  const list = grouped
+    .map((g) => ({ district_hint: g.districtHint, count: g._count._all }))
     .sort((a, b) => b.count - a.count);
 
   return c.json(successResponse({ state, districts: list }));
