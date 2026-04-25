@@ -2,7 +2,9 @@
   "name": "r2-d2-finhack",
   "private": true,
   "scripts": {
-    "dev": "pnpm -r dev",
+    "setup": "bash scripts/setup.sh",
+    "predev": "bash scripts/kill-ports.sh",
+    "dev": "pnpm --parallel --filter './packages/{backend,frontend}' dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
