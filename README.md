@@ -132,3 +132,20 @@ Run a command across all packages:
 ```bash
 pnpm -r <command>
 ```
+
+## Collaboration
+
+Untuk dapatkan code terbaru (Sync):
+
+```bash
+git fetch origin dev
+git merge origin/dev
+```
+
+Untuk update code ke repository:
+
+```bash
+git add .
+git commit -m "(info)"
+git push origin dev
+```
