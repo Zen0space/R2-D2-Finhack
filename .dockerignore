@@ -4,9 +4,12 @@
 node_modules
 packages/*/node_modules
 packages/*/dist
-packages/frontend/.next
+packages/frontend
 docs
 *.log
 .env
 .env.*
 !.env.example
+.local
+uploads
+storage

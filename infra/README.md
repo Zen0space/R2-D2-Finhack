@@ -1,6 +1,6 @@
 # Infra — DuitLater Deployment
 
-**Docker · Caddy · GHCR · EC2 · Elastic IP · two-environment topology**
+**Docker · Caddy · GHCR · VPS · Cloudflare Free DNS · local upload sync**
 
 > **Deploying?** Use **[RELEASE.md](./RELEASE.md)** — the full AWS runbook (provision → first deploy → recurring releases → rollback → troubleshooting). This file is the topology overview and file map.
 
@@ -12,8 +12,10 @@
 infra/
 ├── Caddyfile                       # reverse proxy: routes 2 subdomains to 2 stacks
 ├── docker-compose.local.yml        # laptop dev — Postgres only
-├── docker-compose.dev.yml          # VPS dev stack  (dev branch  → dev.duitlater.com)
+├── docker-compose.dev.yml          # VPS dev stack  (dev branch  → dev.duitlater.com; joins prod Caddy network)
 ├── docker-compose.prod.yml         # VPS prod stack (main branch → duitlater.com)
+├── docker-compose.sync.yml         # host-level Syncthing for local uploads
+├── .env.example                    # copy to infra/.env on each VPS
 └── README.md
 ```
 
@@ -38,9 +40,11 @@ Pre-baked secrets (gitignored, EC2 only):
    └ duitlater-prod-postgres                           └ duitlater-dev-postgres
 
    shared docker network: duitlater_web (created by prod, joined by dev as external)
+   local upload folders: /var/lib/duitlater/{prod,dev}/uploads
 ```
 
 Caddy lives in the **prod** stack and proxies to both projects via container DNS (`duitlater-prod-app`, `duitlater-dev-app`, …). Bring prod up before dev.
+Syncthing runs once per VPS via `docker-compose.sync.yml` and syncs upload folders only; it never syncs Postgres data.
 
 ---
 
@@ -69,11 +73,17 @@ Backend image: `ghcr.io/zen0space/duitlater-backend`.
 
 **Security Group inbound:** 22 (team IPs) · 80 · 443.
 
-**DNS:**
+**Cloudflare Free DNS round-robin:**
 ```
-duitlater.com         A   <ELASTIC_IP>
-dev.duitlater.com     A   <ELASTIC_IP>
+duitlater.com         A   <VPS_1_IP>   proxied
+duitlater.com         A   <VPS_2_IP>   proxied
+duitlater.com         A   <VPS_3_IP>   proxied
+dev.duitlater.com     A   <VPS_1_IP>   proxied
+dev.duitlater.com     A   <VPS_2_IP>   proxied
+dev.duitlater.com     A   <VPS_3_IP>   proxied
 ```
+
+Cloudflare Free has no origin health monitor or priority failover. Remove a bad VPS IP from DNS manually during an incident, or upgrade later to Cloudflare Load Balancing.
 
 ---
 
@@ -91,23 +101,25 @@ git clone <repo-url> duitlater && cd duitlater
 echo "$GHCR_PAT" | docker login ghcr.io -u <github-username> --password-stdin
 
 # Provision env files (gitignored — author by hand on the box)
+cp infra/.env.example infra/.env
 cp packages/backend/.env.example  packages/backend/.env.prod
 cp packages/backend/.env.example  packages/backend/.env.dev
 cp packages/frontend/.env.example packages/frontend/.env.prod
 cp packages/frontend/.env.example packages/frontend/.env.dev
-nano packages/backend/.env.prod packages/backend/.env.dev packages/frontend/.env.prod packages/frontend/.env.dev
+nano infra/.env packages/backend/.env.prod packages/backend/.env.dev packages/frontend/.env.prod packages/frontend/.env.dev
 
-export DUITLATER_DOMAIN=duitlater.com
+# Start Syncthing for upload folders first
+docker compose --env-file infra/.env -f infra/docker-compose.sync.yml -p sync up -d
 
 # Bring prod up first (creates the duitlater_web network + Caddy)
-docker compose -f infra/docker-compose.prod.yml -p prod pull
-docker compose -f infra/docker-compose.prod.yml -p prod up -d --build   # --build needed only until frontend image lands
-docker compose -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod pull
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod up -d --build   # --build needed only until frontend image lands
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
 
 # Then dev (joins the network)
-docker compose -f infra/docker-compose.dev.yml -p dev pull
-docker compose -f infra/docker-compose.dev.yml -p dev up -d --build
-docker compose -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev pull
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev up -d --build
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
 ```
 
 ---
@@ -119,15 +131,15 @@ GitHub Actions builds + pushes the image. On the VPS:
 ```bash
 # Prod (after main push)
 cd /home/ubuntu/duitlater && git pull
-docker compose -f infra/docker-compose.prod.yml -p prod pull
-docker compose -f infra/docker-compose.prod.yml -p prod up -d
-docker compose -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod pull
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod up -d
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
 
 # Dev (after dev push)
 cd /home/ubuntu/duitlater && git pull
-docker compose -f infra/docker-compose.dev.yml -p dev pull
-docker compose -f infra/docker-compose.dev.yml -p dev up -d
-docker compose -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev pull
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev up -d
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
 ```
 
 Both stacks live independently — restarting one does not touch the other.

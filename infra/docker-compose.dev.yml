@@ -1,39 +1,24 @@
-# DuitLater · dev API stack (dev branch → dev.api.duitlater.com)
-# Backend + Postgres only. Frontend joins once packages/frontend/Dockerfile lands.
+# DuitLater · dev stack (dev branch → dev.duitlater.com)
+# Caddy runs in the prod stack and routes to these dev containers
+# through the shared duitlater_web network.
 #
 # First-time: docker compose -f infra/docker-compose.dev.yml -p dev up -d
 # Subsequent: docker compose -f infra/docker-compose.dev.yml -p dev pull app && up -d app
 
 services:
-  caddy:
-    image: caddy:2-alpine
-    container_name: duitlater-dev-caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      DUITLATER_DOMAIN: ${DUITLATER_DOMAIN:-localhost}
-    volumes:
-      - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
-      - caddy_dev_data:/data
-      - caddy_dev_config:/config
-    networks:
-      - web
-    depends_on:
-      - app
-      - frontend
-
   frontend:
-    image: ghcr.io/zen0space/duitlater-frontend:${FRONTEND_TAG:-dev}
+    # TODO(akmal): swap to `image: ghcr.io/zen0space/duitlater-frontend:dev` once frontend-release.yml lands.
+    build:
+      context: ..
+      dockerfile: packages/frontend/Dockerfile
     container_name: duitlater-dev-frontend
     restart: unless-stopped
     env_file:
       - ../packages/frontend/.env.dev
     networks:
       - web
-    expose:
-      - "3000"
+    depends_on:
+      - app
 
   app:
     image: ghcr.io/zen0space/duitlater-backend:${BACKEND_TAG:-dev}
@@ -41,6 +26,11 @@ services:
     restart: unless-stopped
     env_file:
       - ../packages/backend/.env.dev
+    environment:
+      UPLOAD_ROOT: /data/uploads
+      UPLOAD_PUBLIC_PATH: /uploads
+    volumes:
+      - ${DEV_UPLOAD_HOST_PATH:-/var/lib/duitlater/dev/uploads}:/data/uploads
     networks:
       - web
     expose:
@@ -55,16 +45,12 @@ services:
     restart: unless-stopped
     env_file:
       - ../packages/backend/.env.dev
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-duitlater}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-duitlater_dev}
     volumes:
       - duitlater_dev_postgres_data:/var/lib/postgresql/data
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-duitlater} -d ${POSTGRES_DB:-duitlater_dev}"]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-duitlater} -d $${POSTGRES_DB:-duitlater_dev}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -120,5 +106,5 @@ volumes:
 
 networks:
   web:
-    name: duitlater_dev_web
-    driver: bridge
+    name: duitlater_web
+    external: true

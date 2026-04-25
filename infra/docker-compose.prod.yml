@@ -10,10 +10,14 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      DUITLATER_DOMAIN: ${DUITLATER_DOMAIN:-localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      - ${PROD_UPLOAD_HOST_PATH:-/var/lib/duitlater/prod/uploads}:/srv/uploads/prod:ro
+      - ${DEV_UPLOAD_HOST_PATH:-/var/lib/duitlater/dev/uploads}:/srv/uploads/dev:ro
     networks:
       - web
     depends_on:
@@ -40,6 +44,11 @@ services:
     restart: unless-stopped
     env_file:
       - ../packages/backend/.env.prod
+    environment:
+      UPLOAD_ROOT: /data/uploads
+      UPLOAD_PUBLIC_PATH: /uploads
+    volumes:
+      - ${PROD_UPLOAD_HOST_PATH:-/var/lib/duitlater/prod/uploads}:/data/uploads
     networks:
       - web
     expose:
@@ -54,16 +63,12 @@ services:
     restart: unless-stopped
     env_file:
       - ../packages/backend/.env.prod
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-duitlater}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-duitlater}
     volumes:
       - duitlater_prod_postgres_data:/var/lib/postgresql/data
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-duitlater} -d ${POSTGRES_DB:-duitlater}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-duitlater} -d $${POSTGRES_DB:-duitlater}"]
       interval: 10s
       timeout: 5s
       retries: 5
