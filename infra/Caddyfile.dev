@@ -1,14 +1,27 @@
-# DuitLater · dev API Caddyfile
-# Backend-only. All paths proxied directly — no /api/ stripping needed.
-# api.dev.duitlater.com/health → backend :4000/health
-# api.dev.duitlater.com/auth/sign-in → backend :4000/auth/sign-in
+# DuitLater · standalone dev Caddyfile
+# Optional fallback when running only the dev stack on a separate VPS.
 #
 # Set at deploy time: export DUITLATER_DOMAIN=duitlater.com
 
-api.dev.{$DUITLATER_DOMAIN:localhost} {
+dev.{$DUITLATER_DOMAIN:localhost} {
     encode gzip zstd
 
-    reverse_proxy duitlater-dev-app:4000
+    handle /health {
+        reverse_proxy duitlater-dev-app:4000
+    }
+
+    handle /api/* {
+        reverse_proxy duitlater-dev-app:4000
+    }
+
+    handle_path /uploads/* {
+        root * /srv/uploads/dev
+        file_server
+    }
+
+    handle {
+        reverse_proxy duitlater-dev-frontend:3000
+    }
 
     header {
         X-Content-Type-Options "nosniff"

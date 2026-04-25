@@ -1,62 +1,151 @@
-# Multi-Cloud Setup & HA Failover Guide
+# Free Multi-VPS Setup & HA Guide
 
 **DuitLater · TNG FINHACK 2026 · Financial Inclusion Track**
 **Audience:** Mung (Backend / Foundation-Keeper) — primary implementer
 **Companion to:** [`infra/RELEASE.md`](../../infra/RELEASE.md) (single-EC2 baseline runbook)
-**Status:** v1.0 · 2026-04-25
+**Status:** v2.0 · 2026-04-26 · Free VPS mode default
 
 ---
 
 ## Ringkasan Eksekutif
 
-Guide ni tunjuk macam mana setup **3 EC2 server** sebagai HA cluster dengan **Cloudflare** sebagai gate masuk + load balancer + auto-failover, plus integrasi dengan **Alibaba Cloud Function Compute** untuk AI workloads. Semua orkestrasi dirancang untuk **active-passive failover** — Server 1 selalu jadi primary, Server 2 dan 3 backup secara automatik bila primary down.
+Guide ni tunjuk macam mana setup **3 VPS/server** untuk DuitLater dengan kos serendah mungkin: **Cloudflare Free DNS round-robin**, **Postgres replication** untuk data aplikasi, dan **Syncthing** untuk fail upload lokal. Tiada WireGuard. Tiada paid Cloudflare Load Balancer sebagai default. Tiada S3/OSS sebagai default untuk upload.
 
-**Topology summary:**
-- 3 EC2 di AWS ap-southeast-1 (semua run full DuitLater stack)
-- Cloudflare Load Balancer (Pro plan) handle DNS + health monitoring + auto-failover
-- Postgres streaming replication antara 3 server (Server 1 primary, Server 2 + 3 read-only replicas)
-- Alibaba Cloud Function Compute host AI inference (Penasihat suggester · NADI summary)
-- Cross-cloud backup: Postgres → AWS S3 → mirror ke Alibaba OSS
+**Free topology summary:**
+- 3 VPS/server, setiap satu boleh run prod + dev stack.
+- `duitlater.com` ada 3 proxied A records: Server 1, Server 2, Server 3.
+- `dev.duitlater.com` juga ada 3 proxied A records: Server 1, Server 2, Server 3.
+- Postgres primary di Server 1, replicas di Server 2/3.
+- Semua app writes pergi ke Postgres primary; replicas untuk standby/read verification.
+- Local uploads disimpan di folder VPS dan disync ke peer server pakai Syncthing.
+- Alibaba Function Compute kekal optional untuk AI Penasihat.
+- S3/Alibaba OSS kekal optional advanced backup, bukan default setup.
 
-**Detection time** untuk failover: ~90 saat (3 missed health checks at 30s interval).
-**Manual DB promotion time:** ~10 saat (one command via SSH).
-**Total downtime untuk writes** semasa failover: ~2 minit. Reads continue tanpa gangguan.
+**Important boundary:**
+- Syncthing sync **files only**: gambar, PDF, resit, agreement.
+- Syncthing **tidak boleh** sync Postgres data directory.
+- User register, pool, vote, repayment, auth session = Postgres source of truth.
+
+**Free-mode limitation:** Cloudflare Free DNS round-robin tidak ada paid health monitor, origin pools, priority steering, atau guaranteed automatic failover. Kalau satu VPS rosak, buang IP itu dari DNS secara manual atau upgrade kemudian ke Cloudflare Load Balancing.
 
 ---
 
 ## Daftar Kandungan
 
-1. [Konsep Asas — HA, Failover, Replication](#1-konsep-asas)
-2. [Topology Penuh](#2-topology-penuh)
-3. [Prasyarat (Prerequisites)](#3-prasyarat)
-4. [Bahagian A — Setup AWS Side](#bahagian-a--setup-aws-side)
-   - A.1 Provision 3 EC2
-   - A.2 Install Docker stack
-   - A.3 Setup Postgres primary (Server 1)
-   - A.4 Setup Postgres replicas (Server 2 + 3)
-   - A.5 Verify replication
-   - A.6 Setup Cloudflare DNS + Load Balancer
-   - A.7 Health endpoint + monitor
-   - A.8 Test failover
-5. [Bahagian B — Setup Alibaba Cloud Side](#bahagian-b--setup-alibaba-cloud-side)
-   - B.1 Create Alibaba Cloud account
-   - B.2 Get DashScope API key
-   - B.3 Deploy penasihat-suggest function
-   - B.4 Deploy nadi-summary function
-   - B.5 Configure backend `.env` on all 3 EC2
-6. [Bahagian C — Backup Cross-Cloud](#bahagian-c--backup-cross-cloud)
-   - C.1 Postgres pg_dump cron
-   - C.2 Upload to AWS S3
-   - C.3 Mirror S3 → Alibaba OSS
-   - C.4 Restore drill
-7. [Bahagian D — Failover Playbook](#bahagian-d--failover-playbook)
-   - D.1 Web failover (auto)
-   - D.2 Database promotion (manual)
-   - D.3 Recovery
-   - D.4 Failback
-8. [Bahagian E — Verification Checklist](#bahagian-e--verification-checklist)
-9. [Bahagian F — Troubleshooting](#bahagian-f--troubleshooting)
-10. [Lampiran — Quick Reference](#lampiran--quick-reference)
+1. [Free VPS Mode — Default](#0-free-vps-mode--default)
+2. [Konsep Asas](#1-konsep-asas)
+3. [Topology Penuh](#2-topology-penuh)
+4. [Prasyarat](#3-prasyarat)
+5. [Bahagian A — Setup VPS Side](#bahagian-a--setup-vps-side)
+6. [Bahagian B — Setup Alibaba Cloud Side](#bahagian-b--setup-alibaba-cloud-side)
+7. [Bahagian C — Local Upload Sync](#bahagian-c--local-upload-sync)
+8. [Bahagian D — Failover Playbook](#bahagian-d--failover-playbook)
+9. [Bahagian E — Verification Checklist](#bahagian-e--verification-checklist)
+10. [Advanced Optional — Paid Cloudflare + S3/OSS](#advanced-optional--paid-cloudflare--s3oss)
+
+---
+
+## 0. Free VPS Mode — Default
+
+### 0.1 DNS
+
+Cloudflare Free DNS records:
+
+```text
+duitlater.com       A   <SERVER_1_PUBLIC_IP>   proxied
+duitlater.com       A   <SERVER_2_PUBLIC_IP>   proxied
+duitlater.com       A   <SERVER_3_PUBLIC_IP>   proxied
+dev.duitlater.com   A   <SERVER_1_PUBLIC_IP>   proxied
+dev.duitlater.com   A   <SERVER_2_PUBLIC_IP>   proxied
+dev.duitlater.com   A   <SERVER_3_PUBLIC_IP>   proxied
+```
+
+Cloudflare Free DNS can distribute traffic across origins, but it is not a health-checked load balancer. During incident, remove the broken VPS IP from DNS.
+
+### 0.2 `.env` files
+
+On each VPS:
+
+```bash
+cp infra/.env.example infra/.env
+cp packages/backend/.env.example packages/backend/.env.prod
+cp packages/backend/.env.example packages/backend/.env.dev
+cp packages/frontend/.env.example packages/frontend/.env.prod
+cp packages/frontend/.env.example packages/frontend/.env.dev
+```
+
+Prod backend uses:
+
+```env
+APP_ENV=prod
+PUBLIC_APP_URL=https://duitlater.com
+FRONTEND_URL=https://duitlater.com
+CORS_ORIGIN=https://duitlater.com
+BETTER_AUTH_URL=https://duitlater.com
+POSTGRES_DB=duitlater
+DATABASE_URL=postgresql://duitlater:<password>@<primary-public-ip>:5432/duitlater
+UPLOAD_ROOT=/data/uploads
+UPLOAD_PUBLIC_PATH=/uploads
+```
+
+Dev backend uses:
+
+```env
+APP_ENV=dev
+PUBLIC_APP_URL=https://dev.duitlater.com
+FRONTEND_URL=https://dev.duitlater.com
+CORS_ORIGIN=https://dev.duitlater.com
+BETTER_AUTH_URL=https://dev.duitlater.com
+POSTGRES_DB=duitlater_dev
+DATABASE_URL=postgresql://duitlater:<password>@<primary-public-ip>:5432/duitlater_dev
+UPLOAD_ROOT=/data/uploads
+UPLOAD_PUBLIC_PATH=/uploads
+```
+
+### 0.3 Firewall allowlist
+
+No WireGuard. Lock public ports with firewall:
+
+```text
+22          Moon/team IP only
+80,443      public / Cloudflare
+5432        only Server 1/2/3 public IPs
+22000/tcp   only Server 1/2/3 public IPs
+22000/udp   only Server 1/2/3 public IPs
+8384        localhost only (Syncthing GUI through SSH tunnel)
+```
+
+### 0.4 Start stack
+
+```bash
+docker compose --env-file infra/.env -f infra/docker-compose.sync.yml -p sync up -d
+
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod up -d --build
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
+
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev up -d --build
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
+```
+
+### 0.5 Upload sync
+
+Runtime paths:
+
+```text
+Prod host uploads: /var/lib/duitlater/prod/uploads
+Dev host uploads:  /var/lib/duitlater/dev/uploads
+Backend path:      /data/uploads
+Public URL:        /uploads/<yyyy>/<mm>/<dd>/<uuid>.<ext>
+```
+
+Syncthing folders:
+
+```text
+duitlater-prod-uploads -> /var/syncthing/prod-uploads
+duitlater-dev-uploads  -> /var/syncthing/dev-uploads
+```
+
+Set Syncthing to send/receive between Server 1/2/3. Never add Postgres volumes to Syncthing.
 
 ---
 
@@ -111,18 +200,17 @@ Mechanism untuk sync data antara Postgres servers:
                                                │ HTTPS https://duitlater.com
                                                ▼
                             ┌──────────────────────────────────────────┐
-                            │      Cloudflare DNS + LB + WAF           │
+                            │      Cloudflare Free DNS + WAF           │
                             │  - DNS proxy (orange cloud)              │
-                            │  - Load Balancer (Pro plan)              │
-                            │  - Health Monitor (30s interval)         │
+                            │  - Multiple proxied A records            │
+                            │  - No paid health monitor by default     │
                             │  - Auto SSL (Universal SSL)              │
                             │                                          │
-                            │  Origin Pools:                           │
-                            │    Pool A → Server 1 (priority 1)        │
-                            │    Pool B → Server 2 (priority 2)        │
-                            │    Pool C → Server 3 (priority 3)        │
+                            │  DNS records:                            │
+                            │    duitlater.com → Server 1/2/3          │
+                            │    dev.duitlater.com → Server 1/2/3      │
                             │                                          │
-                            │  Failover order: A → B → C               │
+                            │  Manual DNS removal if one VPS fails     │
                             └────────────────┬─────────────────────────┘
                                              │
                                              │ HTTPS internal
@@ -141,7 +229,7 @@ Mechanism untuk sync data antara Postgres servers:
         │  Backend      │            │  Backend      │            │  Backend      │
         │  Postgres     │ ──WAL──▶   │  Postgres     │            │  Postgres     │
         │  (PRIMARY)    │ ──WAL──────┼─────────────▶ │  (REPLICA)    │
-        │               │ ──WAL──────────────────────────▶ │  (REPLICA)    │
+        │  Uploads      │ ◀─sync────▶│  Uploads      │◀─sync────▶ │  Uploads      │
         └───────┬───────┘            └───────────────┘            └───────────────┘
                 │
                 │ AI request: HTTPS POST
@@ -152,14 +240,13 @@ Mechanism untuk sync data antara Postgres servers:
         │  Function Compute:                                        │
         │    - penasihat-suggest (wraps Qwen-plus LLM)              │
         │    - nadi-summary     (wraps Qwen-plus LLM)               │
-        │  Object Storage Service (OSS):                            │
-        │    - duitlater-backup (cross-cloud DR mirror)             │
+        │  Optional later: OSS backup mirror                         │
         └──────────────────────────────────────────────────────────┘
 
-                         AWS S3 (ap-southeast-1)
+                         Local VPS storage
                   ┌────────────────────────────────┐
-                  │  duitlater-postgres-backups    │  ← cron pg_dump uploads
-                  │  duitlater-assets              │  ← general static assets
+                  │ /var/lib/duitlater/*/uploads   │  ← Syncthing files only
+                  │ Postgres WAL replication       │  ← app records
                   └────────────────────────────────┘
 ```
 
@@ -168,13 +255,14 @@ Mechanism untuk sync data antara Postgres servers:
 | Komponen | Fungsi | Lokasi |
 |---|---|---|
 | Cloudflare DNS | Resolve `duitlater.com` ke Cloudflare proxy | Cloud |
-| Cloudflare Load Balancer | Health check + auto-failover routing | Cloud |
+| Cloudflare Free DNS | Multiple proxied A records for both domains | Cloud |
 | Server 1 (EC2 t3.medium) | Active web stack + Postgres primary | AWS ap-southeast-1 |
 | Server 2 (EC2 t3.medium) | Standby web stack + Postgres replica | AWS ap-southeast-1 |
 | Server 3 (EC2 t3.medium) | Standby web stack + Postgres replica | AWS ap-southeast-1 |
 | Alibaba Function Compute | Penasihat AI · NADI summary AI | Alibaba Cloud |
-| AWS S3 | Postgres backup + static assets | AWS |
-| Alibaba Cloud OSS | Cross-cloud DR backup mirror | Alibaba |
+| Syncthing | Local upload file sync only | Each VPS |
+| AWS S3 | Optional later backup storage | AWS |
+| Alibaba Cloud OSS | Optional later backup mirror | Alibaba |
 
 ### 2.2 Network Flow Examples
 
@@ -202,9 +290,9 @@ Pengguna → Cloudflare → Server 2 (now primary) → DB writes work → respon
 
 | Yang Mung perlu | Sebab |
 |---|---|
-| AWS account dengan permission EC2 + EIP + S3 + IAM | Provision 3 server + backup bucket |
-| Cloudflare account (Pro plan minimum, $20/month) | Load Balancer feature kena Pro+ |
-| Alibaba Cloud account dengan permission FC + OSS + DashScope | Multi-cloud AI workloads + DR mirror |
+| VPS/AWS account dengan permission compute + firewall | Provision 3 server |
+| Cloudflare Free account | DNS proxy + multiple A records |
+| Alibaba Cloud account dengan permission FC + DashScope | Optional AI workloads |
 | Domain (e.g., `duitlater.com`) di Cloudflare | DNS gateway |
 | GitHub PAT classic dengan `read:packages` scope | Pull pre-built backend image dari GHCR |
 | 1 SSH key pair (.pem file) | Connect ke 3 EC2 |
@@ -229,13 +317,13 @@ EC2 Server 1: i-xxxxx · IP 13.x.x.x · SSH key: ~/.ssh/duitlater.pem
 EC2 Server 2: i-xxxxx · IP 18.x.x.x · SSH key: ~/.ssh/duitlater.pem
 EC2 Server 3: i-xxxxx · IP 52.x.x.x · SSH key: ~/.ssh/duitlater.pem
 Region: ap-southeast-1
-S3 bucket: duitlater-postgres-backups
+Upload folders: /var/lib/duitlater/prod/uploads · /var/lib/duitlater/dev/uploads
 
 === Cloudflare ===
 Domain: duitlater.com
 Account ID: xxxxxxxxxxxx
 Zone ID: xxxxxxxxxxxx
-API Token: cf_xxxxx (Zone:DNS:Edit + Zone:Load Balancers:Edit)
+API Token: optional, only if automating DNS edits
 
 === Alibaba Cloud ===
 Account: xxxxx@xxx.com
@@ -244,7 +332,7 @@ Access Key Secret: xxxxx
 Region: ap-southeast-1 (or 3 = KL)
 DashScope API Key: sk-xxxxx
 FC Service: duitlater-fc
-OSS Bucket: duitlater-backup-mirror
+OSS Bucket: optional later
 
 === Postgres ===
 Master Password (for replication): generate via `openssl rand -base64 32`
@@ -254,7 +342,7 @@ Replication Password: generate via `openssl rand -base64 32`
 
 ---
 
-## Bahagian A — Setup AWS Side
+## Bahagian A — Setup VPS Side
 
 ### A.1 Provision 3 EC2
 
@@ -502,166 +590,99 @@ docker exec duitlater-prod-postgres psql -U duitlater -d duitlater \
 
 Kalau semua ni jalan = replication setup OK.
 
-### A.6 Setup Cloudflare DNS + Load Balancer
+### A.6 Setup Cloudflare Free DNS Round-Robin
 
-**Step 1: Add domain ke Cloudflare**
+**Step 1: Add domain ke Cloudflare Free**
 
-1. Login ke Cloudflare dashboard
-2. Add Site → enter `duitlater.com`
-3. Pilih Pro plan ($20/month)
-4. Cloudflare bagi 2 nameservers — update kat domain registrar Mung
+1. Login ke Cloudflare dashboard.
+2. Add Site → `duitlater.com`.
+3. Pilih Free plan.
+4. Update nameservers dekat registrar.
 
-**Step 2: Initial DNS A records (proxied)**
+**Step 2: DNS A records untuk production dan dev**
 
 Dalam Cloudflare → DNS → Records:
 
-```
-Type: A   Name: @       Content: <Server 1 EIP>   Proxy: ON (orange cloud)
-Type: A   Name: www     Content: <Server 1 EIP>   Proxy: ON
-Type: A   Name: dev     Content: <Server 1 EIP>   Proxy: ON  (optional, untuk dev stack)
-```
-
-Note: kita nanti akan ganti dengan Load Balancer, tapi DNS records ni jadi fallback.
-
-**Step 3: Buat Origin Pools**
-
-Dalam Cloudflare → Traffic → Load Balancing:
-
-**Pool A — Server 1 Primary:**
-```
-Name: duitlater-server-1
-Origins:
-  - Name: server-1
-    Address: <Server 1 EIP>
-    Weight: 1
-    Enabled: yes
-Health monitor: (akan setup di Step 5)
-Notification email: ijam@duitlater.com (or team chat)
+```text
+Type: A   Name: @     Content: <Server 1 public IP>   Proxy: ON
+Type: A   Name: @     Content: <Server 2 public IP>   Proxy: ON
+Type: A   Name: @     Content: <Server 3 public IP>   Proxy: ON
+Type: A   Name: dev   Content: <Server 1 public IP>   Proxy: ON
+Type: A   Name: dev   Content: <Server 2 public IP>   Proxy: ON
+Type: A   Name: dev   Content: <Server 3 public IP>   Proxy: ON
 ```
 
-**Pool B — Server 2 Standby:**
-```
-Name: duitlater-server-2
-Origins:
-  - Name: server-2
-    Address: <Server 2 EIP>
-    Weight: 1
+This gives:
+
+```text
+https://duitlater.com      -> any healthy/reachable VPS origin
+https://dev.duitlater.com  -> any healthy/reachable VPS origin
 ```
 
-**Pool C — Server 3 Standby:**
-```
-Name: duitlater-server-3
-Origins:
-  - Name: server-3
-    Address: <Server 3 EIP>
-    Weight: 1
-```
+Cloudflare Free DNS does not provide origin pools, health checks, priority order, or guaranteed failover timing. If a VPS breaks, remove that VPS IP from both DNS hostnames until fixed.
 
-**Step 4: Buat Health Monitor**
+### A.7 Health Endpoints
 
-Cloudflare → Traffic → Load Balancing → Health Monitors:
+Backend exposes two health endpoints:
 
-```
-Name: duitlater-health
-Type: HTTPS
-Method: GET
-Path: /api/v1/health
-Expected codes: 200
-Interval: 30 seconds
-Retries: 2
-Timeout: 5 seconds
-Follow redirects: yes
-Allow insecure cert: no
-Header: Host: duitlater.com  ← important so Caddy match the right vhost
+```text
+/health          DB-aware readiness
+/api/v1/health   app/demo compatibility
 ```
 
-Attach this monitor to all 3 pools.
-
-**Step 5: Buat Load Balancer**
-
-Cloudflare → Traffic → Load Balancing → Load Balancers → Create:
-
-```
-Hostname: duitlater.com
-Status: Active
-
-Pool fallback order (FAILOVER MODE):
-  1. Pool A (Server 1)   ← primary
-  2. Pool B (Server 2)   ← if A unhealthy
-  3. Pool C (Server 3)   ← if A + B unhealthy
-
-Steering policy: Off (Failover order)  ← important untuk priority-based
-Session affinity: None
-Proxy mode: HTTP/HTTPS
-```
-
-**Save.** Cloudflare auto-update DNS records untuk point ke Load Balancer endpoint.
-
-### A.7 Health Endpoint + Monitor
-
-Backend kita dah ada `/api/v1/health` endpoint (per `packages/backend/src/index.ts`). Verify dia respond OK pada setiap server:
+Verify every VPS directly:
 
 ```bash
-# Test setiap server directly (bypass Cloudflare)
-curl -k https://13.x.x.x/api/v1/health    # Server 1
-curl -k https://18.x.x.x/api/v1/health    # Server 2
-curl -k https://52.x.x.x/api/v1/health    # Server 3
+curl -k https://<server-1-ip>/health
+curl -k https://<server-2-ip>/health
+curl -k https://<server-3-ip>/health
 
-# Expected: { "status": "ok", "env": "production", "timestamp": "..." }
+curl -k https://<server-1-ip>/api/v1/health
+curl -k https://<server-2-ip>/api/v1/health
+curl -k https://<server-3-ip>/api/v1/health
 ```
 
-Cloudflare akan auto-detect "healthy" status setelah 1 minit (1 successful health check).
+Verify through domains:
 
-### A.8 Test Failover
-
-**Test 1 — Normal state:**
 ```bash
+curl https://duitlater.com/health
 curl https://duitlater.com/api/v1/health
-# Expected: respond 200 (from Server 1)
-
-# Check Cloudflare LB analytics dashboard
-# → all 3 pools = healthy
-# → traffic going to Pool A
+curl https://dev.duitlater.com/health
+curl https://dev.duitlater.com/api/v1/health
 ```
 
-**Test 2 — Simulate Server 1 down:**
+### A.8 Test Free DNS Failure Handling
+
+**Test 1 — Normal state**
+
 ```bash
-# SSH ke Server 1, stop app container
+curl https://duitlater.com/health
+curl https://dev.duitlater.com/health
+```
+
+**Test 2 — Simulate one app down**
+
+```bash
 ssh -i ~/.ssh/duitlater.pem ubuntu@<server-1-ip>
 docker stop duitlater-prod-app
-
-# Wait 90 saat (3 missed health checks at 30s)
-# Then test from outside:
-curl https://duitlater.com/api/v1/health
-# Expected: respond 200 (from Server 2)
-# Check Cloudflare LB dashboard:
-# → Pool A unhealthy
-# → traffic auto-routed to Pool B
 ```
 
-**Test 3 — Server 1 up balik:**
+Then test from outside:
+
+```bash
+curl https://duitlater.com/health
+```
+
+If requests still hit the stopped server, remove Server 1 IP from Cloudflare DNS temporarily. This is the free-mode trade-off.
+
+**Test 3 — Restore server**
+
 ```bash
 ssh -i ~/.ssh/duitlater.pem ubuntu@<server-1-ip>
 docker start duitlater-prod-app
-
-# Wait 60 saat (1 successful health check)
-curl https://duitlater.com/api/v1/health
-# Expected: respond 200 (from Server 1 again)
-# → Pool A healthy
-# → traffic returns to Pool A
 ```
 
-**Test 4 — Server 1 + 2 down:**
-```bash
-ssh ubuntu@server-1-ip docker stop duitlater-prod-app
-ssh ubuntu@server-2-ip docker stop duitlater-prod-app
-
-# Wait 90s
-curl https://duitlater.com/api/v1/health
-# Expected: respond 200 (from Server 3)
-```
-
-Semua test pass = web tier failover **automatic** working. Database write failover masih **manual** — see Bahagian D.
+Add the IP back in Cloudflare DNS after `/health` returns OK.
 
 ---
 
@@ -813,209 +834,109 @@ Ulang untuk Server 2 + Server 3. Multi-cloud routing live.
 
 ---
 
-## Bahagian C — Backup Cross-Cloud
+## Bahagian C — Local Upload Sync
 
-Tujuan: Postgres data backup ke AWS S3 (hourly) + cross-cloud mirror ke Alibaba OSS (daily) untuk DR.
+Tujuan: semua gambar/PDF/resit/agreement disimpan lokal di VPS, kemudian auto-sync ke server lain dengan Syncthing. Ini menggantikan S3/OSS sebagai default upload path.
 
-### C.1 Postgres pg_dump Cron
+### C.1 Runtime paths
 
-Pada **Server 1** (primary saja — replica auto-sync):
-
-```bash
-ssh -i ~/.ssh/duitlater.pem ubuntu@<server-1-ip>
-sudo mkdir -p /opt/duitlater/backups
-sudo chown ubuntu:ubuntu /opt/duitlater/backups
-
-# Backup script
-cat > /opt/duitlater/backup-pg.sh <<'EOF'
-#!/bin/bash
-set -e
-TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-BACKUP_FILE="/opt/duitlater/backups/duitlater-${TIMESTAMP}.sql.gz"
-
-# Dump from running container
-docker exec duitlater-prod-postgres \
-  pg_dump -U duitlater -d duitlater --format=custom --compress=9 \
-  > "${BACKUP_FILE}.tmp"
-
-mv "${BACKUP_FILE}.tmp" "${BACKUP_FILE}"
-
-# Upload to S3
-aws s3 cp "${BACKUP_FILE}" \
-  "s3://duitlater-postgres-backups/$(date -u +%Y/%m/%d)/$(basename ${BACKUP_FILE})" \
-  --storage-class STANDARD_IA
-
-# Keep only last 24 local backups (24 jam x 1 backup per jam)
-find /opt/duitlater/backups -name 'duitlater-*.sql.gz' -mtime +1 -delete
-
-echo "Backup OK: ${BACKUP_FILE}"
-EOF
-
-chmod +x /opt/duitlater/backup-pg.sh
-
-# Test manual sekali
-/opt/duitlater/backup-pg.sh
-
-# Add to cron (every hour)
-crontab -e
-# Tambah line ni:
-# 0 * * * * /opt/duitlater/backup-pg.sh >> /var/log/duitlater-backup.log 2>&1
+```text
+Prod host path: /var/lib/duitlater/prod/uploads
+Dev host path:  /var/lib/duitlater/dev/uploads
+Backend path:   /data/uploads
+Caddy paths:    /srv/uploads/prod and /srv/uploads/dev
+Public path:    /uploads/<yyyy>/<mm>/<dd>/<uuid>.<ext>
 ```
 
-### C.2 Upload to AWS S3
+Compose mounts:
 
-Need AWS CLI configured pada Server 1:
-
-```bash
-# Pada Server 1
-aws configure
-# AWS Access Key ID: <buat IAM user dengan S3 write permission>
-# AWS Secret Access Key: <secret>
-# Default region: ap-southeast-1
-# Default output format: json
-
-# Create bucket kalau belum ada
-aws s3 mb s3://duitlater-postgres-backups --region ap-southeast-1
-
-# Set lifecycle policy: delete old backups after 30 days
-cat > /tmp/lifecycle.json <<EOF
-{
-  "Rules": [
-    {
-      "Id": "delete-after-30d",
-      "Status": "Enabled",
-      "Prefix": "",
-      "Expiration": { "Days": 30 }
-    }
-  ]
-}
-EOF
-aws s3api put-bucket-lifecycle-configuration \
-  --bucket duitlater-postgres-backups \
-  --lifecycle-configuration file:///tmp/lifecycle.json
+```text
+app    read/write host uploads -> /data/uploads
+caddy  read-only host uploads  -> /srv/uploads/<env>
 ```
 
-### C.3 Mirror S3 → Alibaba OSS (Daily)
+### C.2 Backend upload API
 
-Cross-cloud DR: kalau seluruh AWS region down, masih ada backup di Alibaba OSS.
+Endpoint:
 
-**Step 1: Create OSS bucket**
-
-```bash
-# Alibaba Cloud Console → OSS → Create Bucket
-# Name: duitlater-backup-mirror
-# Region: ap-southeast-1 (Singapore) atau ap-southeast-3 (KL)
-# Storage class: Standard
-# Versioning: Enabled (untuk safety)
+```text
+POST /api/v1/uploads
+multipart field: file
 ```
 
-**Step 2: Setup mirror script**
+Rules:
+
+- Auth required.
+- `UPLOAD_DRIVER=local`.
+- Max size controlled by `UPLOAD_MAX_MB`.
+- MIME allowlist controlled by `UPLOAD_ALLOWED_MIME`.
+- Filename is randomized UUID, never raw user filename.
+- File is written to temp path first, then atomically renamed.
+- Metadata is stored in Postgres `UploadAsset`.
+
+### C.3 Syncthing setup
+
+Start Syncthing once per VPS:
 
 ```bash
-# Pada Server 1
-sudo apt install -y python3-pip
-pip3 install --user oss2
-
-cat > /opt/duitlater/mirror-to-oss.py <<'PYEOF'
-#!/usr/bin/env python3
-"""Mirror today's Postgres backups from AWS S3 → Alibaba OSS."""
-import os
-import sys
-import boto3
-import oss2
-from datetime import datetime, timezone
-
-S3_BUCKET = "duitlater-postgres-backups"
-OSS_BUCKET = "duitlater-backup-mirror"
-OSS_ENDPOINT = "https://oss-ap-southeast-1.aliyuncs.com"
-OSS_KEY = os.environ["ALIBABA_OSS_ACCESS_KEY"]
-OSS_SECRET = os.environ["ALIBABA_OSS_SECRET"]
-
-today = datetime.now(timezone.utc).strftime("%Y/%m/%d")
-prefix = f"{today}/"
-
-s3 = boto3.client("s3", region_name="ap-southeast-1")
-auth = oss2.Auth(OSS_KEY, OSS_SECRET)
-oss_bucket = oss2.Bucket(auth, OSS_ENDPOINT, OSS_BUCKET)
-
-# List today's S3 backups
-resp = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=prefix)
-contents = resp.get("Contents", [])
-print(f"Found {len(contents)} backups in S3 for {today}")
-
-for obj in contents:
-    key = obj["Key"]
-    if oss_bucket.object_exists(key):
-        print(f"  skip (exists): {key}")
-        continue
-
-    # Stream copy: S3 → memory → OSS
-    body = s3.get_object(Bucket=S3_BUCKET, Key=key)["Body"].read()
-    oss_bucket.put_object(key, body)
-    print(f"  mirrored: {key} ({len(body)} bytes)")
-
-print("Mirror done.")
-PYEOF
-
-chmod +x /opt/duitlater/mirror-to-oss.py
-
-# Configure env vars
-cat > /opt/duitlater/.oss-env <<EOF
-export ALIBABA_OSS_ACCESS_KEY=<your-alibaba-access-key>
-export ALIBABA_OSS_SECRET=<your-alibaba-secret>
-EOF
-chmod 600 /opt/duitlater/.oss-env
-
-# Test manual
-source /opt/duitlater/.oss-env && /opt/duitlater/mirror-to-oss.py
-
-# Add to cron (daily at 02:00 UTC = 10:00 MYT)
-crontab -e
-# Tambah:
-# 0 2 * * * source /opt/duitlater/.oss-env && /opt/duitlater/mirror-to-oss.py >> /var/log/duitlater-mirror.log 2>&1
+docker compose --env-file infra/.env -f infra/docker-compose.sync.yml -p sync up -d
 ```
 
-### C.4 Restore Drill (Test pemulihan)
-
-Sebulan sekali, test restore (sangat penting — backup yang tak pernah test = backup yang tak boleh dipakai):
+Open GUI through SSH tunnel only:
 
 ```bash
-# Download a backup dari S3
-aws s3 cp s3://duitlater-postgres-backups/2026/04/25/duitlater-20260425T060000Z.sql.gz \
-  /tmp/restore-test.sql.gz
-
-# Spin up a fresh test Postgres container
-docker run -d --name pg-restore-test \
-  -e POSTGRES_PASSWORD=test \
-  -p 5433:5432 \
-  postgres:17-alpine
-sleep 10
-
-# Restore
-gunzip -c /tmp/restore-test.sql.gz | \
-  docker exec -i pg-restore-test pg_restore -U postgres -d postgres --create
-
-# Verify data
-docker exec pg-restore-test psql -U postgres -c "\\dt"
-
-# Cleanup
-docker stop pg-restore-test && docker rm pg-restore-test
-rm /tmp/restore-test.sql.gz
-
-echo "Restore drill OK"
+ssh -L 8384:127.0.0.1:8384 ubuntu@<server-ip>
+open http://127.0.0.1:8384
 ```
+
+Create two folders in Syncthing:
+
+```text
+Folder ID: duitlater-prod-uploads
+Path:      /var/syncthing/prod-uploads
+
+Folder ID: duitlater-dev-uploads
+Path:      /var/syncthing/dev-uploads
+```
+
+Share both folders between Server 1/2/3. Use send/receive mode. Do not sync deletes automatically until the team is confident with restore behaviour.
+
+### C.4 Local backup without cloud
+
+Keep compressed local dumps on each VPS. These are files, so they may be copied manually or synced later, but they are not the Postgres live data directory.
+
+```bash
+mkdir -p /var/lib/duitlater/backups
+docker exec duitlater-prod-postgres pg_dump -U duitlater -d duitlater \
+  | gzip > /var/lib/duitlater/backups/prod-$(date -u +%Y%m%dT%H%M%SZ).sql.gz
+```
+
+Restore drill should use a temporary test Postgres container, not production.
+
+### C.5 Advanced optional cloud backup
+
+AWS S3 and Alibaba OSS can be added later for off-site backup. They are optional, not required for the free VPS mode.
 
 ---
 
 ## Bahagian D — Failover Playbook
 
-### D.1 Web Failover (Auto)
+### D.1 Web Failure Handling (Free DNS)
 
-**Triggered:** Cloudflare detect 3 missed health checks (90 saat).
-**Action:** Cloudflare auto-route traffic ke pool berikutnya dalam priority order.
-**Monitoring:** Cloudflare dashboard → Traffic → Load Balancing → Analytics.
+Cloudflare Free DNS round-robin has no paid health monitor or priority routing. If one VPS app fails:
 
-Tiada manual action diperlukan untuk web tier. Pengguna mungkin nampak ~90 saat slow/error, lepas tu auto-recover.
+1. Verify the failed node:
+   ```bash
+   curl -k https://<server-ip>/health
+   docker logs duitlater-prod-app --tail 100
+   ```
+2. Remove that server IP from both DNS records:
+   - `duitlater.com`
+   - `dev.duitlater.com`
+3. Keep traffic on the remaining VPS nodes.
+4. After the VPS is fixed and `/health` returns OK, add the IP back.
+
+This is the free-mode trade-off. For automatic health-checked failover later, use optional paid Cloudflare Load Balancing.
 
 ### D.2 Database Promotion (Manual)
 
@@ -1023,7 +944,7 @@ Tiada manual action diperlukan untuk web tier. Pengguna mungkin nampak ~90 saat 
 
 **Pre-conditions:**
 - Server 1 confirmed down (tak respond SSH or shutdown EC2)
-- Cloudflare dah route traffic ke Server 2 (auto)
+- DNS has been moved away from Server 1, or users are reaching Server 2
 - Backend pada Server 2 cuba write → fail dengan "read-only transaction" error
 
 **Steps:**
@@ -1052,7 +973,7 @@ curl -X POST https://duitlater.com/api/v1/some-write-endpoint \
 # Expected: 200 success (write went to Server 2's promoted DB)
 ```
 
-**Total time:** ~10 saat command + ~30 saat backend restart = 40 saat. Plus 90 saat Cloudflare detection = ~2 minit total downtime untuk writes.
+**Total time:** ~10 saat command + ~30 saat backend restart. DNS recovery time depends on Cloudflare routing/cache and manual IP removal.
 
 **PENTING:** After promotion, Server 1 (when up balik) **TIDAK BOLEH directly serve traffic dengan data lama dia**. Server 1 mesti re-sync dari Server 2 sebagai replica. See Section D.3.
 
@@ -1060,7 +981,7 @@ curl -X POST https://duitlater.com/api/v1/some-write-endpoint \
 
 Selepas Mung dah promote Server 2 jadi primary, kalau Server 1 up balik:
 
-**Problem:** Server 1's Postgres masih ingat dia primary (data lama). Server 2 sekarang primary (data baru). Cloudflare akan auto-route traffic balik ke Server 1 sebab priority 1, tapi Server 1's data **stale** — risiko data corruption.
+**Problem:** Server 1's Postgres masih ingat dia primary (data lama). Server 2 sekarang primary (data baru). Jangan add Server 1 IP balik ke DNS sebelum DB dia re-synced.
 
 **Solution: Re-sync Server 1 sebagai replica from Server 2.**
 
@@ -1146,21 +1067,20 @@ ssh ubuntu@server-1-ip docker exec duitlater-prod-postgres \
 Mung tick satu-satu sebelum demo:
 
 ### Pre-deploy
-- [ ] 3 EC2 (Server 1, 2, 3) provisioned, t3.medium, ap-southeast-1
-- [ ] Security group allows port 22 (your IP), 80/443 (anywhere), 5432 (intra-SG)
-- [ ] Each EC2 has Elastic IP attached
-- [ ] Domain `duitlater.com` di Cloudflare (Pro plan), nameservers updated
-- [ ] Cloudflare Pro plan paid + activated
-- [ ] AWS S3 bucket `duitlater-postgres-backups` created with 30d lifecycle
-- [ ] Alibaba Cloud account active
-- [ ] Alibaba OSS bucket `duitlater-backup-mirror` created
-- [ ] DashScope API key obtained
+- [ ] 3 VPS/server provisioned with static public IPs
+- [ ] Firewall allows `22` from Moon/team IPs, `80/443` public, `5432` and `22000` only from peer VPS IPs
+- [ ] Cloudflare Free nameservers active for `duitlater.com`
+- [ ] `duitlater.com` has 3 proxied A records
+- [ ] `dev.duitlater.com` has 3 proxied A records
+- [ ] `infra/.env` configured on all 3 VPS
+- [ ] Alibaba Cloud/DashScope ready only if AI FC is being enabled
 
 ### Stack deploy
-- [ ] Docker installed on all 3 EC2
+- [ ] Docker installed on all 3 VPS
 - [ ] GHCR login successful on all 3
 - [ ] Backend image `duitlater-backend:latest` pulled on all 3
-- [ ] `.env.prod` files configured on all 3 (with same secrets)
+- [ ] `.env.prod`, `.env.dev`, and frontend env files configured on all 3
+- [ ] `docker-compose.sync.yml` running on all 3
 - [ ] Postgres container up on Server 1 with WAL streaming config
 - [ ] Postgres replication user `replicator` created
 - [ ] `pg_hba.conf` allows replication from Server 2 + 3 IPs
@@ -1173,13 +1093,12 @@ Mung tick satu-satu sebelum demo:
 - [ ] Test INSERT on Server 1 visible on Server 2 + 3 within 5 seconds
 - [ ] Write attempt on Server 2 returns "read-only transaction" error
 
-### Cloudflare LB
-- [ ] 3 origin pools created (server-1, server-2, server-3)
-- [ ] Health monitor active (HTTPS GET /api/v1/health · 30s · 2 retries)
-- [ ] Load Balancer created with failover order [Pool A, B, C]
-- [ ] Steering policy: "Off (Failover order)"
-- [ ] DNS resolves `duitlater.com` to Cloudflare proxy
-- [ ] All 3 pools showing "healthy" on dashboard
+### Cloudflare Free DNS
+- [ ] DNS resolves `duitlater.com` through Cloudflare proxy
+- [ ] DNS resolves `dev.duitlater.com` through Cloudflare proxy
+- [ ] `https://duitlater.com/health` returns DB-connected JSON
+- [ ] `https://dev.duitlater.com/health` returns DB-connected JSON
+- [ ] Manual runbook exists to remove a failed VPS IP from both hostnames
 
 ### Multi-cloud (Alibaba)
 - [ ] FC service `duitlater-fc` created in ap-southeast-1
@@ -1192,42 +1111,58 @@ Mung tick satu-satu sebelum demo:
 - [ ] `provider="alibaba-qwen"` in response when calling `/api/v1/penasihat/suggest`
 
 ### Backup
-- [ ] `pg_dump` cron running on Server 1 (every hour)
-- [ ] AWS CLI configured on Server 1 (`aws s3 ls` works)
-- [ ] First backup uploaded to S3 successful
-- [ ] OSS mirror script tested manually
-- [ ] OSS daily mirror cron added (02:00 UTC)
-- [ ] Restore drill completed once (test backup file restorable)
+- [ ] Local `pg_dump` backup tested on Server 1
+- [ ] Restore drill completed once in a test container
+- [ ] S3/OSS backup documented as optional later, not required for free mode
+
+### Upload sync tests
+- [ ] Upload image/PDF via `POST /api/v1/uploads`
+- [ ] File appears under prod/dev upload host folder
+- [ ] Syncthing syncs file to Server 2 + Server 3
+- [ ] `https://duitlater.com/uploads/<file>` loads after sync
+- [ ] Syncthing GUI only accessible through SSH tunnel
 
 ### Failover tests
-- [ ] Test 1 — Stop Server 1 app, verify Cloudflare routes to Server 2 within 90s
-- [ ] Test 2 — Restart Server 1 app, verify Cloudflare returns to Server 1 within 60s
+- [ ] Test 1 — Stop Server 1 app, remove Server 1 IP from Cloudflare DNS, verify domain still works
+- [ ] Test 2 — Restart Server 1 app, verify `/health`, then add IP back
 - [ ] Test 3 — DB promotion playbook run end-to-end on Server 2
 - [ ] Test 4 — Re-sync Server 1 as replica successful
-- [ ] Test 5 — Stop Server 1 + Server 2, verify routes to Server 3
 
 ### Demo readiness
-- [ ] All 3 servers showing "healthy" on Cloudflare LB dashboard
+- [ ] `https://duitlater.com/health` returns 200 from any browser
 - [ ] `https://duitlater.com/api/v1/health` returns 200 from any browser
+- [ ] `https://dev.duitlater.com/health` returns 200 from any browser
 - [ ] Pool formation flow works end-to-end
 - [ ] Penasihat suggestion API returns BM-first results within 6s
 - [ ] Failover playbook printed/saved offline (in case Mung phone tak ada signal)
-- [ ] AWS Console + Cloudflare dashboard tabs ready on Mung's laptop
+- [ ] Cloudflare DNS dashboard + VPS terminals ready on Mung's laptop
 
 ---
 
+## Advanced Optional — Paid Cloudflare + S3/OSS
+
+Free mode is the default. These upgrades are optional later:
+
+| Upgrade | Why add it later |
+|---|---|
+| Cloudflare Load Balancing | Health-checked origin pools, failover order, faster automated removal of unhealthy VPS |
+| AWS S3 | Off-site Postgres backup and object storage if local VPS disk is not enough |
+| Alibaba OSS | Cross-cloud backup mirror after S3 is already stable |
+
+Do not mix these into the free baseline until the core VPS setup passes: app deploy, DB replication, upload sync, and failover drill.
+
 ## Bahagian F — Troubleshooting
 
-### F.1 Cloudflare LB shows pool unhealthy but server is up
+### F.1 Domain sometimes hits a failed VPS
 
-**Symptom:** Cloudflare dashboard shows Pool A unhealthy, but `curl <server-1-ip>/api/v1/health` works.
+**Symptom:** `duitlater.com` sometimes fails even though another VPS is healthy.
 
-**Cause:** Cloudflare hits server via internal Cloudflare IPs (different from your IP). Server's security group might not allow.
+**Cause:** Cloudflare Free DNS round-robin has no origin health monitor. A failed VPS IP can remain in the DNS set.
 
 **Fix:**
-- Ensure security group allows ALL of Cloudflare's IPs on 80/443
-- Cloudflare IP list: <https://www.cloudflare.com/ips-v4/>
-- Or set Origin Pool's "host header" to `duitlater.com` so Caddy match the right vhost
+- Remove the bad VPS IP from both `duitlater.com` and `dev.duitlater.com` records.
+- Verify the server directly with `curl -k https://<server-ip>/health`.
+- Add the IP back only after `/health` and `/api/v1/health` pass.
 
 ### F.2 Replica falls behind — data not syncing
 
@@ -1288,11 +1223,11 @@ docker compose -f docker-compose.prod.yml -p prod restart app
 - Verify Claude API key in `.env.prod`
 - Re-test FC endpoint directly with curl
 
-### F.6 Cross-cloud OSS mirror fails
+### F.6 Optional OSS mirror fails
 
 **Symptom:** Mirror script log shows AccessDenied or timeout.
 
-**Cause:** Alibaba OSS access key might not have write permission, or wrong endpoint region.
+**Cause:** Alibaba OSS access key might not have write permission, wrong endpoint region, or optional cloud backup not configured.
 
 **Fix:**
 - Re-check `ALIBABA_OSS_ACCESS_KEY` and `ALIBABA_OSS_SECRET` env vars
@@ -1317,13 +1252,15 @@ docker compose -f docker-compose.prod.yml -p prod restart app
 ### Common Commands
 
 ```bash
-# === Per-server health check ===
-curl -k https://13.x.x.x/api/v1/health    # Server 1
-curl -k https://18.x.x.x/api/v1/health    # Server 2
-curl -k https://52.x.x.x/api/v1/health    # Server 3
+# === Per-server health checks ===
+curl -k https://13.x.x.x/health
+curl -k https://18.x.x.x/health
+curl -k https://52.x.x.x/health
 
-# === Cloudflare LB endpoint ===
+# === Cloudflare Free DNS endpoints ===
+curl https://duitlater.com/health
 curl https://duitlater.com/api/v1/health
+curl https://dev.duitlater.com/health
 
 # === Postgres replication status (run on primary) ===
 docker exec duitlater-prod-postgres psql -U duitlater -d duitlater \
@@ -1340,11 +1277,12 @@ docker exec duitlater-prod-postgres psql -U duitlater -d duitlater \
 # === Restart backend ===
 docker compose -f infra/docker-compose.prod.yml -p prod restart app
 
-# === Backup manual ===
-/opt/duitlater/backup-pg.sh
+# === Local backup manual ===
+docker exec duitlater-prod-postgres pg_dump -U duitlater -d duitlater \
+  | gzip > /var/lib/duitlater/backups/prod-$(date -u +%Y%m%dT%H%M%SZ).sql.gz
 
-# === Mirror to OSS manual ===
-source /opt/duitlater/.oss-env && /opt/duitlater/mirror-to-oss.py
+# === Syncthing service ===
+docker compose --env-file infra/.env -f infra/docker-compose.sync.yml -p sync ps
 
 # === Test Alibaba FC ===
 curl -X POST <fc-url> -H "Content-Type: application/json" -d '{...}'
@@ -1354,12 +1292,14 @@ curl -X POST <fc-url> -H "Content-Type: application/json" -d '{...}'
 
 | Port | Where | What |
 |---|---|---|
-| 22 | All EC2 | SSH (your IP only) |
-| 80 | All EC2 | HTTP (Cloudflare → Caddy) |
-| 443 | All EC2 | HTTPS (Cloudflare → Caddy) |
-| 4000 | All EC2 internal | Backend (not public) |
-| 3000 | All EC2 internal | Frontend (not public) |
-| 5432 | All EC2 intra-SG | Postgres replication |
+| 22 | All VPS | SSH (Moon/team IP only) |
+| 80 | All VPS | HTTP (Cloudflare → Caddy) |
+| 443 | All VPS | HTTPS (Cloudflare → Caddy) |
+| 4000 | Docker network | Backend (not public) |
+| 3000 | Docker network | Frontend (not public) |
+| 5432 | Peer VPS IPs only | Postgres app connection + replication |
+| 22000 | Peer VPS IPs only | Syncthing file sync |
+| 8384 | localhost only | Syncthing GUI via SSH tunnel |
 
 ### Env Variables (backend `.env.prod`)
 
@@ -1367,6 +1307,12 @@ curl -X POST <fc-url> -H "Content-Type: application/json" -d '{...}'
 NODE_ENV=production
 PORT=4000
 DATABASE_URL=postgresql://duitlater:<pass>@postgres:5432/duitlater?schema=public
+FRONTEND_URL=https://duitlater.com
+CORS_ORIGIN=https://duitlater.com
+UPLOAD_DRIVER=local
+UPLOAD_ROOT=/data/uploads
+UPLOAD_PUBLIC_PATH=/uploads
+UPLOAD_MAX_MB=10
 
 # Multi-cloud AI
 ALIBABA_FUNCTION_COMPUTE_URL=https://<fc>.fcv3.ap-southeast-1.fc.aliyuncs.com/2023-03-30/proxy/duitlater-fc/penasihat-suggest/
@@ -1388,11 +1334,12 @@ LOG_LEVEL=info
 
 | URL | Purpose |
 |---|---|
-| `https://duitlater.com/api/v1/health` | Health check (Cloudflare uses this) |
+| `https://duitlater.com/health` | DB-aware readiness |
+| `https://duitlater.com/api/v1/health` | App/demo health |
+| `https://duitlater.com/api/v1/uploads` | Local upload API |
 | `https://duitlater.com/api/v1/penasihat/suggest` | Penasihat AI suggester |
-| `https://duitlater.com/api/v1/nadi/summary` | NADI weekly summary |
 | `https://<fc-url>` | Alibaba FC direct (for testing) |
-| `https://dashboard.cloudflare.com/...` | Cloudflare LB analytics |
+| `https://dashboard.cloudflare.com/...` | Cloudflare DNS records |
 
 ### Useful Logs
 
@@ -1412,37 +1359,38 @@ sudo journalctl -u cron --since "1 hour ago"
 # Backup script
 tail -f /var/log/duitlater-backup.log
 
-# Mirror script
-tail -f /var/log/duitlater-mirror.log
+# Syncthing
+docker logs duitlater-syncthing --tail 100 --follow
 ```
 
 ---
 
 ## Penutup
 
-Setup ni mungkin ambik **4-6 jam first time** untuk Mung implement penuh (provision EC2 + replication + Cloudflare + Alibaba FC + backup). Kalau dah ada experience dengan Postgres replication, lagi cepat (~3 jam).
+Setup ni mungkin ambik **4-6 jam first time** untuk Mung implement penuh (provision VPS + replication + Cloudflare DNS + Syncthing + Alibaba FC optional). Kalau dah ada experience dengan Postgres replication, lagi cepat (~3 jam).
 
 **Demo strategy untuk hackathon judging:**
 1. Show normal flow — pengguna access `duitlater.com`, traffic to Server 1
 2. SSH stop app on Server 1 — dramatic moment
-3. Wait ~90s, judges see traffic auto-route ke Server 2 di Cloudflare dashboard
-4. Show Postgres replication still working (insert on primary, query replica)
-5. Optional: live promote Server 2 to primary for full DB failover demo
-6. Highlight: "Multi-cloud — AI workloads are on Alibaba Cloud Function Compute, AWS handles compute + storage"
+3. Remove Server 1 IP from Cloudflare DNS to demonstrate free-mode recovery
+4. Show domain works through remaining VPS
+5. Show uploaded file already exists on peer VPS via Syncthing
+6. Show Postgres replication still working (insert on primary, query replica)
+7. Optional: live promote Server 2 to primary for DB failover demo
 
 **Ringkasan strategi multi-cloud orchestration:**
 
 | Layer | Cloud | Component |
 |---|---|---|
-| DNS + LB + WAF | **Cloudflare** | Auto-failover · health monitoring · global edge |
-| Compute (web) | **AWS EC2** × 3 | Active-passive HA cluster |
-| Database | **AWS EC2** Postgres | Streaming replication, manual primary promotion |
+| DNS + WAF | **Cloudflare Free** | Proxied DNS round-robin for prod + dev |
+| Compute (web) | **VPS/EC2** × 3 | Same app stack on each server |
+| Database | **Postgres on VPS** | Streaming replication, manual primary promotion |
 | AI inference | **Alibaba Cloud Function Compute** | Qwen LLM (BM-native) |
 | AI fallback | **Anthropic** Claude | When Alibaba 5xx |
-| Object storage | **AWS S3** | Postgres backups (hourly) |
-| Cross-cloud DR | **Alibaba OSS** | S3 mirror (daily) |
+| Upload files | **Local VPS disk** | Syncthing syncs files only |
+| Optional backup | **AWS S3 / Alibaba OSS** | Add later after free baseline works |
 
-**Sponsor alignment** = AWS (Gold) + Alibaba Cloud (Platinum) — both visible, both functionally critical.
+**Sponsor alignment** = Alibaba AI path remains visible; AWS/S3/OSS can be added later as optional backup path.
 
 Kalau ada bahagian yang tak jelas atau perlu Mung clarify, catatkan dalam team-ledger atau ping di group. Failover playbook printout berguna untuk hari demo — print Bahagian D + Bahagian E sahaja untuk reference cepat.
 

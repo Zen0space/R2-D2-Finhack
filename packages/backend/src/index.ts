@@ -10,6 +10,7 @@ import { meRouter } from "./routes/me.js";
 import { poolsRouter } from "./routes/pools.js";
 import { repaymentsRouter } from "./routes/repayments.js";
 import { kampungsRouter } from "./routes/kampungs.js";
+import { uploadsRouter } from "./routes/uploads.js";
 import { ApiError, errorResponse } from "./lib/errors.js";
 import { prisma } from "db";
 
@@ -72,6 +73,7 @@ app.route("/api/v1/repayments", repaymentsRouter);
 app.route("/api/v1/kampungs", kampungsRouter);
 app.route("/api/v1/mykasih", mykasihRouter);
 app.route("/api/v1/nadi", nadiRouter);
+app.route("/api/v1/uploads", uploadsRouter);
 
 const port = Number(process.env.PORT) || 4000;
 
