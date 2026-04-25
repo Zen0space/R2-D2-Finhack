@@ -7,10 +7,7 @@
 
 services:
   frontend:
-    # TODO(akmal): swap to `image: ghcr.io/zen0space/duitlater-frontend:dev` once frontend-release.yml lands.
-    build:
-      context: ..
-      dockerfile: packages/frontend/Dockerfile
+    image: ghcr.io/zen0space/duitlater-frontend:${DEV_FRONTEND_TAG:-dev}
     container_name: duitlater-dev-frontend
     restart: unless-stopped
     env_file:
