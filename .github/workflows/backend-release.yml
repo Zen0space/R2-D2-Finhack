@@ -1,0 +1,75 @@
+name: Backend — Release
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'packages/backend/**'
+      - 'packages/db/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.dockerignore'
+      - '.github/workflows/backend-release.yml'
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Build & push Docker image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/duitlater-backend
+          # main → :latest + :sha-<short>
+          # dev  → :dev    + :dev-sha-<short>
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=sha,prefix=sha-,format=short,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=dev-sha-,format=short,enable=${{ github.ref == 'refs/heads/dev' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: packages/backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to server (dev branch only)
+        if: github.ref == 'refs/heads/dev'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /var/www/R2-D2-Finhack
+            git pull origin dev
+            export DUITLATER_DOMAIN=${{ secrets.DUITLATER_DOMAIN }}
+            docker compose -f infra/docker-compose.dev.yml -p dev pull app
+            docker compose -f infra/docker-compose.dev.yml -p dev up -d app
+            echo "✅ Dev backend deployed — migrations run automatically on container start"
+            sleep 5
+            docker compose -f infra/docker-compose.dev.yml -p dev logs app --tail 20

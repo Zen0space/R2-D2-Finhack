@@ -1,0 +1,10 @@
+{
+  "name": "duitlater-penasihat-suggest-fc",
+  "version": "0.1.0",
+  "description": "Alibaba Cloud Function Compute · Penasihat item suggester (Qwen-backed)",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}

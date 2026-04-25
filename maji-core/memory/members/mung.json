@@ -1,0 +1,18 @@
+{
+  "name": "Mung",
+  "codename": "mung",
+  "firstOnboarded": "2026-04-25T20:04:52+08:00",
+  "lastSession": "2026-04-25T20:07:20+08:00",
+  "sessionsCount": 2,
+  "currentPhase": 0,
+  "phasesCompleted": [],
+  "activePair": null,
+  "lastBlocker": null,
+  "lastHandoff": null,
+  "personalNotes": [
+    {
+      "at": "2026-04-25T20:04:52+08:00",
+      "note": "Real name is Moon; Maji codename is Mung."
+    }
+  ]
+}

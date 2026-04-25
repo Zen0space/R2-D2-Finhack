@@ -1,134 +1,198 @@
-# R2-D2-Finhack
+# DuitLater
 
-A monorepo managed with [pnpm workspaces](https://pnpm.io/workspaces).
+**TNG FINHACK 2026 · Financial Inclusion Track · 25–26 April 2026**
 
-## Structure
+A Shared Pool Pay Later product proposed for TNG eWallet, designed for B40 communities. Two to eight users combine their individual TNG PayLater allowances into a shared pool to access bigger-ticket essentials they could never afford alone.
 
-```
-R2-D2-Finhack/
-├── packages/
-│   ├── backend/     # API server
-│   ├── frontend/    # Web client
-│   └── db/          # Database schema & migrations (Prisma)
-├── docker-compose.yml
-├── pnpm-workspace.yaml
-└── package.json
-```
+Built around Malaysia's existing **NADI** community network as the on-the-ground facilitator, with **MyKasih MySARA** providing the eligible-item catalogue and a bilingual AI advisor (**Penasihat**) suggesting purchases that match each pool's combined cap and stated needs.
 
-## Prerequisites
+---
 
-- [Node.js](https://nodejs.org/) >= 22
-- [pnpm](https://pnpm.io/) >= 9
-- [Docker](https://www.docker.com/) (for PostgreSQL)
+## What this is
+
+Every TNG eWallet user has an individual PayLater allowance — small for most B40 households, but real. **DuitLater lets a household pool combine their allowances** so the group can buy what each individual could not.
+
+A single mother with RM 300 PayLater limit cannot afford a sewing machine. Six neighbours pooling RM 300 each can buy one for the kampung. The pool repays monthly, each member at their proportional share. The kampung's reliability accumulates into a visible trust score that grows the next pool's capacity.
+
+**Test bed: NADI Felda Gedangsa** (Hulu Selangor) — a Felda smallholder community already served by an MCMC-run NADI community internet centre. Felda settlements have existing communal management structures; NADI provides the digital infrastructure. DuitLater plugs the financial layer into both.
+
+---
+
+## AI as project methodology — three layers
+
+DuitLater integrates AI across **three distinct layers of the project lifecycle**, not just inside the product:
+
+1. **Pre-product** — ~2,400 lines of planning artifacts (PRD · architecture · pitch deck · narration · dev plan · brand · team docs) generated through multi-agent AI orchestration before product code began. Every doc in this repo is evidence.
+2. **Process** — [`maji-core/`](./maji-core/) team coordinator ships with the repo: 6 slash commands, schema-locked persistent memory, phase gates (Kairu's ladder), Akal coding discipline, Jimat communication register.
+3. **In-product** — Penasihat catalogue suggester + NADI weekly summary with anomaly detection (multi-cloud routing: Alibaba Cloud Function Compute · Qwen primary · Anthropic Claude failover).
+
+Full breakdown: [docs/ai-methodology.md](./docs/ai-methodology.md).
+
+---
+
+## The institutional package (four-way Malaysian)
+
+| Partner | Role | Existing real institution |
+|---|---|---|
+| **TNG** | PayLater rail · risk model · transaction processing | Touch 'n Go Digital (TNG eWallet) |
+| **NADI** | Community facilitator · pool onboarding · digital literacy support | MCMC's Pusat Sebaran Maklumat Nasional (188 centres nationally · 84 in Selangor) |
+| **MyKasih** | MySARA-eligible item catalogue · merchant network · last-mile delivery | MyKasih Foundation (Sumbangan Asas Rahmah programme operator) |
+| **B40 households** | Pool members · 2–8 per pool · joint accountability | Felda settlers · rural fishers · urban poor |
+
+Zero foreign reliance. All partners aligned by existing mandate. Pitch is a real Malaysian institutional combination, not a synthetic hackathon construct.
+
+---
+
+## Core features
+
+- **Individual PayLater allowance** (TNG-set, varies by financial track record)
+- **Pool formation** — 2 to 8 members per pool, locked roster
+- **Combined PayLater cap** — sum of individual allowances; no NGO subsidy stacking (cleaner risk model)
+- **AI Penasihat (BM-first)** — suggests top-5 catalogue items per pool's combined cap + stated needs + seasonal context
+- **Pool vote** — democratic majority approval before purchase commits
+- **MyKasih catalogue** — curated item set seeded for demo (rice, cooking oil, school supplies, generators, agricultural tools, basic appliances, tradesperson tooling); production: full MySARA integration
+- **Repayment ledger** — monthly per-member share, transparent, append-only
+- **Kampung trust score** — collectivist incentive; kampung-level reliability affects future pool capacity (not individual punishment-based)
+- **NADI portal** — centre staff dashboard for monitoring pool health, kampung-level stats, MySARA item delivery confirmation
+
+Built by team **R2-D2** (KrackedDevs): Ijam · Mung · Akmal · Kairu · MatNep.
+
+---
+
+## Getting started — your first 10 minutes
+
+### 1. Clone
 
 ```bash
-npm install -g pnpm
+git clone https://github.com/Ijam18/duitlater.git
+cd duitlater
 ```
 
-## Getting Started
+### 2. Open in your AI-assisted IDE
 
-### First run (one-time setup)
+Any of these work — Claude Code, Cursor, Codex, VS Code with an AI extension, even claude.ai web.
 
-```bash
-# 1. Install dependencies across all packages
-pnpm install
+### 3. Run `/maji-onboard`
 
-# 2. Start the PostgreSQL database in Docker
-docker compose up -d
+In your AI chat, type:
 
-# 3. Run the initial database migration
-cd packages/db
-npx prisma migrate dev --name init
-
-# 4. Open Prisma Studio to verify the database
-npx prisma studio
-# Opens http://localhost:5555
+```
+/maji-onboard
 ```
 
-### Development
+The AI will greet you in BM, ask your name, match it against the **R2-D2 whitelist** (Ijam · Mung · Akmal · Kairu · MatNep — strict), show your role card with the current BMAD phase task, and create your personal memory file.
+
+If your IDE doesn't autocomplete `/maji-onboard`, just type it in chat — Cursor / Codex / generic AI all read [`AGENTS.md`](./AGENTS.md) and execute the flow.
+
+### 4. Push your identity
 
 ```bash
-# Run all packages in dev mode (backend + frontend in parallel)
+git add maji-core/memory/members/<your-name>.json
+git commit -m "onboard: <your-name> first session"
+git push
+```
+
+The next teammate who runs `/maji-phase` sees you on the team status.
+
+### 5. Stand up the stack
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+cd backend  && cp .env.example .env && npm install && npm run dev
+cd frontend && cp .env.example .env && npm install && npm run dev
+```
+
+Verify Phase 0:
+- Frontend renders at <http://localhost:3000>
+- `curl http://localhost:4000/health` → `{"ok":true}`
+
+Full bootstrap details: [QUICKSTART.md](./QUICKSTART.md).
+# 1. Start Postgres (laptop only — single container on :5432)
+pnpm db:up
+# equivalent: docker compose -f infra/docker-compose.local.yml up -d
+
+# 2. Apply migrations
+pnpm db:migrate
+
+# 3. Run backend (:4000) + frontend (:3000) in parallel
 pnpm dev
-
-# Build all packages
-pnpm build
-
-# Type-check all packages
-pnpm typecheck
-
-# Lint all packages
-pnpm lint
 ```
 
-## Packages
+Stop Postgres when done: `pnpm db:down` (or `docker compose -f infra/docker-compose.local.yml down`).
 
-### `packages/backend`
+> Local dev runs Postgres in Docker and the apps on your host (`pnpm dev`). The other compose files in `infra/` (`docker-compose.dev.yml`, `docker-compose.prod.yml`) are for VPS deployments — see [`infra/RELEASE.md`](./infra/RELEASE.md).
 
-API server.
+---
 
-```bash
-pnpm --filter backend dev
-```
+## Daily workflow — slash commands
 
-### `packages/frontend`
+| When | Command |
+|---|---|
+| First time on this repo | `/maji-onboard` |
+| Returning for a session | `/maji-whoami` |
+| Want team-wide view | `/maji-phase` |
+| Pairing on a task | `/maji-pair` |
+| Phase complete, need to advance | `/maji-gate` |
+| End of session | `/maji-handoff` |
 
-Web client.
+Full specs: [maji-core/commands/](./maji-core/commands/).
 
-```bash
-pnpm --filter frontend dev
-```
+---
 
-### `packages/db`
+## BMAD phases
 
-Prisma schema, migrations, and generated client. All Prisma commands are run from inside this directory.
+| Phase | Goal | Lead |
+|---|---|---|
+| 0 | Stack activation · `/health` + frontend renders | Mung + Akmal |
+| 1 | Auth + individual PayLater allowance display | Mung + Akmal |
+| 2 | Pool formation · invite · 2–8 members lock | Akmal + Mung |
+| 3 | Combined PayLater + MyKasih catalogue browse + AI Penasihat suggestion | Mung + Akmal |
+| 4 | Pool vote + TNG approval flow + purchase + delivery confirm | Mung + Kairu |
+| 5 | Repayment ledger + kampung trust score | Mung + Akmal |
+| 6 | NADI portal (institutional dashboard) + pitch polish | Ijam + MatNep |
 
-```bash
-cd packages/db
+Phase status: [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md). Methodology: [maji-core/protocols/bmad.md](./maji-core/protocols/bmad.md).
 
-npx prisma migrate dev --name <migration-name>   # Create & apply a new migration
-npx prisma migrate deploy                         # Apply pending migrations (prod)
-npx prisma generate                               # Regenerate Prisma client
-npx prisma studio                                 # Open Prisma Studio (http://localhost:5555)
-npx prisma db push                                # Push schema without a migration (prototyping)
-```
+---
 
-## Database Setup
+## Submission deliverables
 
-PostgreSQL runs in Docker via `docker-compose.yml`.
+- [ ] GitHub repo link (this one)
+- [ ] Working prototype deployed to a public URL
+- [ ] 4-minute pitch deck (8 slides) → [docs/pitch-deck.md](./docs/pitch-deck.md)
+- [ ] 4-minute demo video
+- [ ] On-stage pitch (Sunday afternoon) → narration: [docs/pitch-narration.md](./docs/pitch-narration.md)
 
-**Environment variables** — create `packages/db/.env` (gitignored):
-```
-DATABASE_URL=postgresql://kutu:kutu_dev@localhost:5432/kutu_digitizer
-```
+---
 
-These match the defaults in `docker-compose.yml`.
+## Sponsor + partner alignment
 
-```bash
-# Start / stop
-docker compose up -d
-docker compose down
+| Partner | Use |
+|---|---|
+| **TNG Digital** | DuitLater as proposed eWallet feature · sandbox API extension request |
+| **MCMC / NADI** | Community facilitator · 84 Selangor centres ready as distribution channel |
+| **MyKasih Foundation** | MySARA-eligible item catalogue · merchant network |
+| **AWS** | Primary cloud — EC2 + S3 |
+| **Alibaba Cloud** | Fallback compute · scale-out narrative |
 
-# View logs
-docker compose logs -f postgres
-```
+---
 
-## Workspace Commands
+## Contributing (within R2-D2)
 
-Add a dependency to a specific package:
+- Honor the maji-core protocols. Run `/maji-onboard` first. Pair via `/maji-pair`. Advance phases via `/maji-gate`.
+- Follow the **Akal** discipline ([protocols/akal.md](./maji-core/protocols/akal.md)): THINK · SIMPLE · SURGICAL · VERIFY.
+- Default to **jimat penuh** register ([protocols/jimat.md](./maji-core/protocols/jimat.md)) — concise, BM-first, EN for technical terms.
+- Commit messages describe **what shipped**, not what was worked on.
+- Personal memory files (`maji-core/memory/members/*.json`) are committed — push them so the team sees your state on `/maji-phase`.
 
-```bash
-pnpm --filter <package-name> add <dependency>
-```
+---
 
-Add a shared dev dependency at the root:
+## License
 
-```bash
-pnpm add -D -w <dependency>
-```
+Built for TNG FINHACK 2026 · Financial Inclusion track. Codebase belongs to its builders per the FINHACK terms; specific license to be added before any post-hackathon distribution.
 
-Run a command across all packages:
+---
 
-```bash
-pnpm -r <command>
-```
+*Project under team R2-D2 stewardship. Not affiliated with any team member's other engagements.*
+
+*"Sendiri tak mampu, ramai-ramai boleh."*

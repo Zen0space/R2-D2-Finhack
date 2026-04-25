@@ -2,14 +2,16 @@
   "name": "r2-d2-finhack",
   "private": true,
   "scripts": {
-    "dev": "pnpm -r dev",
+    "setup": "bash scripts/setup.sh",
+    "predev": "pnpm db:generate && bash scripts/kill-ports.sh",
+    "dev": "pnpm --parallel --filter './packages/{backend,frontend}' dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
-    "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down",
-    "db:logs": "docker compose logs -f postgres",
+    "db:up": "docker compose -f infra/docker-compose.local.yml up -d",
+    "db:down": "docker compose -f infra/docker-compose.local.yml down",
+    "db:logs": "docker compose -f infra/docker-compose.local.yml logs -f postgres",
     "db:generate": "pnpm --filter db generate",
     "db:migrate": "pnpm --filter db migrate",
     "db:migrate:new": "pnpm --filter db migrate:new",
@@ -24,5 +26,9 @@
   "engines": {
     "node": ">=18",
     "pnpm": ">=9"
+  },
+  "dependencies": {
+    "better-auth": "^1.6.9",
+    "nanoid": "^5.1.9"
   }
 }
