@@ -127,6 +127,75 @@ function assertState(pool: Pool, allowed: Pool["state"][], action: string): void
   }
 }
 
+function buildShareAllocations(
+  members: (PoolMember & { user: Pick<User, "id" | "individualPaylaterCents"> })[],
+  totalAmountCents: number,
+) {
+  if (members.length === 0) {
+    return [];
+  }
+
+  const weightedMembers = members.map((member, index) => {
+    const weight =
+      member.individualAllowanceAtLockCents > 0
+        ? member.individualAllowanceAtLockCents
+        : member.user.individualPaylaterCents;
+
+    return {
+      index,
+      member,
+      weight: Math.max(weight, 0),
+    };
+  });
+
+  const totalWeight = weightedMembers.reduce((sum, entry) => sum + entry.weight, 0);
+  const effectiveWeight = totalWeight > 0 ? totalWeight : weightedMembers.length;
+
+  const baseAllocations = weightedMembers.map((entry) => {
+    const normalizedWeight = totalWeight > 0 ? entry.weight : 1;
+    const exactShare = (totalAmountCents * normalizedWeight) / effectiveWeight;
+    const shareCents = Math.floor(exactShare);
+    const sharePct = effectiveWeight > 0 ? (normalizedWeight / effectiveWeight) * 100 : 0;
+
+    return {
+      exactShare,
+      index: entry.index,
+      member: entry.member,
+      remainder: exactShare - shareCents,
+      shareCents,
+      sharePct,
+    };
+  });
+
+  const allocated = baseAllocations.reduce((sum, entry) => sum + entry.shareCents, 0);
+  const remaining = Math.max(totalAmountCents - allocated, 0);
+  const byRemainder = [...baseAllocations].sort((left, right) => {
+    if (right.remainder !== left.remainder) {
+      return right.remainder - left.remainder;
+    }
+
+    return left.index - right.index;
+  });
+
+  for (let index = 0; index < remaining; index += 1) {
+    const target = byRemainder[index];
+
+    if (!target) {
+      break;
+    }
+
+    target.shareCents += 1;
+  }
+
+  return baseAllocations
+    .sort((left, right) => left.index - right.index)
+    .map((entry) => ({
+      member: entry.member,
+      shareCents: entry.shareCents,
+      sharePct: Math.round(entry.sharePct * 100) / 100,
+    }));
+}
+
 // ---------------------------------------------------------------------------
 // E2.1 — POST /api/v1/pools (create)
 // ---------------------------------------------------------------------------
@@ -564,7 +633,7 @@ poolsRouter.post(
     }
 
     // Record vote (one per user per item · upsert allowed if user changes mind before majority)
-    await prisma.poolVote.upsert({
+    const existingVote = await prisma.poolVote.findUnique({
       where: {
         poolId_userId_itemId: {
           poolId: id,
@@ -572,13 +641,18 @@ poolsRouter.post(
           itemId: pool.selectedCatalogueItemId,
         },
       },
-      create: {
+    });
+    if (existingVote) {
+      throw ApiError.conflict("You have already voted in this voting cycle");
+    }
+
+    await prisma.poolVote.create({
+      data: {
         poolId: id,
         userId: user.id,
         itemId: pool.selectedCatalogueItemId,
         vote,
       },
-      update: { vote, votedAt: new Date() },
     });
 
     // Tally
@@ -601,16 +675,19 @@ poolsRouter.post(
       const totalCents = Math.round(Number(item.priceRm) * 100);
 
       // Run TNG simulated approval per member (proportional shares)
+      const shareAllocations = buildShareAllocations(pool.members, totalCents);
       const memberApprovals = await Promise.all(
-        pool.members.map(async (m) => {
-          const sharePct =
-            (m.user.individualPaylaterCents / pool.combinedCapCents) * 100;
-          const shareCents = Math.round((sharePct / 100) * totalCents);
+        shareAllocations.map(async (allocation) => {
           const approval = await simulateApproval({
-            userId: m.user.id,
-            amountCents: shareCents,
+            userId: allocation.member.user.id,
+            amountCents: allocation.shareCents,
           });
-          return { member: m, sharePct, shareCents, reference: approval.reference };
+          return {
+            member: allocation.member,
+            reference: approval.reference,
+            shareCents: allocation.shareCents,
+            sharePct: allocation.sharePct,
+          };
         }),
       );
 
@@ -668,6 +745,7 @@ poolsRouter.post(
   zValidator("param", idParamSchema),
   async (c) => {
     const { id } = c.req.valid("param");
+    const user = c.get("user");
 
     const pool = await prisma.pool.findUnique({
       where: { id },
@@ -675,6 +753,9 @@ poolsRouter.post(
     });
     if (!pool) throw ApiError.notFound("Pool");
     assertState(pool, ["APPROVED"], "confirm delivery");
+    if (user.role !== "NADI_STAFF" && user.role !== "ADMIN") {
+      throw ApiError.forbidden("Only NADI staff can confirm delivery");
+    }
     if (!pool.transaction) {
       throw ApiError.badRequest("Pool has no transaction yet");
     }
@@ -705,6 +786,68 @@ poolsRouter.post(
 // ---------------------------------------------------------------------------
 // E5.2 — GET /api/v1/pools/:id/ledger (repayment ledger view)
 // ---------------------------------------------------------------------------
+
+poolsRouter.get("/:id/voting-state", zValidator("param", idParamSchema), async (c) => {
+  const { id } = c.req.valid("param");
+  const user = c.get("user");
+
+  const pool = await prisma.pool.findUnique({
+    where: { id },
+    include: {
+      members: { include: { user: { select: { id: true, name: true } } } },
+    },
+  });
+  if (!pool) throw ApiError.notFound("Pool");
+  if (
+    !pool.members.some((member) => member.userId === user.id) &&
+    user.role !== "NADI_STAFF" &&
+    user.role !== "ADMIN"
+  ) {
+    throw ApiError.forbidden("You are not allowed to inspect this voting state");
+  }
+  if (!pool.selectedCatalogueItemId) {
+    throw ApiError.badRequest("No item selected for voting");
+  }
+
+  const votes = await prisma.poolVote.findMany({
+    where: { poolId: id, itemId: pool.selectedCatalogueItemId },
+    include: {
+      user: { select: { id: true, name: true } },
+    },
+    orderBy: { votedAt: "asc" },
+  });
+
+  const yes = votes.filter((vote) => vote.vote === "YES").length;
+  const no = votes.filter((vote) => vote.vote === "NO").length;
+  const majorityThreshold = Math.floor(pool.members.length / 2) + 1;
+  const votedUserIds = new Set(votes.map((vote) => vote.userId));
+  const pendingMembers = pool.members
+    .filter((member) => !votedUserIds.has(member.userId))
+    .map((member) => ({
+      userId: member.user.id,
+      name: member.user.name,
+    }));
+
+  return c.json(
+    successResponse({
+      poolId: id,
+      state: pool.state,
+      tally: {
+        majorityThreshold,
+        no,
+        pendingMembers,
+        totalMembers: pool.members.length,
+        yes,
+      },
+      votes: votes.map((vote) => ({
+        userId: vote.user.id,
+        userName: vote.user.name,
+        vote: vote.vote,
+        votedAt: vote.votedAt,
+      })),
+    }),
+  );
+});
 
 poolsRouter.get("/:id/ledger", zValidator("param", idParamSchema), async (c) => {
   const { id } = c.req.valid("param");

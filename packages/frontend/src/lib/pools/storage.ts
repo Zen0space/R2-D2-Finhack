@@ -5,8 +5,14 @@ import type {
   PoolListItem,
   PoolMemberSnapshot,
   PoolNeedCategory,
+  PoolObligationRecord,
   PoolRecord,
   PoolSuggestionFilter,
+  PoolSuggestionRecord,
+  PoolTransactionRecord,
+  PoolVoteChoice,
+  PoolVoteRecord,
+  PoolVotingState,
 } from "@/types/pool";
 import { buildPoolSuggestions, listCatalogueItems } from "./catalogue";
 
@@ -14,6 +20,11 @@ const POOLS_KEY = "duitlater.phase2.pools";
 const INVITE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const DEFAULT_POOL_CAPACITY = 8;
 const MIN_MEMBERS_TO_LOCK = 2;
+const DEFAULT_REPAYMENT_CYCLES = 6;
+
+type ShareAllocation = Omit<PoolObligationRecord, "id"> & {
+  remainder: number;
+};
 
 function isBrowser() {
   return typeof window !== "undefined";
@@ -42,10 +53,15 @@ function parseJson<T>(value: string | null, fallback: T) {
 function normalizePoolRecord(pool: PoolRecord): PoolRecord {
   return {
     ...pool,
+    approvedAt: pool.approvedAt ?? null,
+    deliveredAt: pool.deliveredAt ?? null,
     selectedSuggestionId: pool.selectedSuggestionId ?? null,
     suggestedAt: pool.suggestedAt ?? null,
     suggestionFilter: pool.suggestionFilter ?? "semua",
     suggestions: pool.suggestions ?? [],
+    transaction: pool.transaction ?? null,
+    votingStartedAt: pool.votingStartedAt ?? null,
+    votes: pool.votes ?? [],
   };
 }
 
@@ -117,8 +133,154 @@ function resolveOrigin() {
   return window.location.origin;
 }
 
+function getMemberContributionCents(member: PoolMemberSnapshot) {
+  return member.individualAllowanceAtLockCents ?? member.individualAllowanceCents;
+}
+
+function buildShareAllocations(pool: PoolRecord, totalAmountCents: number): ShareAllocation[] {
+  if (pool.members.length === 0) {
+    return [];
+  }
+
+  const members = pool.members.map((member) => ({
+    contributionCents: getMemberContributionCents(member),
+    member,
+  }));
+
+  const totalContributionCents = members.reduce(
+    (sum, entry) => sum + Math.max(entry.contributionCents, 0),
+    0,
+  );
+  const effectiveContributionCents =
+    totalContributionCents > 0 ? totalContributionCents : members.length;
+
+  const baseAllocations = members.map((entry, index) => {
+    const weight = totalContributionCents > 0 ? Math.max(entry.contributionCents, 0) : 1;
+    const exactShare = (totalAmountCents * weight) / effectiveContributionCents;
+    const shareAmountCents = Math.floor(exactShare);
+    const sharePct = effectiveContributionCents > 0 ? (weight / effectiveContributionCents) * 100 : 0;
+
+    return {
+      index,
+      allocation: {
+        monthlyAmountCents: Math.round(shareAmountCents / DEFAULT_REPAYMENT_CYCLES),
+        poolMemberId: entry.member.id,
+        remainder: exactShare - shareAmountCents,
+        shareAmountCents,
+        sharePct: Math.round(sharePct * 100) / 100,
+        totalCycles: DEFAULT_REPAYMENT_CYCLES,
+        userId: entry.member.userId,
+        userName: entry.member.name,
+      },
+    };
+  });
+
+  const allocatedCents = baseAllocations.reduce(
+    (sum, entry) => sum + entry.allocation.shareAmountCents,
+    0,
+  );
+  const remainingCents = Math.max(totalAmountCents - allocatedCents, 0);
+
+  const remainderOrder = [...baseAllocations].sort((left, right) => {
+    if (right.allocation.remainder !== left.allocation.remainder) {
+      return right.allocation.remainder - left.allocation.remainder;
+    }
+
+    return left.index - right.index;
+  });
+
+  for (let index = 0; index < remainingCents; index += 1) {
+    const target = remainderOrder[index];
+
+    if (!target) {
+      break;
+    }
+
+    target.allocation.shareAmountCents += 1;
+    target.allocation.monthlyAmountCents = Math.round(
+      target.allocation.shareAmountCents / DEFAULT_REPAYMENT_CYCLES,
+    );
+  }
+
+  return baseAllocations
+    .sort((left, right) => left.index - right.index)
+    .map((entry) => entry.allocation);
+}
+
+function buildTransactionForPool(
+  pool: PoolRecord,
+  suggestion: PoolSuggestionRecord,
+): PoolTransactionRecord {
+  const approvedAt = new Date().toISOString();
+  const obligations = buildShareAllocations(pool, suggestion.priceCents).map((allocation) => ({
+    ...allocation,
+    id: createId("obligation"),
+  }));
+
+  return {
+    approvedAt,
+    deliveredAt: null,
+    id: createId("pool-transaction"),
+    itemNameBm: suggestion.nameBm,
+    obligations,
+    suggestionId: suggestion.id,
+    totalAmountCents: suggestion.priceCents,
+  };
+}
+
+function buildVoteRecord(
+  member: PoolMemberSnapshot,
+  vote: PoolVoteChoice,
+): PoolVoteRecord {
+  return {
+    id: createId("pool-vote"),
+    userId: member.userId,
+    userName: member.name,
+    vote,
+    votedAt: new Date().toISOString(),
+  };
+}
+
 export function calculateLiveCombinedCapCents(pool: PoolRecord) {
   return pool.members.reduce((sum, member) => sum + member.individualAllowanceCents, 0);
+}
+
+export function buildVotingState(pool: PoolRecord): PoolVotingState {
+  const yesCount = pool.votes.filter((vote) => vote.vote === "YES").length;
+  const noCount = pool.votes.filter((vote) => vote.vote === "NO").length;
+  const votedMemberIds = new Set(pool.votes.map((vote) => vote.userId));
+  const pendingMembers = pool.members.filter((member) => !votedMemberIds.has(member.userId));
+  const majorityThreshold = Math.floor(pool.members.length / 2) + 1;
+
+  return {
+    hasMajorityApproval: yesCount >= majorityThreshold,
+    majorityThreshold,
+    noCount,
+    pendingMemberIds: pendingMembers.map((member) => member.userId),
+    pendingMemberNames: pendingMembers.map((member) => member.name),
+    totalMembers: pool.members.length,
+    yesCount,
+  };
+}
+
+export function getMemberVote(pool: PoolRecord, userId: string) {
+  return pool.votes.find((vote) => vote.userId === userId) ?? null;
+}
+
+export function getMemberSharePreview(pool: PoolRecord, userId: string) {
+  if (pool.transaction) {
+    return pool.transaction.obligations.find((obligation) => obligation.userId === userId) ?? null;
+  }
+
+  const selectedSuggestion = getSelectedSuggestion(pool);
+
+  if (!selectedSuggestion) {
+    return null;
+  }
+
+  return buildShareAllocations(pool, selectedSuggestion.priceCents).find(
+    (allocation) => allocation.userId === userId,
+  ) ?? null;
 }
 
 export function listCatalogue(filter: PoolSuggestionFilter = "semua") {
@@ -147,6 +309,22 @@ export function listPoolsForUser(userId: string) {
     .filter((pool) => pool.members.some((member) => member.userId === userId))
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
     .map((pool) => toPoolListItem(pool, userId));
+}
+
+export function listPoolsForNadi(user: MemberProfile) {
+  if (user.role !== "nadi_staff") {
+    return [];
+  }
+
+  return readPools()
+    .filter((pool) => pool.kampungId === user.kampung.id)
+    .filter((pool) => ["approved", "active", "completed"].includes(pool.state))
+    .sort((left, right) => {
+      const rightDate = right.approvedAt ?? right.createdAt;
+      const leftDate = left.approvedAt ?? left.createdAt;
+
+      return rightDate.localeCompare(leftDate);
+    });
 }
 
 export function getPoolById(poolId: string) {
@@ -194,25 +372,30 @@ export function createPool(input: CreatePoolInput, user: MemberProfile) {
   const inviteCode = createUniqueInviteCode(pools);
 
   const pool: PoolRecord = {
+    approvedAt: null,
+    combinedCapCents: null,
+    createdAt: new Date().toISOString(),
+    deliveredAt: null,
     id: createId("pool"),
-    name: input.name.trim(),
-    statedNeedText: input.statedNeedText.trim(),
-    statedNeedCategory: input.statedNeedCategory,
-    targetBudgetCents: input.targetBudgetCents,
-    inviteCode,
-    state: "draft",
     initiatorUserId: user.id,
+    inviteCode,
     kampungId: user.kampung.id,
     kampungName: user.kampung.name,
-    createdAt: new Date().toISOString(),
     lockedAt: null,
-    combinedCapCents: null,
     maxMembers: DEFAULT_POOL_CAPACITY,
     members: [createMemberSnapshot(user, true)],
+    name: input.name.trim(),
     selectedSuggestionId: null,
+    state: "draft",
+    statedNeedCategory: input.statedNeedCategory,
+    statedNeedText: input.statedNeedText.trim(),
     suggestedAt: null,
     suggestionFilter: "semua",
     suggestions: [],
+    targetBudgetCents: input.targetBudgetCents,
+    transaction: null,
+    votingStartedAt: null,
+    votes: [],
   };
 
   writePools([pool, ...pools]);
@@ -291,13 +474,13 @@ export function lockPool(poolId: string, userId: string) {
   const combinedCapCents = calculateLiveCombinedCapCents(pool);
   const updatedPool: PoolRecord = {
     ...pool,
-    state: "locked",
     combinedCapCents,
     lockedAt: new Date().toISOString(),
     members: pool.members.map((member) => ({
       ...member,
       individualAllowanceAtLockCents: member.individualAllowanceCents,
     })),
+    state: "locked",
   };
 
   pools[poolIndex] = updatedPool;
@@ -332,11 +515,16 @@ export function suggestPool(poolId: string, filter: PoolSuggestionFilter = "semu
 
   const updatedPool: PoolRecord = {
     ...pool,
-    state: "suggesting",
+    approvedAt: null,
+    deliveredAt: null,
     selectedSuggestionId: null,
+    state: "suggesting",
     suggestedAt: new Date().toISOString(),
     suggestionFilter: filter,
     suggestions,
+    transaction: null,
+    votingStartedAt: null,
+    votes: [],
   };
 
   pools[poolIndex] = updatedPool;
@@ -371,8 +559,116 @@ export function selectSuggestion(poolId: string, suggestionId: string) {
 
   const updatedPool: PoolRecord = {
     ...pool,
-    state: "voting",
+    approvedAt: null,
+    deliveredAt: null,
     selectedSuggestionId: suggestionId,
+    state: "voting",
+    transaction: null,
+    votingStartedAt: new Date().toISOString(),
+    votes: [],
+  };
+
+  pools[poolIndex] = updatedPool;
+  writePools(pools);
+
+  return updatedPool;
+}
+
+export function voteOnPool(poolId: string, userId: string, vote: PoolVoteChoice) {
+  const pools = readPools();
+  const poolIndex = pools.findIndex((pool) => pool.id === poolId);
+
+  if (poolIndex < 0) {
+    throw new Error("Pool tak ditemui.");
+  }
+
+  const pool = pools[poolIndex];
+
+  if (!pool) {
+    throw new Error("Pool tak ditemui.");
+  }
+
+  if (pool.state !== "voting") {
+    throw new Error("Undian hanya dibuka untuk pool yang sedang dalam fasa voting.");
+  }
+
+  const member = pool.members.find((entry) => entry.userId === userId);
+
+  if (!member) {
+    throw new Error("Hanya ahli pool boleh mengundi.");
+  }
+
+  if (pool.votes.some((entry) => entry.userId === userId)) {
+    throw new Error("Anda sudah hantar undian untuk pusingan ini.");
+  }
+
+  const selectedSuggestion = getSelectedSuggestion(pool);
+
+  if (!selectedSuggestion) {
+    throw new Error("Barang untuk diundi belum dipilih.");
+  }
+
+  const poolWithVote: PoolRecord = {
+    ...pool,
+    votes: [...pool.votes, buildVoteRecord(member, vote)],
+  };
+  const votingState = buildVotingState(poolWithVote);
+
+  const updatedPool =
+    votingState.hasMajorityApproval
+      ? {
+          ...poolWithVote,
+          approvedAt: new Date().toISOString(),
+          state: "approved" as const,
+          transaction: buildTransactionForPool(poolWithVote, selectedSuggestion),
+        }
+      : poolWithVote;
+
+  if (updatedPool.state === "approved" && updatedPool.transaction) {
+    updatedPool.approvedAt = updatedPool.transaction.approvedAt;
+  }
+
+  pools[poolIndex] = updatedPool;
+  writePools(pools);
+
+  return updatedPool;
+}
+
+export function confirmPoolDelivery(poolId: string, user: MemberProfile) {
+  const pools = readPools();
+  const poolIndex = pools.findIndex((pool) => pool.id === poolId);
+
+  if (poolIndex < 0) {
+    throw new Error("Pool tak ditemui.");
+  }
+
+  const pool = pools[poolIndex];
+
+  if (!pool) {
+    throw new Error("Pool tak ditemui.");
+  }
+
+  if (user.role !== "nadi_staff") {
+    throw new Error("Hanya staf NADI boleh sahkan penghantaran.");
+  }
+
+  if (pool.kampungId !== user.kampung.id) {
+    throw new Error(`Pool ini berada di luar kampung ${user.kampung.name}.`);
+  }
+
+  if (pool.state !== "approved" || !pool.transaction) {
+    throw new Error("Pool ini belum menunggu pengesahan penghantaran.");
+  }
+
+  const deliveredAt = new Date().toISOString();
+  const updatedPool: PoolRecord = {
+    ...pool,
+    deliveredAt,
+    state: "active",
+    transaction: {
+      ...pool.transaction,
+      deliveredAt,
+    },
   };
 
   pools[poolIndex] = updatedPool;

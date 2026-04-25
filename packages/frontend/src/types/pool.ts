@@ -66,9 +66,52 @@ export type PoolSuggestionRecord = {
   reasoningBm: string;
 };
 
+export type PoolVoteChoice = "YES" | "NO";
+
+export type PoolVoteRecord = {
+  id: string;
+  userId: string;
+  userName: string;
+  vote: PoolVoteChoice;
+  votedAt: string;
+};
+
+export type PoolObligationRecord = {
+  id: string;
+  monthlyAmountCents: number;
+  poolMemberId: string;
+  shareAmountCents: number;
+  sharePct: number;
+  totalCycles: number;
+  userId: string;
+  userName: string;
+};
+
+export type PoolTransactionRecord = {
+  approvedAt: string;
+  deliveredAt: string | null;
+  id: string;
+  itemNameBm: string;
+  obligations: PoolObligationRecord[];
+  suggestionId: string;
+  totalAmountCents: number;
+};
+
+export type PoolVotingState = {
+  hasMajorityApproval: boolean;
+  majorityThreshold: number;
+  noCount: number;
+  pendingMemberIds: string[];
+  pendingMemberNames: string[];
+  totalMembers: number;
+  yesCount: number;
+};
+
 export type PoolRecord = {
+  approvedAt: string | null;
   combinedCapCents: number | null;
   createdAt: string;
+  deliveredAt: string | null;
   id: string;
   initiatorUserId: string;
   inviteCode: string;
@@ -86,6 +129,9 @@ export type PoolRecord = {
   suggestionFilter: PoolSuggestionFilter;
   suggestions: PoolSuggestionRecord[];
   targetBudgetCents: number;
+  transaction: PoolTransactionRecord | null;
+  votingStartedAt: string | null;
+  votes: PoolVoteRecord[];
 };
 
 export type CreatePoolInput = {

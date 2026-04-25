@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { MemberProfile } from "@/types/auth";
 import { poolsClient } from "@/lib/pools/client";
 
 export function usePoolsQuery(userId: string | null) {
@@ -25,6 +26,15 @@ export function usePoolInviteQuery(inviteCode: string | null, options?: { enable
     queryKey: ["pools", "invite", inviteCode],
     queryFn: () => poolsClient.getByInviteCode(inviteCode ?? ""),
     enabled: (options?.enabled ?? true) && inviteCode !== null,
+    refetchInterval: 2_000,
+  });
+}
+
+export function useNadiPoolsQuery(user: MemberProfile | null) {
+  return useQuery({
+    queryKey: ["pools", "nadi", user?.id],
+    queryFn: () => poolsClient.listForNadi(user as MemberProfile),
+    enabled: user?.role === "nadi_staff",
     refetchInterval: 2_000,
   });
 }

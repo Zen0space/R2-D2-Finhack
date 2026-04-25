@@ -3,21 +3,42 @@
 import { API_BASE } from "@/lib/auth/client";
 import type { MemberProfile } from "@/types/auth";
 import type {
+  CatalogueProduct,
   CreatePoolInput,
   PoolListItem,
   PoolNeedCategory,
+  PoolObligationRecord,
   PoolRecord,
   PoolState,
+  PoolSuggestionFilter,
+  PoolSuggestionRecord,
+  PoolTransactionRecord,
+  PoolVoteChoice,
+  PoolVoteRecord,
 } from "@/types/pool";
 import {
   calculateLiveCombinedCapCents,
   getSelectedSuggestion,
+  listCatalogue as listFallbackCatalogue,
+  listPoolsForNadi as listLocalNadiPools,
   toPoolListItem,
 } from "./storage";
 
-// ---------------------------------------------------------------------------
-// Shape returned by poolView() on the backend
-// ---------------------------------------------------------------------------
+type ApiResponse<T> = {
+  success: boolean;
+  data: T;
+  meta?: Record<string, unknown>;
+};
+
+class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiRequestError";
+  }
+}
 
 type BackendMember = {
   id: string;
@@ -49,9 +70,82 @@ type BackendPool = {
   deliveredAt: string | null;
 };
 
-// ---------------------------------------------------------------------------
-// Mappers
-// ---------------------------------------------------------------------------
+type BackendSuggestion = {
+  itemId: string;
+  itemName: string;
+  priceCents: number;
+  allocationPct: number;
+  reasoningBm: string;
+  reasoningEn: string;
+};
+
+type BackendVotingState = {
+  poolId: string;
+  state: string;
+  tally: {
+    majorityThreshold: number;
+    no: number;
+    pendingMembers: Array<{ userId: string; name: string }>;
+    totalMembers: number;
+    yes: number;
+  };
+  votes: Array<{
+    userId: string;
+    userName: string;
+    vote: PoolVoteChoice;
+    votedAt: string;
+  }>;
+};
+
+type BackendLedgerEntry = {
+  obligationId: string;
+  member: { id: string; name: string };
+  shareAmountCents: number;
+  sharePct: number;
+  perCycleCents: number;
+  totalCycles: number;
+  cyclesPaid: number;
+  progressPct: number;
+  cycles: Array<{
+    cycleNumber: number;
+    amountCents: number;
+    status: string;
+    paidAt: string | null;
+    tngReference: string | null;
+  }>;
+};
+
+type BackendLedger = {
+  poolId: string;
+  ledger: BackendLedgerEntry[];
+  totals: {
+    memberCount: number;
+    cyclesPaid: number;
+    cyclesTotal: number;
+  };
+};
+
+type BackendProduct = {
+  id: string;
+  name: string;
+  nameMs: string | null;
+  brand: string | null;
+  category: string;
+  unit: string | null;
+  priceRm: number | string;
+  subsidyRm: number | string | null;
+  imageUrl: string | null;
+  stock: number | null;
+  barcode: string | null;
+  description?: string | null;
+};
+
+type PoolUiCache = {
+  suggestedAt?: string | null;
+  suggestionFilter?: PoolSuggestionFilter;
+  suggestions?: PoolSuggestionRecord[];
+  votingStartedAt?: string | null;
+};
 
 const stateMap: Record<string, PoolState> = {
   DRAFT: "draft",
@@ -74,6 +168,16 @@ const categoryFromBackend: Record<string, PoolNeedCategory> = {
   OTHER: "lain-lain",
 };
 
+const productCategoryMap: Record<string, PoolNeedCategory> = {
+  GROCERY: "makanan",
+  DAIRY: "makanan",
+  PRODUCE: "makanan",
+  BEVERAGE: "makanan",
+  FROZEN: "makanan",
+  BABY: "rumah",
+  PERSONAL_CARE: "lain-lain",
+};
+
 export const categoryToBackend: Record<PoolNeedCategory, string> = {
   peralatan: "EQUIPMENT",
   makanan: "GROCERY",
@@ -85,87 +189,405 @@ export const categoryToBackend: Record<PoolNeedCategory, string> = {
   "lain-lain": "OTHER",
 };
 
-function mapBackendPool(p: BackendPool): PoolRecord {
+const poolUiCache = new Map<string, PoolUiCache>();
+const knownPoolIds = new Set<string>();
+
+function rememberPoolId(poolId: string) {
+  if (poolId) {
+    knownPoolIds.add(poolId);
+  }
+}
+
+function createSuggestionId(poolId: string, productId: string) {
+  return `suggestion-${poolId}-${productId}`;
+}
+
+function extractProductId(poolId: string, suggestionId: string) {
+  const prefix = `suggestion-${poolId}-`;
+
+  if (suggestionId.startsWith(prefix)) {
+    return suggestionId.slice(prefix.length);
+  }
+
+  return suggestionId;
+}
+
+function mapBackendCategory(category: string) {
+  return (categoryFromBackend[category] ?? "lain-lain") as PoolNeedCategory;
+}
+
+function mapProductCategory(category: string, fallback: PoolNeedCategory) {
+  return (productCategoryMap[category] ?? fallback) as PoolNeedCategory;
+}
+
+function mergePoolUiCache(pool: PoolRecord): PoolRecord {
+  const cache = poolUiCache.get(pool.id);
+
+  if (!cache) {
+    return pool;
+  }
+
+  const suggestions = [...(cache.suggestions ?? [])];
+  const knownSuggestionIds = new Set(suggestions.map((suggestion) => suggestion.id));
+
+  for (const suggestion of pool.suggestions) {
+    if (!knownSuggestionIds.has(suggestion.id)) {
+      suggestions.push(suggestion);
+      knownSuggestionIds.add(suggestion.id);
+    }
+  }
+
   return {
-    id: p.id,
-    name: p.name,
-    statedNeedText: p.statedNeed,
-    statedNeedCategory: (categoryFromBackend[p.category] ?? "lain-lain") as PoolNeedCategory,
-    state: (stateMap[p.state] ?? "draft") as PoolState,
-    kampungId: p.kampung.id,
-    kampungName: p.kampung.name,
-    targetBudgetCents: p.targetBudgetCents,
-    combinedCapCents: p.combinedCapCents,
-    inviteCode: p.inviteCode,
-    selectedSuggestionId: p.selectedCatalogueItemId,
-    initiatorUserId: p.initiatorUserId,
-    maxMembers: 8,
-    members: p.members.map((m) => ({
-      id: m.id,
-      userId: m.userId,
-      name: m.userName,
-      email: m.userEmail,
-      isInitiator: m.userId === p.initiatorUserId,
-      joinedAt: m.joinedAt,
-      individualAllowanceCents: m.individualPaylaterCents,
-      individualAllowanceAtLockCents: m.individualAllowanceAtLockCents || null,
-    })),
-    createdAt: p.createdAt,
-    lockedAt: p.lockedAt,
-    suggestedAt: null,
-    suggestionFilter: "semua",
-    suggestions: [],
+    ...pool,
+    suggestedAt: cache.suggestedAt ?? pool.suggestedAt,
+    suggestionFilter: cache.suggestionFilter ?? pool.suggestionFilter,
+    suggestions,
+    votingStartedAt: cache.votingStartedAt ?? pool.votingStartedAt,
   };
 }
 
-async function apiFetch(path: string, init?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, {
+function patchPoolUiCache(poolId: string, patch: PoolUiCache) {
+  const previous = poolUiCache.get(poolId) ?? {};
+  poolUiCache.set(poolId, { ...previous, ...patch });
+  rememberPoolId(poolId);
+}
+
+function mapBackendPool(basePool: BackendPool): PoolRecord {
+  rememberPoolId(basePool.id);
+
+  return {
+    approvedAt: basePool.approvedAt,
+    combinedCapCents: basePool.combinedCapCents,
+    createdAt: basePool.createdAt,
+    deliveredAt: basePool.deliveredAt,
+    id: basePool.id,
+    initiatorUserId: basePool.initiatorUserId,
+    inviteCode: basePool.inviteCode,
+    kampungId: basePool.kampung.id,
+    kampungName: basePool.kampung.name,
+    lockedAt: basePool.lockedAt,
+    maxMembers: 8,
+    members: basePool.members.map((member) => ({
+      id: member.id,
+      userId: member.userId,
+      name: member.userName,
+      email: member.userEmail,
+      isInitiator: member.userId === basePool.initiatorUserId,
+      joinedAt: member.joinedAt,
+      individualAllowanceCents: member.individualPaylaterCents,
+      individualAllowanceAtLockCents:
+        member.individualAllowanceAtLockCents > 0 ? member.individualAllowanceAtLockCents : null,
+    })),
+    name: basePool.name,
+    selectedSuggestionId: basePool.selectedCatalogueItemId
+      ? createSuggestionId(basePool.id, basePool.selectedCatalogueItemId)
+      : null,
+    state: (stateMap[basePool.state] ?? "draft") as PoolState,
+    statedNeedCategory: mapBackendCategory(basePool.category),
+    statedNeedText: basePool.statedNeed,
+    suggestedAt: null,
+    suggestionFilter: "semua",
+    suggestions: [],
+    targetBudgetCents: basePool.targetBudgetCents,
+    transaction: null,
+    votingStartedAt: null,
+    votes: [],
+  };
+}
+
+function buildVoteRecord(poolId: string, vote: BackendVotingState["votes"][number]): PoolVoteRecord {
+  return {
+    id: `vote-${poolId}-${vote.userId}-${vote.votedAt}`,
+    userId: vote.userId,
+    userName: vote.userName,
+    vote: vote.vote,
+    votedAt: vote.votedAt,
+  };
+}
+
+function buildTransactionFromLedger(
+  pool: PoolRecord,
+  ledger: BackendLedgerEntry[],
+  itemNameBm: string,
+): PoolTransactionRecord {
+  const obligations: PoolObligationRecord[] = ledger.map((entry) => {
+    const member = pool.members.find((poolMember) => poolMember.userId === entry.member.id);
+
+    return {
+      id: entry.obligationId,
+      monthlyAmountCents: entry.perCycleCents,
+      poolMemberId: member?.id ?? entry.member.id,
+      shareAmountCents: entry.shareAmountCents,
+      sharePct: entry.sharePct,
+      totalCycles: entry.totalCycles,
+      userId: entry.member.id,
+      userName: entry.member.name,
+    };
+  });
+
+  return {
+    approvedAt: pool.approvedAt ?? new Date().toISOString(),
+    deliveredAt: pool.deliveredAt,
+    id: `pool-transaction-${pool.id}`,
+    itemNameBm,
+    obligations,
+    suggestionId: pool.selectedSuggestionId ?? `suggestion-${pool.id}`,
+    totalAmountCents: obligations.reduce((sum, obligation) => sum + obligation.shareAmountCents, 0),
+  };
+}
+
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<ApiResponse<T>> {
+  const response = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: { message?: string } };
-    throw new Error(body?.error?.message ?? `Request failed (${res.status})`);
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as {
+      error?: { message?: string };
+    };
+
+    throw new ApiRequestError(
+      body.error?.message ?? `Request failed (${response.status})`,
+      response.status,
+    );
   }
 
-  return res.json() as Promise<{ success: boolean; data: Record<string, unknown> }>;
+  return (await response.json()) as ApiResponse<T>;
 }
 
-// ---------------------------------------------------------------------------
-// Client
-// ---------------------------------------------------------------------------
+async function fetchProduct(productId: string): Promise<BackendProduct | null> {
+  try {
+    const response = await apiFetch<BackendProduct>(`/api/v1/mykasih/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function buildSuggestionRecords(
+  poolId: string,
+  fallbackCategory: PoolNeedCategory,
+  suggestions: BackendSuggestion[],
+): Promise<PoolSuggestionRecord[]> {
+  const products = await Promise.all(
+    suggestions.map(async (suggestion) => [suggestion.itemId, await fetchProduct(suggestion.itemId)] as const),
+  );
+  const productById = new Map(products);
+
+  return suggestions.map((suggestion, index) => {
+    const product = productById.get(suggestion.itemId);
+    const category = product ? mapProductCategory(product.category, fallbackCategory) : fallbackCategory;
+
+    return {
+      id: createSuggestionId(poolId, suggestion.itemId),
+      productId: suggestion.itemId,
+      nameBm: product?.nameMs ?? suggestion.itemName,
+      priceCents: suggestion.priceCents,
+      category,
+      allocationPct: suggestion.allocationPct,
+      imageUrl: product?.imageUrl ?? null,
+      rank: index + 1,
+      reasoningBm: suggestion.reasoningBm,
+    };
+  });
+}
+
+async function ensureSelectedSuggestion(pool: PoolRecord): Promise<PoolRecord> {
+  if (!pool.selectedSuggestionId) {
+    return pool;
+  }
+
+  const alreadySelected = pool.suggestions.some(
+    (suggestion) => suggestion.id === pool.selectedSuggestionId,
+  );
+
+  if (alreadySelected) {
+    return pool;
+  }
+
+  const productId = extractProductId(pool.id, pool.selectedSuggestionId);
+  const product = await fetchProduct(productId);
+
+  if (!product) {
+    return pool;
+  }
+
+  const syntheticSuggestion: PoolSuggestionRecord = {
+    id: createSuggestionId(pool.id, product.id),
+    productId: product.id,
+    nameBm: product.nameMs ?? product.name,
+    priceCents: Math.round(Number(product.priceRm) * 100),
+    category: mapProductCategory(product.category, pool.statedNeedCategory),
+    allocationPct: Math.max(
+      1,
+      Math.round(
+        (Math.round(Number(product.priceRm) * 100) /
+          Math.max(pool.combinedCapCents ?? calculateLiveCombinedCapCents(pool), 1)) *
+          100,
+      ),
+    ),
+    imageUrl: product.imageUrl,
+    rank: 1,
+    reasoningBm:
+      "Item dipulihkan daripada katalog backend supaya keputusan undian dan ringkasan transaksi kekal kelihatan.",
+  };
+
+  return mergePoolUiCache({
+    ...pool,
+    suggestions: [...pool.suggestions, syntheticSuggestion],
+  });
+}
+
+async function hydratePoolRecord(basePool: BackendPool): Promise<PoolRecord> {
+  let pool = mergePoolUiCache(mapBackendPool(basePool));
+  pool = await ensureSelectedSuggestion(pool);
+
+  if (pool.selectedSuggestionId && ["voting", "approved", "active"].includes(pool.state)) {
+    const votingState = await apiFetch<BackendVotingState>(`/api/v1/pools/${pool.id}/voting-state`).catch(
+      (error) => {
+        if (error instanceof ApiRequestError && error.status === 400) {
+          return null;
+        }
+
+        throw error;
+      },
+    );
+
+    if (votingState) {
+      const votes = votingState.data.votes.map((vote) => buildVoteRecord(pool.id, vote));
+      const votingStartedAt =
+        votes.at(0)?.votedAt ??
+        poolUiCache.get(pool.id)?.votingStartedAt ??
+        pool.votingStartedAt ??
+        pool.lockedAt;
+
+      patchPoolUiCache(pool.id, { votingStartedAt });
+      pool = {
+        ...pool,
+        votes,
+        votingStartedAt,
+      };
+    }
+  }
+
+  if (pool.selectedSuggestionId && ["approved", "active"].includes(pool.state)) {
+    const ledger = await apiFetch<BackendLedger>(`/api/v1/pools/${pool.id}/ledger`).catch((error) => {
+      if (error instanceof ApiRequestError && error.status === 400) {
+        return null;
+      }
+
+      throw error;
+    });
+
+    if (ledger) {
+      const selectedSuggestion = getSelectedSuggestion(pool);
+      const productId = extractProductId(pool.id, pool.selectedSuggestionId);
+      const product = selectedSuggestion ? null : await fetchProduct(productId);
+      const itemNameBm =
+        selectedSuggestion?.nameBm ??
+        product?.nameMs ??
+        product?.name ??
+        "Item pool";
+
+      pool = {
+        ...pool,
+        transaction: buildTransactionFromLedger(pool, ledger.data.ledger, itemNameBm),
+      };
+    }
+  }
+
+  return mergePoolUiCache(pool);
+}
+
+async function fetchPoolRecord(poolId: string): Promise<PoolRecord | null> {
+  try {
+    const response = await apiFetch<{ pool: BackendPool }>(`/api/v1/pools/${poolId}`);
+    return hydratePoolRecord(response.data.pool);
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+}
 
 export const poolsClient = {
   async listMine(userId: string): Promise<PoolListItem[]> {
-    const body = await apiFetch("/api/v1/pools/mine");
-    const pools = (body.data as { pools: BackendPool[] }).pools;
-    return pools.map((p) => toPoolListItem(mapBackendPool(p), userId));
+    const response = await apiFetch<{ pools: BackendPool[] }>("/api/v1/pools/mine");
+    const pools = response.data.pools.map((pool) => {
+      rememberPoolId(pool.id);
+      return toPoolListItem(mapBackendPool(pool), userId);
+    });
+
+    return pools;
+  },
+
+  async listForNadi(user: MemberProfile): Promise<PoolRecord[]> {
+    if (user.role !== "nadi_staff") {
+      return [];
+    }
+
+    const backendMine = await apiFetch<{ pools: BackendPool[] }>("/api/v1/pools/mine").catch(
+      () => null,
+    );
+
+    backendMine?.data.pools.forEach((pool) => rememberPoolId(pool.id));
+
+    const detailedPools = (
+      await Promise.all(
+        [...knownPoolIds].map(async (poolId) => {
+          try {
+            return await fetchPoolRecord(poolId);
+          } catch {
+            return null;
+          }
+        }),
+      )
+    ).filter((pool): pool is PoolRecord => pool !== null);
+
+    const backendScopedPools = detailedPools
+      .filter((pool) => pool.kampungId === user.kampung.id)
+      .filter((pool) => ["approved", "active", "completed"].includes(pool.state))
+      .sort((left, right) => {
+        const rightDate = right.approvedAt ?? right.createdAt;
+        const leftDate = left.approvedAt ?? left.createdAt;
+
+        return rightDate.localeCompare(leftDate);
+      });
+
+    if (backendScopedPools.length > 0) {
+      return backendScopedPools;
+    }
+
+    return listLocalNadiPools(user);
   },
 
   async getById(poolId: string): Promise<PoolRecord | null> {
-    try {
-      const body = await apiFetch(`/api/v1/pools/${poolId}`);
-      return mapBackendPool((body.data as { pool: BackendPool }).pool);
-    } catch (err) {
-      if (err instanceof Error && err.message.includes("404")) return null;
-      throw err;
-    }
+    return fetchPoolRecord(poolId);
   },
 
   async getByInviteCode(code: string): Promise<PoolRecord | null> {
     try {
-      const body = await apiFetch(`/api/v1/pools/by-code/${code}`);
-      return mapBackendPool((body.data as { pool: BackendPool }).pool);
-    } catch (err) {
-      if (err instanceof Error && err.message.includes("404")) return null;
-      throw err;
+      const response = await apiFetch<{ pool: BackendPool }>(`/api/v1/pools/by-code/${code}`);
+      return hydratePoolRecord(response.data.pool);
+    } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 404) {
+        return null;
+      }
+
+      throw error;
     }
   },
 
   async create(input: CreatePoolInput, user: MemberProfile): Promise<PoolRecord> {
-    const body = await apiFetch("/api/v1/pools", {
+    const response = await apiFetch<{ pool: BackendPool }>("/api/v1/pools", {
       method: "POST",
       body: JSON.stringify({
         kampungId: user.kampung.id,
@@ -175,43 +597,149 @@ export const poolsClient = {
         targetBudgetCents: input.targetBudgetCents,
       }),
     });
-    return mapBackendPool((body.data as { pool: BackendPool }).pool);
+
+    return hydratePoolRecord(response.data.pool);
   },
 
-  async join(inviteCode: string): Promise<PoolRecord> {
-    const joinBody = await apiFetch("/api/v1/pools/join", {
+  async join(inviteCode: string, user: MemberProfile): Promise<PoolRecord> {
+    void user;
+
+    const response = await apiFetch<{ poolId: string }>("/api/v1/pools/join", {
       method: "POST",
       body: JSON.stringify({ code: inviteCode }),
     });
-    const poolId = (joinBody.data as { poolId: string }).poolId;
-    const pool = await poolsClient.getById(poolId);
-    if (!pool) throw new Error("Pool tak ditemui selepas join.");
+
+    const pool = await fetchPoolRecord(response.data.poolId);
+
+    if (!pool) {
+      throw new Error("Pool tak ditemui selepas join.");
+    }
+
     return pool;
   },
 
-  async lock(poolId: string): Promise<PoolRecord> {
+  async lock(poolId: string, userId: string): Promise<PoolRecord> {
+    void userId;
+
     await apiFetch(`/api/v1/pools/${poolId}/lock`, { method: "POST" });
-    const pool = await poolsClient.getById(poolId);
-    if (!pool) throw new Error("Pool tak ditemui selepas lock.");
+
+    const pool = await fetchPoolRecord(poolId);
+
+    if (!pool) {
+      throw new Error("Pool tak ditemui selepas lock.");
+    }
+
     return pool;
   },
 
-  // Phase 3 stubs — wired in the next phase
-  async suggest(): Promise<PoolRecord> {
-    throw new Error("AI Penasihat belum disambung — Phase 3.");
+  async suggest(poolId: string, filter: PoolSuggestionFilter = "semua"): Promise<PoolRecord> {
+    const currentPool = await fetchPoolRecord(poolId);
+
+    if (!currentPool) {
+      throw new Error("Pool tak ditemui.");
+    }
+
+    const response = await apiFetch<{
+      items: BackendSuggestion[];
+      provider: string;
+      cached: boolean;
+      suggestedAt: string;
+    }>(`/api/v1/pools/${poolId}/suggest`, {
+      method: "POST",
+    });
+
+    const suggestions = await buildSuggestionRecords(
+      poolId,
+      currentPool.statedNeedCategory,
+      response.data.items,
+    );
+
+    patchPoolUiCache(poolId, {
+      suggestedAt: response.data.suggestedAt,
+      suggestionFilter: filter,
+      suggestions,
+    });
+
+    const pool = await fetchPoolRecord(poolId);
+
+    if (!pool) {
+      throw new Error("Pool tak ditemui selepas jana cadangan.");
+    }
+
+    return {
+      ...pool,
+      state: "suggesting",
+      suggestedAt: response.data.suggestedAt,
+      suggestionFilter: filter,
+      suggestions,
+    };
   },
 
-  async chooseSuggestion(): Promise<PoolRecord> {
-    throw new Error("Pilih barang belum disambung — Phase 3.");
+  async chooseSuggestion(poolId: string, suggestionId: string): Promise<PoolRecord> {
+    const cache = poolUiCache.get(poolId);
+    const cachedSuggestion = cache?.suggestions?.find((suggestion) => suggestion.id === suggestionId);
+    const productId = cachedSuggestion?.productId ?? extractProductId(poolId, suggestionId);
+
+    await apiFetch(`/api/v1/pools/${poolId}/select-item`, {
+      method: "POST",
+      body: JSON.stringify({ catalogueItemId: productId }),
+    });
+
+    patchPoolUiCache(poolId, {
+      votingStartedAt: new Date().toISOString(),
+    });
+
+    const pool = await fetchPoolRecord(poolId);
+
+    if (!pool) {
+      throw new Error("Pool tak ditemui selepas pilih barang.");
+    }
+
+    return pool;
   },
 
-  async listCatalogue() {
-    return [];
+  async vote(poolId: string, userId: string, vote: PoolVoteChoice): Promise<PoolRecord> {
+    void userId;
+
+    await apiFetch(`/api/v1/pools/${poolId}/vote`, {
+      method: "POST",
+      body: JSON.stringify({ vote }),
+    });
+
+    const pool = await fetchPoolRecord(poolId);
+
+    if (!pool) {
+      throw new Error("Pool tak ditemui selepas undian dihantar.");
+    }
+
+    return pool;
+  },
+
+  async confirmDelivery(poolId: string, user: MemberProfile): Promise<PoolRecord> {
+    void user;
+
+    await apiFetch(`/api/v1/pools/${poolId}/confirm-delivery`, {
+      method: "POST",
+    });
+
+    const pool = await fetchPoolRecord(poolId);
+
+    if (!pool) {
+      throw new Error("Pool tak ditemui selepas pengesahan penghantaran.");
+    }
+
+    return pool;
+  },
+
+  async listCatalogue(filter?: PoolSuggestionFilter): Promise<CatalogueProduct[]> {
+    return listFallbackCatalogue(filter);
   },
 
   getSelectedSuggestion,
 
-  countCatalogueMatches: (pool: PoolRecord) => {
+  countCatalogueMatches: (pool: PoolRecord, filter?: PoolSuggestionFilter) => {
+    void filter;
+
     const cap = pool.combinedCapCents ?? calculateLiveCombinedCapCents(pool);
     return cap > 0 ? 1 : 0;
   },

@@ -8,8 +8,41 @@ export const authClient = createAuthClient({
   baseURL: API_BASE,
 });
 
-// Demo credentials — seeded via `pnpm --filter backend tsx src/scripts/seed-demo.ts`
+// Seeded via `pnpm --filter backend tsx src/scripts/seed-demo.ts`
 export const DEMO_CREDENTIALS = {
   email: "aminah@duitlater.demo",
   password: "FeldaG3dangsa!",
 } as const;
+
+export const DEMO_ACCOUNTS = [
+  {
+    email: "aminah@duitlater.demo",
+    name: "Mak Cik Aminah",
+    password: DEMO_CREDENTIALS.password,
+    role: "member",
+  },
+  {
+    email: "razali@duitlater.demo",
+    name: "Pak Cik Razali",
+    password: DEMO_CREDENTIALS.password,
+    role: "member",
+  },
+  {
+    email: "faiz@duitlater.demo",
+    name: "Adik Faiz",
+    password: DEMO_CREDENTIALS.password,
+    role: "member",
+  },
+  {
+    email: "hamid@duitlater.demo",
+    name: "Pakcik Hamid",
+    password: DEMO_CREDENTIALS.password,
+    role: "member",
+  },
+  {
+    email: "hidayah@duitlater.demo",
+    name: "Cik Hidayah",
+    password: DEMO_CREDENTIALS.password,
+    role: "nadi_staff",
+  },
+] as const;
