@@ -20,6 +20,8 @@ export type PoolNeedCategory =
   | "rumah"
   | "lain-lain";
 
+export type PoolSuggestionFilter = PoolNeedCategory | "semua";
+
 export const poolNeedCategories = [
   { value: "makanan", label: "Makanan" },
   { value: "alat-sekolah", label: "Alat sekolah" },
@@ -42,6 +44,28 @@ export type PoolMemberSnapshot = {
   userId: string;
 };
 
+export type CatalogueProduct = {
+  category: PoolNeedCategory;
+  descriptionBm: string;
+  id: string;
+  imageUrl: string | null;
+  keywords: string[];
+  nameBm: string;
+  priceCents: number;
+};
+
+export type PoolSuggestionRecord = {
+  allocationPct: number;
+  category: PoolNeedCategory;
+  id: string;
+  imageUrl: string | null;
+  nameBm: string;
+  priceCents: number;
+  productId: string;
+  rank: number;
+  reasoningBm: string;
+};
+
 export type PoolRecord = {
   combinedCapCents: number | null;
   createdAt: string;
@@ -54,9 +78,13 @@ export type PoolRecord = {
   maxMembers: number;
   members: PoolMemberSnapshot[];
   name: string;
+  selectedSuggestionId: string | null;
   state: PoolState;
   statedNeedCategory: PoolNeedCategory;
   statedNeedText: string;
+  suggestedAt: string | null;
+  suggestionFilter: PoolSuggestionFilter;
+  suggestions: PoolSuggestionRecord[];
   targetBudgetCents: number;
 };
 

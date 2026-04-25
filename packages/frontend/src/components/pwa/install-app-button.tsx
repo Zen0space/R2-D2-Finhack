@@ -2,6 +2,7 @@
 
 import { useAtomValue, useSetAtom } from "jotai";
 import { Download, Smartphone } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { useAppInstallPrompt } from "@/hooks/use-app-install-prompt";
 import {
   canInstallAppAtom,
@@ -10,6 +11,7 @@ import {
   isAppInstalledAtom,
   setAppInstalledAtom,
 } from "@/store/ui";
+import { cn } from "@/lib/utils";
 
 export function InstallAppButton() {
   useAppInstallPrompt();
@@ -39,7 +41,12 @@ export function InstallAppButton() {
 
   if (isAppInstalled) {
     return (
-      <span className="install-status">
+      <span
+        className={cn(
+          "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold",
+          "border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] text-[color:var(--dl-forest)]",
+        )}
+      >
         <Smartphone aria-hidden="true" size={16} />
         Installed
       </span>
@@ -51,7 +58,11 @@ export function InstallAppButton() {
   }
 
   return (
-    <button className="install-button" type="button" onClick={() => void install()}>
+    <button
+      className={cn(buttonVariants({ variant: "secondary" }), "h-10 rounded-full px-4")}
+      type="button"
+      onClick={() => void install()}
+    >
       <Download aria-hidden="true" size={16} />
       Install app
     </button>

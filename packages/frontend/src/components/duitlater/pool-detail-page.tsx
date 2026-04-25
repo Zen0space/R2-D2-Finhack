@@ -11,17 +11,25 @@ import {
   UsersRound,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { toast } from "sonner";
 import { InviteQr } from "@/components/duitlater/invite-qr";
+import { PoolSuggestionsPanel } from "@/components/duitlater/pool-suggestions-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePoolDetailQuery } from "@/hooks/use-pools-query";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { poolsClient } from "@/lib/pools/client";
-import { buildPoolShareLink, calculateLiveCombinedCapCents } from "@/lib/pools/storage";
+import {
+  buildPoolShareLink,
+  calculateLiveCombinedCapCents,
+  countCatalogueMatches,
+  getSelectedSuggestion,
+} from "@/lib/pools/storage";
 import { cn, formatCurrency } from "@/lib/utils";
 import { poolNeedCategories } from "@/types/pool";
+import type { PoolSuggestionFilter } from "@/types/pool";
 
 type PoolDetailPageProps = {
   poolId: string;
@@ -49,6 +57,8 @@ async function copyText(value: string, successMessage: string) {
 
 export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   const queryClient = useQueryClient();
+  const [pendingFilter, setPendingFilter] = useState<PoolSuggestionFilter | null>(null);
+  const [pendingSuggestionId, setPendingSuggestionId] = useState<string | null>(null);
   const { data: session, isLoading: isSessionLoading } = useSessionQuery();
   const { data: pool, isLoading: isPoolLoading } = usePoolDetailQuery(poolId);
 
@@ -61,6 +71,42 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Tak dapat lock pool sekarang.");
+    },
+  });
+
+  const suggestMutation = useMutation({
+    mutationFn: (filter: PoolSuggestionFilter) => poolsClient.suggest(poolId, filter),
+    onMutate: (filter) => {
+      setPendingFilter(filter);
+    },
+    onSuccess: (updatedPool) => {
+      queryClient.invalidateQueries({ queryKey: ["pools"] });
+      queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
+      toast.success("Penasihat dah susun shortlist BM untuk pool ini.");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Tak dapat jana cadangan sekarang.");
+    },
+    onSettled: () => {
+      setPendingFilter(null);
+    },
+  });
+
+  const chooseSuggestionMutation = useMutation({
+    mutationFn: (suggestionId: string) => poolsClient.chooseSuggestion(poolId, suggestionId),
+    onMutate: (suggestionId) => {
+      setPendingSuggestionId(suggestionId);
+    },
+    onSuccess: (updatedPool) => {
+      queryClient.invalidateQueries({ queryKey: ["pools"] });
+      queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
+      toast.success("Barang dipilih. Pool kini masuk ke fasa voting.");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Tak dapat pilih barang sekarang.");
+    },
+    onSettled: () => {
+      setPendingSuggestionId(null);
     },
   });
 
@@ -143,6 +189,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   const isInitiator = pool.initiatorUserId === session.user.id;
   const liveCombinedCapCents = calculateLiveCombinedCapCents(pool);
   const shareLink = buildPoolShareLink(pool);
+  const selectedSuggestion = getSelectedSuggestion(pool);
+  const activeSuggestionFilter = pendingFilter ?? pool.suggestionFilter;
+  const catalogueMatchCount = countCatalogueMatches(pool, activeSuggestionFilter);
 
   if (!isMember) {
     return (
@@ -204,11 +253,15 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                 {formatCurrency(pool.combinedCapCents ?? liveCombinedCapCents)}
               </p>
               <p className="mt-3 max-w-xl text-sm text-white/78 sm:text-base">
-                {pool.state === "locked"
+                {pool.state === "voting"
+                  ? "Barang sudah dipilih dan pool ini telah bergerak ke fasa voting. Ahli akan semak cadangan yang sama pada langkah seterusnya."
+                  : pool.state === "suggesting"
+                    ? "5 cadangan BM-first kini tersedia di bawah. Anda boleh tapis ikut kategori sebelum pilih satu untuk dibawa ke voting."
+                    : pool.state === "locked"
                   ? `Pool dah dikunci. Combined cap: ${formatCurrency(
                       pool.combinedCapCents ?? 0,
                     )}. Cadangkan barang.`
-                  : "Ahli yang join akan terus mengubah cap semasa ini. Nilai rasmi hanya dibekukan bila initiator klik Lock pool."}
+                    : "Ahli yang join akan terus mengubah cap semasa ini. Nilai rasmi hanya dibekukan bila initiator klik Lock pool."}
               </p>
             </div>
 
@@ -338,18 +391,32 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
             <Card>
               <CardHeader className="gap-3">
-                <Badge tone={pool.state === "locked" ? "forest" : "maroon"}>
-                  {pool.state === "locked" ? "Pool dikunci" : "Lock pool"}
+                <Badge tone={pool.state === "draft" ? "maroon" : pool.state === "voting" ? "forest" : "gold"}>
+                  {pool.state === "draft"
+                    ? "Lock pool"
+                    : pool.state === "voting"
+                      ? "Pool dalam voting"
+                      : "Phase 3 aktif"}
                 </Badge>
                 <CardTitle className="text-4xl">
-                  {pool.state === "locked" ? "Sedia untuk Phase 3" : "Bekukan roster ahli"}
+                  {pool.state === "draft"
+                    ? "Bekukan roster ahli"
+                    : pool.state === "voting"
+                      ? "Barang dah dipilih"
+                      : "Katalog sedia untuk dipilih"}
                 </CardTitle>
                 <CardDescription className="text-base">
-                  {pool.state === "locked"
+                  {pool.state === "draft"
+                    ? "Hanya initiator boleh lock. Bila dikunci, senarai ahli dan combined cap jadi rasmi untuk langkah seterusnya."
+                    : pool.state === "voting"
+                      ? "Pilihan barang sudah ditetapkan. Fasa selepas ini ialah undian ahli, yang akan disambung pada Phase 4."
+                    : pool.state === "suggesting"
+                      ? "Cadangan telah dijana. Tapis ikut kategori dan pilih satu barang dari panel di bawah."
+                      : pool.state === "locked"
                     ? `Pool dah dikunci. Combined cap: ${formatCurrency(
                         pool.combinedCapCents ?? 0,
                       )}. Cadangkan barang.`
-                    : "Hanya initiator boleh lock. Bila dikunci, senarai ahli dan combined cap jadi rasmi untuk langkah seterusnya."}
+                      : "Pool ini sudah cukup syarat untuk mula menilai cadangan katalog."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -371,30 +438,70 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       {lockMutation.isPending ? "Sedang lock..." : "Lock pool"}
                     </Button>
                   </>
-                ) : (
-                  <div className="grid gap-4 rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 aria-hidden="true" className="mt-0.5 text-[color:var(--dl-forest)]" size={20} />
-                      <div className="grid gap-2">
-                        <p className="text-base font-semibold text-[color:var(--dl-forest)]">
-                          Pool dah dikunci. Combined cap: {formatCurrency(pool.combinedCapCents ?? 0)}.
-                          {" "}Cadangkan barang.
-                        </p>
-                        <p className="text-sm text-[color:var(--dl-forest)]">
-                          Frontend Phase 2 berhenti di sini. Butang di bawah sengaja letak sebagai jambatan ke Phase 3.
-                        </p>
-                      </div>
+                ) : pool.state === "locked" ? (
+                  <>
+                    <div className="rounded-[1.5rem] border border-[color:rgba(200,148,31,0.22)] bg-[color:rgba(200,148,31,0.08)] p-4 text-sm text-[color:var(--dl-slate)]">
+                      Klik `Cadangkan barang` untuk jana shortlist BM-first berasaskan cap pool, kategori
+                      need, dan katalog MyKasih yang muat dalam bajet semasa.
                     </div>
 
                     <Button
                       className="w-full"
                       variant="secondary"
                       size="lg"
-                      onClick={() => toast.message("Phase 3 suggestion flow belum disambung lagi.")}
+                      disabled={suggestMutation.isPending}
+                      onClick={() => suggestMutation.mutate(pool.suggestionFilter)}
                     >
                       <Sparkles aria-hidden="true" size={18} />
-                      Cadangkan barang
+                      {suggestMutation.isPending ? "Sedang jana..." : "Cadangkan barang"}
                     </Button>
+                  </>
+                ) : pool.state === "suggesting" ? (
+                  <>
+                    <div className="rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4 text-sm text-[color:var(--dl-forest)]">
+                      5 cadangan sudah tersedia. Anda boleh tapis kategori atau jana semula shortlist jika
+                      mahu fokus pada bahagian katalog tertentu.
+                    </div>
+
+                    <Button
+                      className="w-full"
+                      variant="secondary"
+                      size="lg"
+                      disabled={suggestMutation.isPending}
+                      onClick={() => suggestMutation.mutate(pool.suggestionFilter)}
+                    >
+                      <Sparkles aria-hidden="true" size={18} />
+                      {suggestMutation.isPending ? "Sedang jana semula..." : "Cadangkan semula"}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="grid gap-4 rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 aria-hidden="true" className="mt-0.5 text-[color:var(--dl-forest)]" size={20} />
+                      <div className="grid gap-2">
+                        <p className="text-base font-semibold text-[color:var(--dl-forest)]">
+                          {selectedSuggestion
+                            ? `${selectedSuggestion.nameBm} telah dipilih untuk dibawa ke voting.`
+                            : "Pool ini sudah berada dalam voting."}
+                        </p>
+                        <p className="text-sm text-[color:var(--dl-forest)]">
+                          Undian ahli akan sambung pada Phase 4. Buat masa ini, ringkasan pilihan kekal
+                          dipapar supaya semua orang lihat konteks yang sama.
+                        </p>
+                      </div>
+                    </div>
+
+                    {selectedSuggestion ? (
+                      <div className="rounded-[1.25rem] bg-white/78 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                          Pilihan semasa
+                        </p>
+                        <p className="mt-2 text-lg font-semibold">{selectedSuggestion.nameBm}</p>
+                        <p className="mt-1 text-sm text-[color:var(--dl-slate)]">
+                          {formatCurrency(selectedSuggestion.priceCents)} · {selectedSuggestion.allocationPct}% cap pool
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 )}
 
@@ -406,6 +513,20 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
             </Card>
           </div>
         </section>
+
+        {pool.state !== "draft" ? (
+          <PoolSuggestionsPanel
+            activeFilter={activeSuggestionFilter}
+            catalogueMatchCount={catalogueMatchCount}
+            choosePendingSuggestionId={pendingSuggestionId}
+            isChoosePending={chooseSuggestionMutation.isPending}
+            isSuggestPending={suggestMutation.isPending}
+            onChoose={(suggestionId) => chooseSuggestionMutation.mutate(suggestionId)}
+            onSuggest={(filter) => suggestMutation.mutate(filter)}
+            pool={pool}
+            selectedSuggestion={selectedSuggestion}
+          />
+        ) : null}
       </div>
     </main>
   );

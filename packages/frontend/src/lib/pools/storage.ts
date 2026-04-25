@@ -6,7 +6,9 @@ import type {
   PoolMemberSnapshot,
   PoolNeedCategory,
   PoolRecord,
+  PoolSuggestionFilter,
 } from "@/types/pool";
+import { buildPoolSuggestions, listCatalogueItems } from "./catalogue";
 
 const POOLS_KEY = "duitlater.phase2.pools";
 const INVITE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -37,8 +39,18 @@ function parseJson<T>(value: string | null, fallback: T) {
   }
 }
 
+function normalizePoolRecord(pool: PoolRecord): PoolRecord {
+  return {
+    ...pool,
+    selectedSuggestionId: pool.selectedSuggestionId ?? null,
+    suggestedAt: pool.suggestedAt ?? null,
+    suggestionFilter: pool.suggestionFilter ?? "semua",
+    suggestions: pool.suggestions ?? [],
+  };
+}
+
 function readPools() {
-  return parseJson<PoolRecord[]>(storage()?.getItem(POOLS_KEY) ?? null, []);
+  return parseJson<PoolRecord[]>(storage()?.getItem(POOLS_KEY) ?? null, []).map(normalizePoolRecord);
 }
 
 function writePools(pools: PoolRecord[]) {
@@ -107,6 +119,10 @@ function resolveOrigin() {
 
 export function calculateLiveCombinedCapCents(pool: PoolRecord) {
   return pool.members.reduce((sum, member) => sum + member.individualAllowanceCents, 0);
+}
+
+export function listCatalogue(filter: PoolSuggestionFilter = "semua") {
+  return listCatalogueItems(filter);
 }
 
 export function toPoolListItem(pool: PoolRecord, currentUserId: string): PoolListItem {
@@ -193,6 +209,10 @@ export function createPool(input: CreatePoolInput, user: MemberProfile) {
     combinedCapCents: null,
     maxMembers: DEFAULT_POOL_CAPACITY,
     members: [createMemberSnapshot(user, true)],
+    selectedSuggestionId: null,
+    suggestedAt: null,
+    suggestionFilter: "semua",
+    suggestions: [],
   };
 
   writePools([pool, ...pools]);
@@ -284,6 +304,95 @@ export function lockPool(poolId: string, userId: string) {
   writePools(pools);
 
   return updatedPool;
+}
+
+export function suggestPool(poolId: string, filter: PoolSuggestionFilter = "semua") {
+  const pools = readPools();
+  const poolIndex = pools.findIndex((pool) => pool.id === poolId);
+
+  if (poolIndex < 0) {
+    throw new Error("Pool tak ditemui.");
+  }
+
+  const pool = pools[poolIndex];
+
+  if (!pool) {
+    throw new Error("Pool tak ditemui.");
+  }
+
+  if (!["locked", "suggesting"].includes(pool.state)) {
+    throw new Error("Cadangan barang hanya boleh dijana untuk pool yang sudah dikunci.");
+  }
+
+  const suggestions = buildPoolSuggestions(pool, filter);
+
+  if (suggestions.length === 0) {
+    throw new Error("Belum ada item katalog yang muat dalam combined cap pool ini.");
+  }
+
+  const updatedPool: PoolRecord = {
+    ...pool,
+    state: "suggesting",
+    selectedSuggestionId: null,
+    suggestedAt: new Date().toISOString(),
+    suggestionFilter: filter,
+    suggestions,
+  };
+
+  pools[poolIndex] = updatedPool;
+  writePools(pools);
+
+  return updatedPool;
+}
+
+export function selectSuggestion(poolId: string, suggestionId: string) {
+  const pools = readPools();
+  const poolIndex = pools.findIndex((pool) => pool.id === poolId);
+
+  if (poolIndex < 0) {
+    throw new Error("Pool tak ditemui.");
+  }
+
+  const pool = pools[poolIndex];
+
+  if (!pool) {
+    throw new Error("Pool tak ditemui.");
+  }
+
+  const selectedSuggestion = pool.suggestions.find((suggestion) => suggestion.id === suggestionId);
+
+  if (!selectedSuggestion) {
+    throw new Error("Cadangan barang ini belum tersedia lagi.");
+  }
+
+  if (!["suggesting", "locked"].includes(pool.state)) {
+    throw new Error("Pool ini belum berada pada fasa pemilihan barang.");
+  }
+
+  const updatedPool: PoolRecord = {
+    ...pool,
+    state: "voting",
+    selectedSuggestionId: suggestionId,
+  };
+
+  pools[poolIndex] = updatedPool;
+  writePools(pools);
+
+  return updatedPool;
+}
+
+export function getSelectedSuggestion(pool: PoolRecord) {
+  if (!pool.selectedSuggestionId) {
+    return null;
+  }
+
+  return pool.suggestions.find((suggestion) => suggestion.id === pool.selectedSuggestionId) ?? null;
+}
+
+export function countCatalogueMatches(pool: PoolRecord, filter: PoolSuggestionFilter = "semua") {
+  const capCents = pool.combinedCapCents ?? calculateLiveCombinedCapCents(pool);
+
+  return listCatalogueItems(filter).filter((product) => product.priceCents <= capCents).length;
 }
 
 export function parsePoolJoinPreview(searchParams: URLSearchParams, inviteCode: string): PoolJoinPreview {

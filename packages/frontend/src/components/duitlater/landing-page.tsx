@@ -15,6 +15,7 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
+import { InstallAppButton } from "@/components/pwa/install-app-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -110,6 +111,7 @@ export function LandingPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
+              <InstallAppButton />
               <Link className={cn(buttonVariants({ variant: "ghost" }))} href="/settings">
                 <SwatchBook aria-hidden="true" size={16} />
                 Settings
@@ -128,18 +130,18 @@ export function LandingPage() {
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.92fr)] lg:items-start">
             <div className="grid gap-7">
               <div className="flex flex-wrap items-center gap-3">
-                <Badge tone="maroon">Phase 2 frontend</Badge>
+                <Badge tone="maroon">Phase 3 frontend</Badge>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--dl-slate)]">
-                  Pool formation
+                  Penasihat + katalog
                 </p>
               </div>
 
               <div className="grid gap-4">
                 <h1 className="max-w-4xl text-[clamp(3.1rem,8vw,6.2rem)] leading-[0.94]">
-                  Bina pool. Jemput ahli. Kunci cap.
+                  Bina pool. Kunci cap. Pilih barang.
                 </h1>
                 <p className="max-w-xl text-base text-[color:var(--dl-slate)] sm:text-lg">
-                  Kurang cakap, lebih jelas. Semua perkara penting duduk depan mata.
+                  Lepas lock, app terus beri shortlist BM-first yang muat dalam cap komuniti anda.
                 </p>
               </div>
 

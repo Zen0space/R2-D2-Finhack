@@ -1,15 +1,20 @@
 "use client";
 
 import type { MemberProfile } from "@/types/auth";
-import type { CreatePoolInput } from "@/types/pool";
+import type { CreatePoolInput, PoolSuggestionFilter } from "@/types/pool";
 import {
   buildPoolShareLink,
+  countCatalogueMatches,
   createPool,
+  getSelectedSuggestion,
   getPoolById,
   getPoolByInviteCode,
   joinPool,
+  listCatalogue,
   listPoolsForUser,
   lockPool,
+  selectSuggestion,
+  suggestPool,
 } from "./storage";
 
 export const poolsClient = {
@@ -36,6 +41,22 @@ export const poolsClient = {
   async lock(poolId: string, userId: string) {
     return lockPool(poolId, userId);
   },
+
+  async suggest(poolId: string, filter?: PoolSuggestionFilter) {
+    return suggestPool(poolId, filter);
+  },
+
+  async chooseSuggestion(poolId: string, suggestionId: string) {
+    return selectSuggestion(poolId, suggestionId);
+  },
+
+  async listCatalogue(filter?: PoolSuggestionFilter) {
+    return listCatalogue(filter);
+  },
+
+  getSelectedSuggestion,
+
+  countCatalogueMatches,
 
   buildShareLink: buildPoolShareLink,
 };

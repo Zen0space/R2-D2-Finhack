@@ -319,7 +319,7 @@ The following will trigger Kairu's Tangga Hidup to crack on contact:
 | 0 — Stack Activation | 🟡 Scaffolded (needs `npm install` + verify) | 2026-04-25 ~06:30 | — | — |
 | 1 — Auth + Individual PayLater | 🟡 In progress (frontend) | 2026-04-25 | — | — |
 | 2 — Pool Formation + Lock | 🟡 In progress (frontend) | 2026-04-25 | — | — |
-| 3 — Penasihat + Catalogue | ⏳ Pending | — | — | — |
+| 3 — Penasihat + Catalogue | 🟡 In progress (frontend) | 2026-04-26 | — | — |
 | 4 — Vote + TNG Approval + Purchase | ⏳ Pending | — | — | — |
 | 5 — Repayment + Kampung Trust | ⏳ Pending | — | — | — |
 | 5b — NADI Weekly Summary (AI) | ⏳ Pending | — | — | — |

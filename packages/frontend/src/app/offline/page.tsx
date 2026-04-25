@@ -3,6 +3,8 @@ import { WifiOff } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+export const dynamic = "force-static";
+
 export default function OfflinePage() {
   return (
     <main className="flex min-h-screen items-center px-4 py-10">

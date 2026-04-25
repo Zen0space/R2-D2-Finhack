@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { InstallAppButton } from "@/components/pwa/install-app-button";
 import { useDesignLanguage } from "@/components/providers/design-language-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -55,6 +56,7 @@ export function SettingsPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
+              <InstallAppButton />
               <Link className={cn(buttonVariants({ variant: "outline" }))} href="/">
                 <Home aria-hidden="true" size={16} />
                 Landing

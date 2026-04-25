@@ -7,7 +7,7 @@ import "./globals.css";
 
 const appName = "DuitLater";
 const appDescription =
-  "BM-first shared PayLater frontend for auth, allowance visibility, and Phase 1 member onboarding.";
+  "BM-first shared PayLater app untuk pool komuniti, cadangan barang, dan aliran beli bersama.";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: "/icons/pusat-tabung.svg",
+    icon: "/icons/icon-512.png",
     apple: "/icons/apple-touch-icon.png",
   },
   openGraph: {

@@ -1,7 +1,7 @@
 {
   "name": "DuitLater",
   "short_name": "DuitLater",
-  "description": "BM-first shared PayLater frontend for auth, allowance visibility, and member onboarding.",
+  "description": "BM-first shared PayLater app untuk pool komuniti, cadangan barang, dan aliran beli bersama.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,9 +10,9 @@
   "theme_color": "#c8941f",
   "icons": [
     {
-      "src": "/icons/pusat-tabung.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
