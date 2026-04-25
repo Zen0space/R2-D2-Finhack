@@ -1,0 +1,68 @@
+name: CI — Frontend
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'packages/frontend/**'
+      - 'packages/db/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'packages/frontend/**'
+      - 'packages/db/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter db generate
+
+      - name: Typecheck frontend
+        run: pnpm --filter frontend typecheck
+
+  build:
+    name: Build check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter db generate
+
+      - name: Build frontend
+        run: pnpm --filter frontend build
+        env:
+          NEXT_PUBLIC_API_BASE: /api
