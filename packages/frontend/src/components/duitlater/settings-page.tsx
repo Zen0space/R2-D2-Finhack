@@ -12,6 +12,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
 import { useDesignLanguage } from "@/components/providers/design-language-provider";
+import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +23,13 @@ import { designLanguages } from "@/lib/design-language/config";
 import { cn } from "@/lib/utils";
 
 const languageIconMap = {
+  zine: Sparkles,
   "neo-nusantara": Landmark,
   skeu: Layers3,
 } as const;
 
 const languageToneMap = {
+  zine: "maroon",
   "neo-nusantara": "maroon",
   skeu: "gold",
 } as const;
@@ -39,15 +42,24 @@ export function SettingsPage() {
   return (
     <main className="px-4 py-6 sm:px-6 lg:py-10">
       <div className="page-shell grid gap-6">
-        <header className="panel-surface rounded-[2.25rem] px-6 py-7 md:px-8 md:py-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <header className="panel-surface relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
+          <ScribbleCircle
+            color="brick"
+            size={300}
+            variant="loop"
+            className="-right-12 -top-14 opacity-15"
+          />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="grid gap-4">
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <Logo width={130} />
                 <Badge tone="gold">Settings</Badge>
-                <Badge tone="neutral">Experimental surface lab</Badge>
+                <Badge tone="neutral">Surface lab</Badge>
               </div>
               <div className="grid gap-3">
-                <h1 className="text-5xl sm:text-6xl">Pilih design language untuk app ini.</h1>
+                <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
+                  Pilih design language untuk app ini.
+                </BrushHeadline>
                 <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
                   Pilihan ini disimpan pada browser semasa dan terus ubah tokens, komponen shared,
                   serta permukaan utama app untuk tujuan eksperimen visual.

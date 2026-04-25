@@ -1,9 +1,18 @@
 export const designLanguages = [
   {
+    id: "zine",
+    shortName: "Zine",
+    name: "Pitch Zine",
+    badge: "Pitch deck DNA",
+    description: "Editorial collage — torn paper, brush headlines, hand-drawn scribbles, meme cats. Match deck FINHACK 2026.",
+    tokens: "Teal, cream paper, brick red, forest green, burnt orange",
+    traits: ["Brush + condensed display", "Paper grain", "Cat humanizers"],
+  },
+  {
     id: "neo-nusantara",
     shortName: "Neo",
     name: "Neo Nusantara",
-    badge: "Current base",
+    badge: "Heritage base",
     description: "Editorial, BM-first, dan terasa seperti produk institusi yang hangat dan tersusun.",
     tokens: "Cream parchment, heritage maroon, tabung gold",
     traits: ["Typography-led", "Warm surfaces", "Quiet hierarchy"],
@@ -21,7 +30,7 @@ export const designLanguages = [
 
 export type DesignLanguage = (typeof designLanguages)[number]["id"];
 
-export const defaultDesignLanguage: DesignLanguage = "neo-nusantara";
+export const defaultDesignLanguage: DesignLanguage = "zine";
 export const designLanguageStorageKey = "duitlater.design-language";
 
 const designLanguageSet = new Set<DesignLanguage>(designLanguages.map((item) => item.id));

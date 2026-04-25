@@ -1,295 +1,282 @@
-import type { LucideIcon } from "lucide-react";
-import {
-  ArrowRight,
-  FileText,
-  HandCoins,
-  House,
-  KeyRound,
-  Landmark,
-  LockKeyhole,
-  Scissors,
-  Send,
-  SwatchBook,
-  UserRound,
-  UsersRound,
-  Wallet,
-} from "lucide-react";
 import Link from "next/link";
+import {
+  BrushHeadline,
+  Logo,
+  MemeCat,
+  NumberedTab,
+  ScribbleCircle,
+  StatChip,
+  TornCard,
+  ZineSection,
+} from "@/components/duitlater/brand/zine";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
-const heroSignals = [
-  { icon: UsersRound, label: "2-8", caption: "Ahli pool" },
-  { icon: KeyRound, label: "Kod", caption: "Jemputan" },
-  { icon: LockKeyhole, label: "Lock", caption: "Cap akhir" },
+const stats = [
+  { figure: "23M+", caption: "TNG eWallet users · rails already in system" },
+  { figure: "15%", caption: "Adult Malaysians remain unbanked / underbanked" },
+  { figure: "2.9M", caption: "B40 households nationally" },
+  { figure: "RM2k", caption: "Combined PayLater of six Felda neighbours · no mechanism to combine" },
 ] as const;
 
-const poolFacts = [
-  { icon: UserRound, label: "Initiator", value: "Nurul" },
-  { icon: House, label: "Kampung", value: "Gedangsa" },
-  { icon: Scissors, label: "Kategori", value: "Jahit" },
-  { icon: UsersRound, label: "Kuota", value: "3 / 8" },
+const flowSteps = [
+  { n: 1, title: "Form Pool", desc: "2–8 members at NADI centre" },
+  { n: 2, title: "Combine PayLater", desc: "Sum of individual TNG limits" },
+  { n: 3, title: "AI Suggestions", desc: "AI in BM picks from MyKasih catalogue" },
+  { n: 4, title: "Pool Votes & Buys", desc: "Majority approves; TNG processes; NADI confirms delivery" },
 ] as const;
 
-const rosterPreview = [
-  { name: "Nurul Aisyah", state: "Initiator" },
-  { name: "Farah Hani", state: "Join" },
-  { name: "Auni Sofia", state: "Menunggu" },
+const testBedFacts = [
+  { label: "Felda Settlement", note: "Primarily oil-palm + rubber smallholders" },
+  { label: "Communal management tradition", note: "Felda model is collective by design" },
+  { label: "MCMC-run NADI centre", note: "Already serves the kampung — digital training, light banking, courier" },
+  { label: "B40 concentrated", note: "Felda smallholders predominantly in B40 income bracket" },
+  { label: "1.5h drive from FINHACK venue", note: "Site visit feasibility for Day 2 follow-up" },
 ] as const;
-
-const memberJourney = [
-  {
-    icon: FileText,
-    title: "Cipta pool",
-    description: "Nama, need, bajet.",
-  },
-  {
-    icon: Send,
-    title: "Jemput ahli",
-    description: "Kod atau pautan.",
-  },
-  {
-    icon: LockKeyhole,
-    title: "Lock cap",
-    description: "Roster dibekukan.",
-  },
-] as const;
-
-const supportNotes = [
-  {
-    icon: Landmark,
-    title: "Mudah dipandu di NADI",
-    description: "Susun atur ringkas.",
-  },
-  {
-    icon: Wallet,
-    title: "Cap semasa jelas",
-    description: "Angka utama di depan.",
-  },
-  {
-    icon: HandCoins,
-    title: "Sedia ke Phase 3",
-    description: "Terus ke cadangan barang.",
-  },
-] as const;
-
-function IconTile({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-[1.4rem] border border-[color:rgba(224,216,200,0.9)] bg-white/72 p-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:rgba(122,46,46,0.12)] bg-[color:rgba(248,244,236,0.9)] text-[color:var(--dl-maroon)]">
-        <Icon aria-hidden="true" size={18} />
-      </div>
-      <p className="mt-4 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--dl-slate)]">
-        {label}
-      </p>
-      <p className="mt-1 text-base font-semibold text-[color:var(--dl-ink)]">{value}</p>
-    </div>
-  );
-}
 
 export function LandingPage() {
   return (
-    <main className="landing-geist px-4 py-6 sm:px-6 lg:py-10">
-      <div className="page-shell grid gap-6">
-        <header className="rounded-[2rem] border border-[color:rgba(122,46,46,0.12)] bg-[color:rgba(248,244,236,0.9)] px-5 py-4 shadow-[0_16px_32px_rgba(73,53,19,0.06)] sm:px-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="grid gap-2">
-              <p className="section-kicker">DuitLater</p>
-              <p className="max-w-xl text-sm text-[color:var(--dl-slate)]">
-                Pool belian bersama untuk keluarga dan komuniti kecil.
+    <main className="zine-paper min-h-screen pb-24">
+      {/* ─── HERO — slide 1 DNA ──────────────────────────────────────── */}
+      <ZineSection color="brick" className="px-4 pb-20 pt-10 md:pt-14">
+        <div className="page-shell relative">
+          <ScribbleCircle
+            color="paper"
+            size={420}
+            variant="loop"
+            className="left-[15%] top-8 opacity-30"
+          />
+          <ScribbleCircle
+            color="paper"
+            size={520}
+            variant="double"
+            className="right-[10%] top-20 opacity-25"
+          />
+
+          <header className="relative z-10 flex items-center justify-between gap-4">
+            <Logo width={200} priority />
+            <div className="zine-display rounded-sm border-2 border-[var(--dl-zine-paper)] px-3 py-1.5 text-sm tracking-wide text-[var(--dl-zine-paper)] md:text-base">
+              TNG FINHACK 2026 · Financial Inclusion
+            </div>
+          </header>
+
+          <div className="relative z-10 mt-12 grid gap-8 md:grid-cols-[200px_1fr_220px] md:items-center">
+            <MemeCat cat="shock" width={200} rotate={-4} className="md:mt-12" priority />
+
+            <div className="text-center">
+              <BrushHeadline
+                color="cream"
+                size="3xl"
+                rotate={-3}
+                as="h1"
+                className="block leading-[0.85]"
+              >
+                Sendiri tak mampu,
+              </BrushHeadline>
+              <BrushHeadline
+                color="cream"
+                size="3xl"
+                rotate={2}
+                className="mt-3 block leading-[0.85]"
+              >
+                ramai-ramai boleh!?
+              </BrushHeadline>
+
+              <p className="mx-auto mt-8 max-w-xl text-base text-[var(--dl-zine-paper)] opacity-90 md:text-lg">
+                Pool kelompok B40 · combine TNG PayLater · AI Penasihat picks from MyKasih ·
+                kampung trust score grows. Built on real Malaysian rails — TNG · NADI · MyKasih.
               </p>
+
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <Link
+                  href="/sign-up"
+                  className={cn(
+                    buttonVariants({ size: "lg" }),
+                    "zine-display !bg-[var(--dl-zine-paper)] !text-[var(--dl-zine-brick)] hover:!bg-[var(--dl-zine-paper-warm)]",
+                  )}
+                  style={{ boxShadow: "5px 5px 0 var(--dl-zine-brick-dark)" }}
+                >
+                  Mula pool sekarang
+                </Link>
+                <Link
+                  href="/sign-in"
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "outline" }),
+                    "zine-display !border-[var(--dl-zine-paper)] !text-[var(--dl-zine-paper)] hover:!bg-[rgba(245,240,220,0.12)]",
+                  )}
+                >
+                  Daftar masuk
+                </Link>
+                <InstallAppButton />
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <InstallAppButton />
-              <Link className={cn(buttonVariants({ variant: "ghost" }))} href="/settings">
-                <SwatchBook aria-hidden="true" size={16} />
-                Settings
-              </Link>
-              <Link className={cn(buttonVariants({ variant: "outline" }))} href="/sign-in">
-                Sign in
-              </Link>
-              <Link className={cn(buttonVariants({ variant: "primary" }))} href="/sign-up">
-                Mula sekarang
-              </Link>
+            <MemeCat cat="stare" width={220} rotate={4} className="md:-mt-6" priority />
+          </div>
+
+          <p className="relative z-10 mt-12 text-center text-xs uppercase tracking-[0.3em] text-[var(--dl-zine-paper)] opacity-70">
+            Team R2-D2 · Ijam · Moon · Akmal · Kairu · MatNep
+          </p>
+        </div>
+      </ZineSection>
+
+      {/* ─── PROBLEM — slide 2 DNA ──────────────────────────────────── */}
+      <ZineSection color="forest" className="px-4 py-20">
+        <div className="page-shell relative grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+          <div className="relative">
+            <h2 className="zine-display text-5xl text-[var(--dl-zine-paper)] md:text-7xl">
+              RM300 doesn&rsquo;t
+              <br />
+              buy a sewing
+              <br />
+              machine
+            </h2>
+
+            <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {stats.map((stat, i) => (
+                <StatChip
+                  key={stat.figure}
+                  figure={stat.figure}
+                  caption={stat.caption}
+                  rotate={i % 2 === 0 ? -1.5 : 1.5}
+                />
+              ))}
             </div>
           </div>
-        </header>
 
-        <section className="rounded-[2.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(249,246,240,0.94)] px-6 py-7 shadow-[0_22px_44px_rgba(73,53,19,0.08)] md:px-8 md:py-8 lg:px-10 lg:py-10">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.92fr)] lg:items-start">
-            <div className="grid gap-7">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge tone="maroon">Phase 3 frontend</Badge>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--dl-slate)]">
-                  Penasihat + katalog
-                </p>
-              </div>
-
-              <div className="grid gap-4">
-                <h1 className="max-w-4xl text-[clamp(3.1rem,8vw,6.2rem)] leading-[0.94]">
-                  Bina pool. Kunci cap. Pilih barang.
-                </h1>
-                <p className="max-w-xl text-base text-[color:var(--dl-slate)] sm:text-lg">
-                  Lepas lock, app terus beri shortlist BM-first yang muat dalam cap komuniti anda.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Link className={cn(buttonVariants({ variant: "primary", size: "lg" }))} href="/sign-up">
-                  Cipta akaun
-                  <ArrowRight aria-hidden="true" size={18} />
-                </Link>
-                <Link className={cn(buttonVariants({ variant: "outline", size: "lg" }))} href="/sign-in">
-                  Saya dah ada akaun
-                </Link>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                {heroSignals.map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <div
-                      className="rounded-[1.5rem] border border-[color:rgba(122,46,46,0.12)] bg-[color:rgba(255,255,255,0.76)] p-4 shadow-[0_12px_24px_rgba(73,53,19,0.05)]"
-                      key={item.caption}
-                    >
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:rgba(122,46,46,0.14)] bg-[color:rgba(248,244,236,0.92)] text-[color:var(--dl-maroon)]">
-                        <Icon aria-hidden="true" size={19} />
-                      </div>
-                      <p className="mt-4 text-2xl font-semibold text-[color:var(--dl-ink)]">{item.label}</p>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--dl-slate)]">
-                        {item.caption}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="relative flex flex-col items-end gap-6">
+            <div className="relative ml-auto">
+              <BrushHeadline color="brick" size="2xl" rotate={-6} as="div">
+                The Gap
+              </BrushHeadline>
+              <ScribbleCircle
+                color="brick"
+                size={260}
+                variant="loop"
+                className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+              />
             </div>
-
-            <aside className="rounded-[2rem] border border-[color:rgba(122,46,46,0.15)] bg-[color:rgba(255,252,245,0.95)] p-6 shadow-[0_18px_36px_rgba(73,53,19,0.08)]">
-              <div className="flex items-start justify-between gap-4 border-b border-[color:rgba(122,46,46,0.12)] pb-4">
-                <div className="grid gap-2">
-                  <p className="section-kicker">Register pool</p>
-                  <h2 className="text-4xl sm:text-[2.5rem]">Gedangsa Jahit</h2>
-                </div>
-                <Badge tone="gold">Draft</Badge>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {poolFacts.map((item) => (
-                  <IconTile icon={item.icon} key={item.label} label={item.label} value={item.value} />
-                ))}
-              </div>
-
-              <div className="mt-5 rounded-[1.5rem] border border-[color:rgba(200,148,31,0.22)] bg-[color:rgba(248,244,236,0.85)] p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:rgba(200,148,31,0.26)] bg-white/70 text-[color:var(--dl-gold-dark)]">
-                    <Wallet aria-hidden="true" size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--dl-gold-dark)]">
-                      Combined cap
-                    </p>
-                    <p className="data-figure text-3xl font-semibold tracking-[-0.08em] text-[color:var(--dl-ink)]">
-                      {formatCurrency(75_000)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 border-t border-[color:rgba(122,46,46,0.12)] pt-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:rgba(122,46,46,0.12)] bg-[color:rgba(248,244,236,0.92)] text-[color:var(--dl-maroon)]">
-                      <KeyRound aria-hidden="true" size={18} />
-                    </div>
-                    <div>
-                      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--dl-slate)]">
-                        Invite code
-                      </p>
-                      <strong className="data-figure text-base tracking-[0.24em] text-[color:var(--dl-maroon)]">
-                        K6P8T2QW
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-3">
-                  {rosterPreview.map((member) => (
-                    <div
-                      className="flex items-center justify-between gap-4 rounded-[1.15rem] border border-[color:rgba(224,216,200,0.85)] bg-white/72 px-4 py-3"
-                      key={member.name}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:rgba(122,46,46,0.12)] bg-[color:rgba(248,244,236,0.92)] text-[color:var(--dl-maroon)]">
-                          <UsersRound aria-hidden="true" size={16} />
-                        </div>
-                        <p className="text-sm font-medium text-[color:var(--dl-ink)]">{member.name}</p>
-                      </div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                        {member.state}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </aside>
+            <MemeCat cat="worry" width={260} rotate={3} />
+            <p className="zine-brush zine-brush-cream text-2xl leading-tight md:text-3xl">
+              The Platform is Missing.
+            </p>
           </div>
-        </section>
+        </div>
+      </ZineSection>
 
-        <section className="grid gap-4 lg:grid-cols-3">
-          {memberJourney.map((item) => {
-            const Icon = item.icon;
+      {/* ─── SOLUTION — slide 3 DNA ─────────────────────────────────── */}
+      <ZineSection color="burnt" className="px-4 py-20">
+        <div className="page-shell relative">
+          <p className="zine-display max-w-3xl text-sm uppercase tracking-[0.18em] text-[var(--dl-zine-paper)] opacity-90 md:text-base">
+            TNG (PayLater Rail) · NADI (Community Facilitator · 84 in Selangor) ·
+            MyKasih (MySARA item catalogue + merchant network) · B40 households (the pool).
+            <br />
+            Four real Malaysian institutions. One product. Zero new welfare programmes invented.
+          </p>
 
-            return (
-              <div
-                className="rounded-[1.9rem] border border-[color:rgba(122,46,46,0.1)] bg-[color:rgba(255,255,255,0.76)] p-6 shadow-[0_14px_28px_rgba(73,53,19,0.05)]"
-                key={item.title}
+          <div className="relative mt-14 grid gap-6 md:grid-cols-2 md:gap-8">
+            {flowSteps.map((step, i) => (
+              <NumberedTab
+                key={step.n}
+                number={step.n}
+                title={step.title}
+                rotate={i % 2 === 0 ? -1 : 1}
+                className="!flex"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[color:rgba(122,46,46,0.14)] bg-[color:rgba(248,244,236,0.92)] text-[color:var(--dl-maroon)]">
-                  <Icon aria-hidden="true" size={20} />
-                </div>
-                <h2 className="mt-5 text-3xl sm:text-[2.25rem]">{item.title}</h2>
-                <p className="mt-2 text-sm text-[color:var(--dl-slate)] sm:text-base">{item.description}</p>
-              </div>
-            );
-          })}
-        </section>
+                {step.desc}
+              </NumberedTab>
+            ))}
 
-        <section className="grid gap-4 lg:grid-cols-3">
-          {supportNotes.map((item) => {
-            const Icon = item.icon;
+            <div className="absolute -right-6 -top-10 hidden md:block">
+              <MemeCat cat="yay" width={200} rotate={-6} />
+            </div>
+          </div>
 
-            return (
-              <div
-                className="rounded-[1.9rem] border border-[color:rgba(122,46,46,0.1)] bg-[color:rgba(248,244,236,0.8)] p-6 shadow-[0_14px_28px_rgba(73,53,19,0.05)]"
-                key={item.title}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[color:rgba(122,46,46,0.14)] bg-white/75 text-[color:var(--dl-maroon)]">
-                    <Icon aria-hidden="true" size={20} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl sm:text-[2rem]">{item.title}</h2>
-                    <p className="mt-1 text-sm text-[color:var(--dl-slate)]">{item.description}</p>
-                  </div>
+          <div className="mt-16 flex items-end justify-center gap-6">
+            <BrushHeadline color="cream" size="3xl" rotate={-3} as="div">
+              The Solution!
+            </BrushHeadline>
+          </div>
+        </div>
+      </ZineSection>
+
+      {/* ─── TEST BED — slide 4 DNA ─────────────────────────────────── */}
+      <ZineSection color="paper" className="px-4 py-20">
+        <div className="page-shell relative grid gap-10 md:grid-cols-[1fr_1fr] md:items-start">
+          <div>
+            <p className="zine-display text-2xl tracking-[0.06em] text-[var(--dl-zine-brick)] md:text-3xl">
+              Felda Gedangsa
+            </p>
+            <BrushHeadline color="brick" size="2xl" rotate={-3} as="h2" className="mt-2">
+              The Test Bed
+            </BrushHeadline>
+
+            <p className="mt-8 zine-brush zine-brush-forest text-3xl md:text-4xl">Why NADI Felda Gedangsa?</p>
+
+            <ul className="mt-6 space-y-4">
+              {testBedFacts.map((fact) => (
+                <li key={fact.label} className="zine-stat" style={{ borderLeftColor: "var(--dl-zine-forest)" }}>
+                  <p className="font-bold text-[var(--dl-zine-ink)]">{fact.label}</p>
+                  <p className="mt-1 text-sm text-[var(--dl-slate)]">{fact.note}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="relative flex flex-col items-center gap-6">
+            <TornCard rotate="r" bg="cream" className="max-w-md">
+              <div className="flex flex-col items-center gap-4">
+                <div className="zine-display text-xs uppercase tracking-[0.32em] text-[var(--dl-zine-brick)]">
+                  Selangor · Hulu Selangor
                 </div>
+                <MemeCat cat="smart" width={240} rotate={-2} />
+                <p className="text-center text-sm text-[var(--dl-slate)]">
+                  Real institutions. Real settlement. Real B40 household pool dynamics —
+                  not synthetic.
+                </p>
               </div>
-            );
-          })}
-        </section>
-      </div>
+            </TornCard>
+
+            <MemeCat cat="yay" width={180} rotate={6} className="self-end" />
+          </div>
+        </div>
+      </ZineSection>
+
+      {/* ─── BOTTOM CTA ─────────────────────────────────────────────── */}
+      <ZineSection color="teal" className="px-4 py-20">
+        <div className="page-shell relative text-center">
+          <Logo width={260} className="mx-auto" />
+          <BrushHeadline color="cream" size="2xl" rotate={-2} as="h2" className="mt-8">
+            Jom mula pool kau.
+          </BrushHeadline>
+          <p className="mx-auto mt-6 max-w-xl text-base text-[var(--dl-zine-paper)] opacity-85 md:text-lg">
+            Daftar dengan TNG eWallet kau. Jemput jiran. Combine PayLater. Beli barang yang
+            seorang sahaja tak mampu.
+          </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/sign-up"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "zine-display !bg-[var(--dl-zine-paper)] !text-[var(--dl-zine-teal)] hover:!bg-[var(--dl-zine-paper-warm)]",
+              )}
+              style={{ boxShadow: "5px 5px 0 var(--dl-zine-teal-deep)" }}
+            >
+              Daftar sekarang
+            </Link>
+            <Link
+              href="/sign-in"
+              className={cn(
+                buttonVariants({ size: "lg", variant: "outline" }),
+                "zine-display !border-[var(--dl-zine-paper)] !text-[var(--dl-zine-paper)] hover:!bg-[rgba(245,240,220,0.12)]",
+              )}
+            >
+              Daftar masuk
+            </Link>
+          </div>
+        </div>
+      </ZineSection>
     </main>
   );
 }

@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@font-face {
+  font-family: "Splatink";
+  src: url("/brand/fonts/Splatink.otf") format("opentype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --dl-gold: #c8941f;
   --dl-gold-dark: #8a6014;
@@ -73,6 +81,101 @@
   --dl-badge-neutral-text: var(--dl-slate);
   --dl-grain-line: linear-gradient(90deg, transparent, rgba(224, 216, 200, 0.95), transparent);
   --dl-selection-bg: rgba(200, 148, 31, 0.2);
+}
+
+html[data-design-language="zine"] {
+  /* Pitch-deck DNA — teal · cream paper · brick · forest · burnt orange */
+  --dl-zine-teal: #2a4f4a;
+  --dl-zine-teal-deep: #1f3d38;
+  --dl-zine-paper: #f5f0dc;
+  --dl-zine-paper-warm: #efe4c5;
+  --dl-zine-brick: #b53028;
+  --dl-zine-brick-dark: #8e2520;
+  --dl-zine-forest: #3f5f3f;
+  --dl-zine-burnt: #d85a2c;
+  --dl-zine-ink: #1f1f1a;
+
+  --dl-gold: var(--dl-zine-burnt);
+  --dl-gold-dark: #b5471f;
+  --dl-maroon: var(--dl-zine-brick);
+  --dl-cream: var(--dl-zine-paper);
+  --dl-surface: #fbf7e8;
+  --dl-ink: var(--dl-zine-ink);
+  --dl-slate: #5a5048;
+  --dl-sand: #d8c9a8;
+  --dl-forest: var(--dl-zine-forest);
+  --dl-amber: var(--dl-zine-burnt);
+  --dl-error: var(--dl-zine-brick-dark);
+
+  --dl-body-font: var(--font-sans), "Segoe UI", sans-serif;
+  --dl-heading-font: var(--font-display), Impact, "Arial Narrow", sans-serif;
+  --dl-brush-font: "Splatink", var(--font-brush-fallback), "Permanent Marker", "Caveat Brush", cursive;
+  --dl-mono-font: var(--font-mono), "SFMono-Regular", monospace;
+
+  --dl-shadow: 6px 8px 0 rgba(31, 31, 26, 0.18), 0 18px 32px rgba(31, 31, 26, 0.08);
+  --dl-radius-control: 0.4rem;
+  --dl-radius-card: 0.6rem;
+
+  --dl-bg-accent-primary: rgba(181, 48, 40, 0.08);
+  --dl-bg-accent-secondary: rgba(63, 95, 63, 0.06);
+  --dl-bg-grid: rgba(31, 31, 26, 0.04);
+  --dl-overlay-accent-primary: rgba(245, 240, 220, 0.7);
+  --dl-overlay-accent-secondary: rgba(216, 90, 44, 0.04);
+
+  --dl-panel-bg: var(--dl-zine-paper);
+  --dl-panel-border: rgba(31, 31, 26, 0.12);
+  --dl-panel-shadow: var(--dl-shadow);
+  --dl-panel-blur: 0px;
+  --dl-card-bg: #fbf7e8;
+  --dl-card-border: rgba(31, 31, 26, 0.12);
+  --dl-card-shadow: var(--dl-shadow);
+
+  --dl-input-bg: #fbf7e8;
+  --dl-input-border: rgba(31, 31, 26, 0.18);
+  --dl-input-shadow: inset 0 2px 0 rgba(31, 31, 26, 0.04);
+  --dl-input-placeholder: rgba(90, 80, 72, 0.6);
+
+  --dl-focus-color: var(--dl-zine-teal);
+  --dl-focus-ring: rgba(42, 79, 74, 0.18);
+  --dl-focus-outline: rgba(42, 79, 74, 0.7);
+
+  --dl-button-primary-bg: var(--dl-zine-teal);
+  --dl-button-primary-border: transparent;
+  --dl-button-primary-text: var(--dl-zine-paper);
+  --dl-button-primary-shadow: 4px 4px 0 var(--dl-zine-teal-deep);
+  --dl-button-primary-hover-bg: var(--dl-zine-teal-deep);
+  --dl-button-primary-hover-text: var(--dl-zine-paper);
+  --dl-button-secondary-bg: var(--dl-zine-brick);
+  --dl-button-secondary-border: transparent;
+  --dl-button-secondary-text: var(--dl-zine-paper);
+  --dl-button-secondary-shadow: 4px 4px 0 var(--dl-zine-brick-dark);
+  --dl-button-secondary-hover-bg: var(--dl-zine-brick-dark);
+  --dl-button-outline-bg: transparent;
+  --dl-button-outline-border: var(--dl-zine-teal);
+  --dl-button-outline-text: var(--dl-zine-teal);
+  --dl-button-outline-shadow: none;
+  --dl-button-outline-hover-border: var(--dl-zine-teal-deep);
+  --dl-button-outline-hover-text: var(--dl-zine-teal-deep);
+  --dl-button-ghost-bg: transparent;
+  --dl-button-ghost-border: transparent;
+  --dl-button-ghost-text: var(--dl-zine-teal);
+  --dl-button-ghost-hover-bg: rgba(42, 79, 74, 0.08);
+
+  --dl-badge-gold-border: rgba(216, 90, 44, 0.3);
+  --dl-badge-gold-bg: rgba(216, 90, 44, 0.12);
+  --dl-badge-gold-text: #b5471f;
+  --dl-badge-maroon-border: rgba(181, 48, 40, 0.25);
+  --dl-badge-maroon-bg: rgba(181, 48, 40, 0.1);
+  --dl-badge-maroon-text: var(--dl-zine-brick);
+  --dl-badge-forest-border: rgba(63, 95, 63, 0.28);
+  --dl-badge-forest-bg: rgba(63, 95, 63, 0.12);
+  --dl-badge-forest-text: var(--dl-zine-forest);
+  --dl-badge-neutral-border: rgba(31, 31, 26, 0.18);
+  --dl-badge-neutral-bg: var(--dl-zine-paper);
+  --dl-badge-neutral-text: var(--dl-zine-ink);
+
+  --dl-grain-line: linear-gradient(90deg, transparent, rgba(31, 31, 26, 0.18), transparent);
+  --dl-selection-bg: rgba(216, 90, 44, 0.22);
 }
 
 html[data-design-language="skeu"] {
@@ -311,4 +414,207 @@ html[data-design-language="skeu"] .landing-geist .data-figure {
   .page-shell {
     width: min(100% - 1.25rem, 78rem);
   }
+}
+
+/* ─── Zine design language — utilities ─────────────────────────────────── */
+
+html[data-design-language="zine"] body {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(181, 48, 40, 0.06), transparent 22%),
+    radial-gradient(circle at 92% 88%, rgba(63, 95, 63, 0.05), transparent 24%),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 2px,
+      rgba(31, 31, 26, 0.018) 2px,
+      rgba(31, 31, 26, 0.018) 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 2px,
+      rgba(31, 31, 26, 0.018) 2px,
+      rgba(31, 31, 26, 0.018) 3px
+    ),
+    var(--dl-zine-paper);
+}
+
+html[data-design-language="zine"] body::before {
+  background:
+    radial-gradient(circle at 0% 0%, var(--dl-overlay-accent-primary), transparent 28%),
+    radial-gradient(circle at 100% 100%, var(--dl-overlay-accent-secondary), transparent 30%);
+  opacity: 0.5;
+}
+
+html[data-design-language="zine"] h1,
+html[data-design-language="zine"] h2,
+html[data-design-language="zine"] h3,
+html[data-design-language="zine"] h4 {
+  font-family: var(--dl-heading-font);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+html[data-design-language="zine"] .section-kicker {
+  color: var(--dl-zine-brick);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.zine-brush {
+  font-family: var(--dl-brush-font);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 0.9;
+  text-transform: none;
+  color: var(--dl-zine-brick);
+}
+
+.zine-brush-cream {
+  color: var(--dl-zine-paper);
+}
+
+.zine-brush-teal {
+  color: var(--dl-zine-teal);
+}
+
+.zine-brush-forest {
+  color: var(--dl-zine-forest);
+}
+
+.zine-brush-burnt {
+  color: var(--dl-zine-burnt);
+}
+
+.zine-display {
+  font-family: var(--dl-heading-font);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.92;
+}
+
+.zine-paper {
+  background: var(--dl-zine-paper);
+}
+
+.zine-paper-warm {
+  background: var(--dl-zine-paper-warm);
+}
+
+/* Torn-paper card — flat fill, offset hard shadow, slight rotation, paper edges via clip-path */
+.zine-card {
+  position: relative;
+  background: var(--dl-card-bg);
+  color: var(--dl-zine-ink);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--dl-shadow);
+  border: 1px solid rgba(31, 31, 26, 0.08);
+}
+
+.zine-card-torn {
+  clip-path: polygon(
+    0% 4%, 4% 1%, 12% 3%, 22% 0%, 35% 2%, 48% 0%, 60% 3%, 72% 1%, 84% 2%, 96% 0%,
+    100% 4%, 99% 18%, 100% 35%, 98% 52%, 100% 70%, 99% 88%, 100% 96%,
+    96% 100%, 84% 99%, 72% 100%, 56% 98%, 38% 100%, 20% 99%, 8% 100%, 0% 96%,
+    1% 80%, 0% 60%, 2% 40%, 0% 20%
+  );
+}
+
+.zine-card-rotate-l {
+  transform: rotate(-1.5deg);
+}
+
+.zine-card-rotate-r {
+  transform: rotate(1.2deg);
+}
+
+.zine-card-rotate-l-strong {
+  transform: rotate(-3deg);
+}
+
+.zine-card-rotate-r-strong {
+  transform: rotate(2.5deg);
+}
+
+/* Numbered green tab — slide 3 1-2-3-4 flow */
+.zine-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--dl-zine-forest);
+  color: var(--dl-zine-paper);
+  padding: 0.85rem 1.25rem;
+  font-family: var(--dl-heading-font);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: 4px 4px 0 rgba(31, 31, 26, 0.4);
+  border: 1px solid rgba(31, 31, 26, 0.18);
+}
+
+.zine-tab-number {
+  font-size: 2.4em;
+  line-height: 0.8;
+  color: var(--dl-zine-paper);
+  font-family: var(--dl-heading-font);
+}
+
+/* Stat chip — torn paper clipping with brick stat */
+.zine-stat {
+  position: relative;
+  background: var(--dl-zine-paper);
+  color: var(--dl-zine-ink);
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--dl-zine-brick);
+  box-shadow: 3px 3px 0 rgba(31, 31, 26, 0.18);
+}
+
+.zine-stat-figure {
+  font-family: var(--dl-heading-font);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 0.95;
+  color: var(--dl-zine-ink);
+  text-transform: uppercase;
+}
+
+.zine-stat-caption {
+  color: var(--dl-zine-brick);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-top: 0.25rem;
+}
+
+/* Scribble circle — purely decorative SVG positioned absolute inside relative parent */
+.zine-scribble {
+  position: absolute;
+  pointer-events: none;
+  color: var(--dl-zine-brick);
+  opacity: 0.85;
+}
+
+/* Pin / tape detail — small accent dot mimicking tape on torn paper corner */
+.zine-tape::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 56px;
+  height: 18px;
+  background: rgba(216, 90, 44, 0.5);
+  transform: translateX(-50%) rotate(-3deg);
+  border-radius: 1px;
+}
+
+html[data-design-language="zine"] button:focus-visible,
+html[data-design-language="zine"] a:focus-visible,
+html[data-design-language="zine"] input:focus-visible,
+html[data-design-language="zine"] textarea:focus-visible,
+html[data-design-language="zine"] select:focus-visible {
+  outline: 3px dashed var(--dl-focus-outline);
+  outline-offset: 3px;
 }

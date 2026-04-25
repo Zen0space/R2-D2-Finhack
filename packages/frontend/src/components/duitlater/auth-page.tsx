@@ -9,9 +9,10 @@ import { startTransition, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { formatErrorMessage } from "@/lib/api/errors";
@@ -89,11 +90,19 @@ function resolveNextPath(value: string | null) {
 
 function AuthStory({ mode }: { mode: AuthMode }) {
   return (
-    <Card className="h-full">
-      <CardHeader className="gap-4 border-b border-[color:rgba(224,216,200,0.72)]">
+    <Card className="relative h-full overflow-hidden">
+      <ScribbleCircle
+        color="brick"
+        size={260}
+        variant="loop"
+        className="-right-12 -top-10 opacity-15"
+      />
+      <CardHeader className="relative gap-4 border-b border-[color:rgba(31,31,26,0.1)]">
         <Badge tone="gold">Phase 1 frontend</Badge>
         <div className="grid gap-3">
-          <CardTitle className="text-5xl sm:text-6xl">{pageCopy[mode].title}</CardTitle>
+          <BrushHeadline color="brick" size="xl" rotate={-2} as="h2">
+            {pageCopy[mode].title}
+          </BrushHeadline>
           <CardDescription className="max-w-xl text-base">
             {pageCopy[mode].description}
           </CardDescription>
@@ -191,12 +200,14 @@ function SignInFormCard({ nextPath }: { nextPath: string }) {
 
   return (
     <Card>
-      <CardHeader className="gap-3 border-b border-[color:rgba(224,216,200,0.72)]">
+      <CardHeader className="gap-3 border-b border-[color:rgba(31,31,26,0.1)]">
         <Badge tone="maroon">Sign in</Badge>
         <div className="grid gap-2">
-          <CardTitle>Daftar masuk</CardTitle>
+          <BrushHeadline color="teal" size="lg" rotate={-2}>
+            Daftar masuk
+          </BrushHeadline>
           <CardDescription>
-            Session akan disimpan pada browser ini supaya reload tak buang allowance view anda.
+            Session akan disimpan pada browser ini supaya reload tak buang allowance view kau.
           </CardDescription>
         </div>
       </CardHeader>
@@ -299,10 +310,12 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
 
   return (
     <Card>
-      <CardHeader className="gap-3 border-b border-[color:rgba(224,216,200,0.72)]">
+      <CardHeader className="gap-3 border-b border-[color:rgba(31,31,26,0.1)]">
         <Badge tone="maroon">Sign up</Badge>
         <div className="grid gap-2">
-          <CardTitle>Buka akaun baharu</CardTitle>
+          <BrushHeadline color="teal" size="lg" rotate={-2}>
+            Buka akaun baharu
+          </BrushHeadline>
           <CardDescription>
             Nama kampung dikumpul sekarang supaya dashboard dan Phase 2 pool flow ada konteks dari awal.
           </CardDescription>
@@ -402,16 +415,21 @@ function SignUpFormCard({ nextPath }: { nextPath: string }) {
 function AuthLayout({ children, mode }: { children: ReactNode; mode: AuthMode }) {
   return (
     <main className="px-4 py-6 sm:px-6 lg:py-10">
-      <div className="page-shell grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <AuthStory mode={mode} />
-        <div className="grid gap-4">
-          {children}
-          <Link
-            className={cn(buttonVariants({ variant: "ghost" }), "justify-start rounded-[1.5rem] px-4")}
-            href="/"
-          >
-            Kembali ke ringkasan Phase 1
-          </Link>
+      <div className="page-shell grid gap-6">
+        <Link href="/" className="inline-flex w-fit">
+          <Logo width={150} priority />
+        </Link>
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <AuthStory mode={mode} />
+          <div className="grid gap-4">
+            {children}
+            <Link
+              className={cn(buttonVariants({ variant: "ghost" }), "justify-start px-4")}
+              href="/"
+            >
+              Kembali ke ringkasan Phase 1
+            </Link>
+          </div>
         </div>
       </div>
     </main>

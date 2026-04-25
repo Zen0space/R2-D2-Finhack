@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { startTransition } from "react";
 import { toast } from "sonner";
 import { formatErrorMessage } from "@/lib/api/errors";
+import { BrushHeadline } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,7 +82,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
           <Card className="h-full">
             <CardHeader className="gap-3">
               <Badge tone="gold">Join pool</Badge>
-              <CardTitle className="text-5xl">Auth dulu, baru boleh sertai.</CardTitle>
+              <BrushHeadline color="brick" size="lg" rotate={-2} as="h2">Auth dulu, baru boleh sertai.</BrushHeadline>
               <CardDescription className="text-base">
                 Kod jemputan ini aktif, tapi Phase 2 masih perlukan identiti ahli sebelum tambah anda
                 ke dalam roster pool.
@@ -142,7 +143,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
           <Card className="mx-auto max-w-3xl">
             <CardHeader className="gap-3">
               <Badge tone="maroon">Frontend-only limitation</Badge>
-              <CardTitle className="text-5xl">Preview ada, tapi pool sebenar tak ditemui dalam browser ini.</CardTitle>
+              <BrushHeadline color="brick" size="lg" rotate={-2} as="h2">Preview ada, tapi pool sebenar tak ditemui.</BrushHeadline>
               <CardDescription className="text-base">
                 Untuk demo frontend-only, pencipta dan ahli yang join perlu guna browser yang sama
                 supaya local storage pool dapat dikongsi.
@@ -198,7 +199,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
           <Card className="mx-auto max-w-2xl">
             <CardHeader className="gap-3">
               <Badge tone="forest">Dah sertai</Badge>
-              <CardTitle className="text-5xl">Anda memang dah ada dalam pool ini.</CardTitle>
+              <BrushHeadline color="forest" size="lg" rotate={-2} as="h2">Kau memang dah ada dalam pool ini.</BrushHeadline>
               <CardDescription className="text-base">
                 Teruskan ke halaman detail untuk lihat ahli lain, invite code, atau status lock pool.
               </CardDescription>
@@ -225,7 +226,7 @@ export function JoinPoolPage({ inviteCode, searchParamsString }: JoinPoolPagePro
               <Badge tone={isLocked ? "maroon" : "forest"}>{isLocked ? "Sudah lock" : "Masih draft"}</Badge>
             </div>
             <div className="grid gap-2">
-              <CardTitle className="text-5xl">{pool.name}</CardTitle>
+              <BrushHeadline color="brick" size="xl" rotate={-2} as="h2">{pool.name}</BrushHeadline>
               <CardDescription className="text-base">{pool.statedNeedText}</CardDescription>
             </div>
           </CardHeader>

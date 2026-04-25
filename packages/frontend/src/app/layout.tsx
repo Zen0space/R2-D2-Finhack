@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
+import { Anton, Geist_Mono, Inter, JetBrains_Mono, Permanent_Marker } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppProviders } from "@/components/providers/app-providers";
 import { defaultDesignLanguage } from "@/lib/design-language/config";
@@ -9,11 +9,18 @@ const appName = "DuitLater";
 const appDescription =
   "BM-first shared PayLater app untuk pool komuniti, cadangan barang, dan aliran beli bersama.";
 
-const display = Cormorant_Garamond({
+const display = Anton({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
-  weight: ["500", "600", "700"],
+  weight: ["400"],
+});
+
+const brushFallback = Permanent_Marker({
+  subsets: ["latin"],
+  variable: "--font-brush-fallback",
+  display: "swap",
+  weight: ["400"],
 });
 
 const sans = Inter({
@@ -63,7 +70,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#C8941F",
+  themeColor: "#2A4F4A",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -72,7 +79,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html data-design-language={defaultDesignLanguage} lang="ms">
-      <body className={`${display.variable} ${sans.variable} ${mono.variable} ${landingMono.variable}`}>
+      <body
+        className={`${display.variable} ${sans.variable} ${mono.variable} ${landingMono.variable} ${brushFallback.variable}`}
+      >
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
