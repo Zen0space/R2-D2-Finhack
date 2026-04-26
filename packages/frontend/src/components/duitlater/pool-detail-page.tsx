@@ -9,7 +9,6 @@ import {
   Copy,
   Lock,
   MessageCircle,
-  Send,
   Share2,
   ShieldCheck,
   Sparkles,
@@ -28,6 +27,7 @@ import { BrushHeadline } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { usePoolDetailQuery } from "@/hooks/use-pools-query";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { poolsClient } from "@/lib/pools/client";
@@ -132,6 +132,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   const queryClient = useQueryClient();
   const [acknowledgedVotePromptKey, setAcknowledgedVotePromptKey] = useState<string | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [pendingFilter, setPendingFilter] = useAtom(pendingSuggestionFilterAtom);
   const [pendingSuggestionId, setPendingSuggestionId] = useAtom(pendingSuggestionIdAtom);
   const { data: session, isLoading: isSessionLoading } = useSessionQuery();
@@ -730,49 +731,69 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <a
-                    className={cn(buttonVariants({ variant: "primary", size: "sm" }))}
-                    href={`https://wa.me/?text=${encodeURIComponent(`Jom join pool DuitLater: ${pool.name}\n${shareLink}`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <MessageCircle aria-hidden="true" size={14} />
-                    WhatsApp
-                  </a>
-                  <a
-                    className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
-                    href={`https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(`Join pool DuitLater: ${pool.name}`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Send aria-hidden="true" size={14} />
-                    Telegram
-                  </a>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    onClick={async () => {
-                      if (typeof navigator === "undefined" || !navigator.share) {
+                <form
+                  className="grid gap-3 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const digits = whatsappNumber.replace(/\D/g, "");
+                    if (digits.length < 8) {
+                      toast.error("Enter a valid phone number with country code.");
+                      return;
+                    }
+                    const normalised = digits.startsWith("0") ? `60${digits.slice(1)}` : digits;
+                    const message = `Hi! Saya nak invite you join my DuitLater pool — ${pool.name}.\n\nKita pool TNG PayLater ramai-ramai untuk beli ${categoryLabel.toLowerCase()} yang sorang-sorang tak mampu.\n\nKlik link ni to join:\n${shareLink}\n\nOr enter code: ${pool.inviteCode}`;
+                    const url = `https://wa.me/${normalised}?text=${encodeURIComponent(message)}`;
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="zine-display text-xs uppercase tracking-[0.22em] text-[color:var(--dl-zine-forest)]">
+                      Send via WhatsApp
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        if (typeof navigator !== "undefined" && navigator.share) {
+                          try {
+                            await navigator.share({
+                              title: "DuitLater pool",
+                              text: `Join pool: ${pool.name}`,
+                              url: shareLink,
+                            });
+                            return;
+                          } catch {
+                            // user cancelled
+                          }
+                        }
                         await copyText(shareLink, "Link copied.");
-                        return;
-                      }
-                      try {
-                        await navigator.share({
-                          title: "DuitLater pool",
-                          text: `Join pool: ${pool.name}`,
-                          url: shareLink,
-                        });
-                      } catch {
-                        // User cancelled — silent.
-                      }
-                    }}
-                  >
-                    <Share2 aria-hidden="true" size={14} />
-                    More
-                  </Button>
-                </div>
+                      }}
+                    >
+                      <Share2 aria-hidden="true" size={14} />
+                      Other apps
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+                    <Input
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      placeholder="e.g. 60123456789"
+                      value={whatsappNumber}
+                      onChange={(event) => setWhatsappNumber(event.target.value)}
+                      className="flex-1"
+                      aria-label="Neighbour's WhatsApp number"
+                    />
+                    <Button type="submit" variant="primary" size="default">
+                      <MessageCircle aria-hidden="true" size={14} />
+                      Send
+                    </Button>
+                  </div>
+                  <p className="text-xs text-[color:var(--dl-slate)]">
+                    Country code + number (no +). Malaysian numbers starting with 0 are auto-converted.
+                  </p>
+                </form>
 
                 <div className="grid gap-4 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                   <div className="grid gap-3 sm:grid-cols-[180px_1fr] sm:items-center">
@@ -782,19 +803,15 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       className="mx-auto w-full max-w-[180px] cursor-zoom-in rounded-[1rem] transition hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-[var(--dl-zine-brick)]"
                       aria-label="Enlarge QR code"
                     >
-                      <InviteQr code={pool.inviteCode} />
+                      <InviteQr value={shareLink} />
                     </button>
                     <div className="grid gap-3">
                       <p className="text-sm text-[color:var(--dl-slate)]">
-                        Tap the QR to enlarge for scanning. As neighbours join, the member count and live cap refresh automatically.
+                        Tap the QR to enlarge for scanning. The QR encodes the full join link — neighbours can scan with their phone camera.
                       </p>
-                      <Link
-                        className={cn(buttonVariants({ variant: "outline" }), "w-full justify-between sm:w-fit")}
-                        href={`/join/${pool.inviteCode}`}
-                      >
-                        Open join page
-                        <ArrowLeft aria-hidden="true" className="rotate-180" size={16} />
-                      </Link>
+                      <p className="text-xs text-[color:var(--dl-slate)] opacity-75">
+                        Code: <span className="font-mono">{pool.inviteCode}</span>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1453,7 +1470,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                 {pool.inviteCode}
               </p>
               <div className="mx-auto mt-5 max-w-sm">
-                <InviteQr code={pool.inviteCode} />
+                <InviteQr value={shareLink} size={360} />
               </div>
               <p
                 className="mt-4 break-all rounded-[1rem] bg-[color:rgba(248,244,236,0.72)] px-3 py-2 font-mono text-xs text-[color:var(--dl-slate)]"
