@@ -387,13 +387,6 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
               <div className="flex flex-wrap gap-3">
                 <Badge tone="gold">{stateLabels[pool.state]}</Badge>
                 <Badge tone="neutral">{pool.kampungName}</Badge>
-                <Badge tone="forest">
-                  {pool.state === "active" || pool.state === "completed"
-                    ? "Phase 5 live"
-                    : pool.state === "approved"
-                      ? "Phase 4 live"
-                      : "Auto refresh 2s"}
-                </Badge>
               </div>
               <div className="grid gap-3">
                 <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
@@ -1003,7 +996,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
                 <div className="flex items-center gap-3 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 text-sm text-[color:var(--dl-slate)]">
                   <UsersRound aria-hidden="true" size={18} />
-                  Auto refresh every 2 seconds lets you see new members without manually reloading.
+                  As neighbours join, the member count and live cap update automatically.
                 </div>
               </CardContent>
             </Card>
