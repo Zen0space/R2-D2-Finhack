@@ -58,8 +58,44 @@ function mapSummaryRecord(summary: BackendNadiSummary): NadiWeeklySummaryRecord 
   };
 }
 
+export type NadiCentreSummary = {
+  id: string;
+  name: string;
+  state: string;
+  districtHint: string | null;
+};
+
+type BackendNadiCentre = {
+  id: string;
+  name: string;
+  state: string;
+  district_hint: string | null;
+  raw_position: number;
+};
+
 export const nadiClient = {
   getCurrentWeekStart,
+
+  async listCentres(params: { state?: string; district?: string; limit?: number } = {}) {
+    const search = new URLSearchParams();
+    if (params.state) search.set("state", params.state);
+    if (params.district) search.set("district", params.district);
+    search.set("limit", String(params.limit ?? 200));
+    const response = await apiFetch<{
+      centres: BackendNadiCentre[];
+      meta: { total: number; limit: number; offset: number; returned: number };
+    }>(`/api/v1/nadi/centres?${search.toString()}`);
+
+    return {
+      total: response.data.meta.total,
+      centres: response.data.centres.map<NadiCentreSummary>((row) => ({
+        id: row.id,
+        name: row.name,
+        state: row.state,
+        districtHint: row.district_hint,
+      })),
+    };
+  },
 
   async getWeeklySummary(kampungId: string, weekStart = getCurrentWeekStart()) {
     const response = await apiFetch<BackendNadiSummary>("/api/v1/nadi/summary", {

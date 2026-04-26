@@ -21,13 +21,14 @@ import { formatErrorMessage } from "@/lib/api/errors";
 import { pendingSuggestionFilterAtom, pendingSuggestionIdAtom } from "@/store/pools";
 import { InviteQr } from "@/components/duitlater/invite-qr";
 import { PoolSuggestionsPanel } from "@/components/duitlater/pool-suggestions-panel";
-import { BrushHeadline, ScribbleCircle } from "@/components/duitlater/brand/zine";
+import { BrushHeadline } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePoolDetailQuery } from "@/hooks/use-pools-query";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { poolsClient } from "@/lib/pools/client";
+import { myKasihCatalogue } from "@/lib/pools/catalogue";
 import {
   buildPoolShareLink,
   buildVotingState,
@@ -73,10 +74,10 @@ async function copyText(value: string, successMessage: string) {
 
 function formatDateTime(value: string | null) {
   if (!value) {
-    return "Belum direkod";
+    return "Not yet recorded";
   }
 
-  return new Intl.DateTimeFormat("ms-MY", {
+  return new Intl.DateTimeFormat("en-MY", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -100,10 +101,10 @@ function getRepaymentStatusLabel(status: PoolRepaymentCycleStatus) {
   }
 
   if (status === "DUE") {
-    return "Perlu bayar";
+    return "Due";
   }
 
-  return "Belum buka";
+  return "Upcoming";
 }
 
 function getNextDueCycle(cycles: PoolRepaymentCycleRecord[]) {
@@ -138,7 +139,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
     onSuccess: (updatedPool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
-      toast.success("Pool dah dikunci. Combined cap telah dibekukan.");
+      toast.success("Pool locked. The combined cap is now frozen.");
     },
     onError: (error) => {
       toast.error(formatErrorMessage(error, "Couldn't lock the pool right now."));
@@ -153,7 +154,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
     onSuccess: (updatedPool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
-      toast.success("Penasihat dah susun shortlist BM untuk pool ini.");
+      toast.success("The Advisor has shortlisted items for this pool.");
     },
     onError: (error) => {
       toast.error(formatErrorMessage(error, "Couldn't generate suggestions right now."));
@@ -171,7 +172,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
     onSuccess: (updatedPool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
-      toast.success("Barang dipilih. Pool kini masuk ke fasa voting.");
+      toast.success("Item selected. The pool is moving into voting.");
     },
     onError: (error) => {
       toast.error(formatErrorMessage(error, "Couldn't select the item right now."));
@@ -189,10 +190,10 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       closeVoteModal();
       toast.success(
         updatedPool.state === "approved"
-          ? "Majoriti dicapai. Pool kini menunggu pengesahan dari NADI."
+          ? "Majority reached. The pool is now awaiting NADI confirmation."
           : vote === "YES"
-            ? "Undian setuju anda dah direkodkan."
-            : "Undian tak setuju anda dah direkodkan.",
+            ? "Your YES vote has been recorded."
+            : "Your NO vote has been recorded.",
       );
     },
     onError: (error) => {
@@ -207,7 +208,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       queryClient.invalidateQueries({ queryKey: ["kampung", "trust", updatedPool.kampungId] });
       queryClient.setQueryData(["pools", "detail", poolId], updatedPool);
-      toast.success(`Bayaran kitaran ${repayment.cycleNumber} berjaya direkodkan.`);
+      toast.success(`Cycle ${repayment.cycleNumber} payment recorded.`);
     },
     onError: (error) => {
       toast.error(formatErrorMessage(error, "Couldn't process the repayment right now."));
@@ -236,11 +237,10 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
         <div className="page-shell">
           <Card className="mx-auto max-w-2xl">
             <CardHeader className="gap-3">
-              <Badge tone="maroon">Auth diperlukan</Badge>
-              <CardTitle className="text-5xl">Sign in dulu untuk buka detail pool.</CardTitle>
+              <Badge tone="maroon">Sign-in required</Badge>
+              <CardTitle className="text-5xl">Sign in to open the pool details.</CardTitle>
               <CardDescription className="text-base">
-                Phase 2 masih perlukan sesi ahli supaya kita tahu siapa pencipta pool dan siapa yang
-                layak join atau lock.
+                Phase 2 still needs a member session so we know who created the pool and who can join or lock it.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
@@ -254,7 +254,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
                 href={`/sign-up?next=${encodeURIComponent(nextPath)}`}
               >
-                Cipta akaun
+                Create account
               </Link>
             </CardContent>
           </Card>
@@ -269,16 +269,15 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
         <div className="page-shell">
           <Card className="mx-auto max-w-2xl">
             <CardHeader className="gap-3">
-              <Badge tone="maroon">Pool tak jumpa</Badge>
-              <CardTitle className="text-5xl">Halaman pool ini belum ada dalam demo ini.</CardTitle>
+              <Badge tone="maroon">Pool not found</Badge>
+              <CardTitle className="text-5xl">This pool isn&rsquo;t available in this demo.</CardTitle>
               <CardDescription className="text-base">
-                Kalau anda datang dari pautan jemputan, cuba buka semula dari browser yang sama dengan
-                pencipta pool atau cipta pool baharu dari dashboard.
+                If you came from an invite link, try opening it from the same browser as the pool creator, or create a new pool from the dashboard.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Link className={cn(buttonVariants({ variant: "outline", size: "lg" }))} href="/dashboard">
-                Kembali ke dashboard
+                Back to dashboard
               </Link>
             </CardContent>
           </Card>
@@ -288,7 +287,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   }
 
   const categoryLabel =
-    poolNeedCategories.find((category) => category.value === pool.statedNeedCategory)?.label ?? "Lain-lain";
+    poolNeedCategories.find((category) => category.value === pool.statedNeedCategory)?.label ?? "Other";
   const isMember = pool.members.some((member) => member.userId === session.user.id);
   const isInitiator = pool.initiatorUserId === session.user.id;
   const liveCombinedCapCents = calculateLiveCombinedCapCents(pool);
@@ -296,6 +295,26 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   const selectedSuggestion = getSelectedSuggestion(pool);
   const activeSuggestionFilter = pendingFilter ?? pool.suggestionFilter;
   const catalogueMatchCount = countCatalogueMatches(pool, activeSuggestionFilter);
+
+  const effectiveCapCents = pool.combinedCapCents ?? liveCombinedCapCents;
+  const categoryFilteredCatalogue = myKasihCatalogue.filter(
+    (item) => item.category === pool.statedNeedCategory,
+  );
+  const catalogueRanked = (
+    categoryFilteredCatalogue.length >= 3 ? categoryFilteredCatalogue : myKasihCatalogue
+  )
+    .slice()
+    .sort((a, b) => {
+      const aAffordable = a.priceCents <= effectiveCapCents ? 0 : 1;
+      const bAffordable = b.priceCents <= effectiveCapCents ? 0 : 1;
+      if (aAffordable !== bAffordable) return aAffordable - bAffordable;
+      return a.priceCents - b.priceCents;
+    })
+    .slice(0, 8);
+  const affordableCount = catalogueRanked.filter((item) => item.priceCents <= effectiveCapCents).length;
+  const targetProgressPct = pool.targetBudgetCents
+    ? Math.min(100, Math.round((effectiveCapCents / pool.targetBudgetCents) * 100))
+    : 0;
   const currentUserVote = getMemberVote(pool, session.user.id);
   const votingState = buildVotingState(pool);
   const currentUserShare = getMemberSharePreview(pool, session.user.id);
@@ -320,18 +339,18 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
         <div className="page-shell">
           <Card className="mx-auto max-w-2xl">
             <CardHeader className="gap-3">
-              <Badge tone="maroon">Akses terhad</Badge>
-              <CardTitle className="text-5xl">Anda belum jadi ahli pool ini.</CardTitle>
+              <Badge tone="maroon">Restricted access</Badge>
+              <CardTitle className="text-5xl">You&rsquo;re not a member of this pool yet.</CardTitle>
               <CardDescription className="text-base">
-                Buka pautan join semula atau minta pencipta hantar kod jemputan yang aktif.
+                Open the join link again, or ask the creator to share an active invite code.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
               <Link className={cn(buttonVariants({ variant: "primary", size: "lg" }))} href={`/join/${pool.inviteCode}`}>
-                Buka halaman join
+                Open join page
               </Link>
               <Link className={cn(buttonVariants({ variant: "outline", size: "lg" }))} href="/dashboard">
-                Balik dashboard
+                Back to dashboard
               </Link>
             </CardContent>
           </Card>
@@ -341,8 +360,8 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
   }
 
   return (
-    <main className="px-4 py-6 sm:px-6 lg:py-10">
-      <div className="page-shell grid gap-6">
+    <main className="px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+      <div className="mx-auto grid w-full max-w-[1800px] gap-6">
         <header className="panel-surface rounded-[2.25rem] px-6 py-7 md:px-8 md:py-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="grid gap-4">
@@ -381,34 +400,28 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                 boxShadow: "5px 5px 0 var(--dl-zine-teal-deep)",
               }}
             >
-              <ScribbleCircle
-                color="paper"
-                size={220}
-                variant="loop"
-                className="-right-8 -top-10 opacity-25"
-              />
               <p className="zine-display relative text-xs uppercase tracking-[0.22em] text-[var(--dl-zine-paper)] opacity-85">
-                {pool.state === "locked" ? "Combined cap" : "Combined cap semasa"}
+                {pool.state === "locked" ? "Combined cap" : "Current combined cap"}
               </p>
               <p className="zine-display relative mt-3 text-5xl tracking-[-0.02em] sm:text-6xl">
                 {formatCurrency(pool.combinedCapCents ?? liveCombinedCapCents)}
               </p>
               <p className="relative mt-3 max-w-xl text-sm text-[var(--dl-zine-paper)] opacity-85 sm:text-base">
                 {pool.state === "voting"
-                  ? "Barang sudah dipilih dan undian ahli kini dibuka. Bila majoriti setuju, pool terus masuk ke state approved dan menunggu pengesahan NADI."
+                  ? "An item has been selected and member voting is now open. Once a majority approves, the pool moves to the approved state and awaits NADI confirmation."
                   : pool.state === "approved"
-                    ? "Majoriti sudah dicapai. Ringkasan transaksi kini dikunci sementara staf NADI sahkan penghantaran."
+                    ? "Majority reached. The transaction summary is now locked while NADI staff confirm delivery."
                     : pool.state === "active"
-                      ? "Penghantaran sudah disahkan oleh NADI. Pool ini kini aktif dengan catatan bayaran balik bulanan yang visible kepada semua ahli."
+                      ? "Delivery has been confirmed by NADI. This pool is now active with monthly repayment records visible to every member."
                       : pool.state === "completed"
-                        ? "Semua kitaran bayaran balik telah selesai. Rekod pool ini kekal sebagai visible record untuk ahli dan kampung."
+                        ? "All repayment cycles are complete. This pool's record stays on file as a visible record for members and the village."
                   : pool.state === "suggesting"
-                    ? "5 cadangan BM-first kini tersedia di bawah. Anda boleh tapis ikut kategori sebelum pilih satu untuk dibawa ke voting."
+                    ? "5 shortlisted items are available below. You can filter by category before picking one to send to voting."
                     : pool.state === "locked"
-                  ? `Pool dah dikunci. Combined cap: ${formatCurrency(
+                  ? `Pool locked. Combined cap: ${formatCurrency(
                       pool.combinedCapCents ?? 0,
-                    )}. Cadangkan barang.`
-                    : "Ahli yang join akan terus mengubah cap semasa ini. Nilai rasmi hanya dibekukan bila initiator klik Lock pool."}
+                    )}. Suggest items.`
+                    : "Joining members continue to shift the live cap. The official value is only frozen when the initiator clicks Lock pool."}
               </p>
             </div>
 
@@ -422,25 +435,161 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
             <div className="rounded-[1.75rem] border border-[color:var(--dl-sand)] bg-white/82 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                Ahli
+                Members
               </p>
               <p className="mt-3 text-3xl font-semibold">
                 {pool.members.length}/{pool.maxMembers}
               </p>
               <p className="mt-2 text-sm text-[color:var(--dl-slate)]">
-                Minimum 2 ahli sebelum lock.
+                Minimum 2 members before locking.
               </p>
             </div>
           </div>
         </header>
 
+        <section
+          className="panel-surface rounded-[2.25rem] px-6 py-7 md:px-8 md:py-8"
+          aria-label="Pool overview"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <Badge tone="forest">Pool overview</Badge>
+              <h2 className="zine-display mt-2 text-3xl tracking-wide text-[var(--dl-zine-ink)] md:text-4xl">
+                Statistics & available items
+              </h2>
+              <p className="mt-1 text-sm text-[color:var(--dl-slate)]">
+                Live snapshot of the pool versus the MyKasih catalogue.
+              </p>
+            </div>
+            <p className="zine-display text-[11px] uppercase tracking-[0.22em] text-[var(--dl-zine-brick)]">
+              Category · {categoryLabel}
+            </p>
+          </div>
+
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-[1.5rem] border-2 border-[var(--dl-zine-ink)] bg-[var(--dl-paper)] p-4" style={{ boxShadow: "4px 4px 0 var(--dl-zine-ink)" }}>
+              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                Combined cap
+              </dt>
+              <dd className="zine-display mt-2 text-3xl text-[var(--dl-zine-ink)]">
+                {formatCurrency(effectiveCapCents)}
+              </dd>
+              <dd className="mt-1 text-xs text-[color:var(--dl-slate)]">
+                {pool.state === "locked" ? "Locked figure" : "Live · shifts as members join"}
+              </dd>
+            </div>
+
+            <div className="rounded-[1.5rem] border-2 border-[var(--dl-zine-ink)] bg-[var(--dl-paper)] p-4" style={{ boxShadow: "4px 4px 0 var(--dl-zine-ink)" }}>
+              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                Target progress
+              </dt>
+              <dd className="zine-display mt-2 text-3xl text-[var(--dl-zine-ink)]">
+                {targetProgressPct}%
+              </dd>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--dl-sand)]">
+                <div
+                  className="h-full rounded-full bg-[var(--dl-zine-forest)]"
+                  style={{ width: `${targetProgressPct}%` }}
+                />
+              </div>
+              <dd className="mt-1 text-xs text-[color:var(--dl-slate)]">
+                of {formatCurrency(pool.targetBudgetCents)}
+              </dd>
+            </div>
+
+            <div className="rounded-[1.5rem] border-2 border-[var(--dl-zine-ink)] bg-[var(--dl-paper)] p-4" style={{ boxShadow: "4px 4px 0 var(--dl-zine-ink)" }}>
+              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                Members
+              </dt>
+              <dd className="zine-display mt-2 text-3xl text-[var(--dl-zine-ink)]">
+                {pool.members.length}
+                <span className="text-base text-[color:var(--dl-slate)]"> / {pool.maxMembers}</span>
+              </dd>
+              <dd className="mt-1 text-xs text-[color:var(--dl-slate)]">
+                {pool.maxMembers - pool.members.length} seat
+                {pool.maxMembers - pool.members.length === 1 ? "" : "s"} open
+              </dd>
+            </div>
+
+            <div className="rounded-[1.5rem] border-2 border-[var(--dl-zine-ink)] bg-[var(--dl-paper)] p-4" style={{ boxShadow: "4px 4px 0 var(--dl-zine-ink)" }}>
+              <dt className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
+                Available items
+              </dt>
+              <dd className="zine-display mt-2 text-3xl text-[var(--dl-zine-ink)]">
+                {affordableCount}
+              </dd>
+              <dd className="mt-1 text-xs text-[color:var(--dl-slate)]">
+                affordable now from MyKasih
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-8 flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="zine-display text-xl tracking-wide text-[var(--dl-zine-ink)]">
+              Available to buy
+            </h3>
+            <p className="text-xs text-[color:var(--dl-slate)]">
+              {affordableCount} of {catalogueRanked.length} items in reach with the current cap.
+            </p>
+          </div>
+
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {catalogueRanked.map((item) => {
+              const affordable = item.priceCents <= effectiveCapCents;
+              const shortBy = affordable ? 0 : item.priceCents - effectiveCapCents;
+              return (
+                <li
+                  key={item.id}
+                  className={cn(
+                    "rounded-[1.25rem] border-2 p-4",
+                    affordable
+                      ? "border-[var(--dl-zine-forest)] bg-[var(--dl-paper)]"
+                      : "border-[var(--dl-sand)] bg-white/70 opacity-80",
+                  )}
+                  style={
+                    affordable
+                      ? { boxShadow: "3px 3px 0 var(--dl-zine-forest)" }
+                      : undefined
+                  }
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-semibold leading-tight text-[var(--dl-zine-ink)]">
+                      {item.nameBm}
+                    </p>
+                    <Badge tone={affordable ? "forest" : "neutral"}>
+                      {affordable ? "In reach" : "Need more"}
+                    </Badge>
+                  </div>
+                  <p className="zine-display mt-3 text-2xl text-[var(--dl-zine-ink)]">
+                    {formatCurrency(item.priceCents)}
+                  </p>
+                  {affordable ? (
+                    <p className="mt-1 text-xs text-[var(--dl-zine-forest)]">
+                      Pool can buy this now.
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-[color:var(--dl-slate)]">
+                      Short by {formatCurrency(shortBy)}
+                    </p>
+                  )}
+                  {item.descriptionBm ? (
+                    <p className="mt-2 text-xs text-[color:var(--dl-slate)] opacity-80">
+                      {item.descriptionBm}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
         <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <Card>
             <CardHeader className="gap-3">
-              <Badge tone="maroon">Ahli pool</Badge>
-              <CardTitle className="text-4xl">Siapa dah masuk</CardTitle>
+              <Badge tone="maroon">Pool members</Badge>
+              <CardTitle className="text-4xl">Who&rsquo;s in</CardTitle>
               <CardDescription className="text-base">
-                Combined cap semasa akan ikut jumlah allowance ahli di bawah. Bila lock, angka ini dibekukan.
+                The current combined cap follows each member&rsquo;s allowance below. When locked, the figure is frozen.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
@@ -454,7 +603,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       <div className="flex flex-wrap gap-2">
                         <strong className="text-lg">{member.name}</strong>
                         {member.isInitiator ? <Badge tone="gold">Initiator</Badge> : null}
-                        {member.userId === session.user.id ? <Badge tone="forest">Anda</Badge> : null}
+                        {member.userId === session.user.id ? <Badge tone="forest">You</Badge> : null}
                       </div>
                       <p className="mt-1 text-sm text-[color:var(--dl-slate)]">{member.email}</p>
                     </div>
@@ -463,7 +612,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                         {formatCurrency(member.individualAllowanceAtLockCents ?? member.individualAllowanceCents)}
                       </p>
                       <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[color:var(--dl-slate)]">
-                        {member.individualAllowanceAtLockCents !== null ? "Allowance terkunci" : "Allowance semasa"}
+                        {member.individualAllowanceAtLockCents !== null ? "Locked allowance" : "Current allowance"}
                       </p>
                     </div>
                   </div>
@@ -475,10 +624,10 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
           <div className="grid gap-4">
             <Card>
               <CardHeader className="gap-3">
-                <Badge tone="gold">Jemputan</Badge>
-                <CardTitle className="text-4xl">Kod & pautan pool</CardTitle>
+                <Badge tone="gold">Invitation</Badge>
+                <CardTitle className="text-4xl">Pool code & link</CardTitle>
                 <CardDescription className="text-base">
-                  Guna kod ini untuk tambah ahli lain. Dalam demo frontend-only ini, browser yang sama akan bagi hasil paling stabil.
+                  Use this code to add other members. In this frontend-only demo, the same browser gives the most stable result.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -489,11 +638,11 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     </p>
                     <p className="data-figure text-3xl font-semibold tracking-[0.18em]">{pool.inviteCode}</p>
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => copyText(pool.inviteCode, "Kod berjaya dicopy.")}>
+                      <Button variant="outline" size="sm" onClick={() => copyText(pool.inviteCode, "Code copied.")}>
                         <Copy aria-hidden="true" size={14} />
-                        Copy kod
+                        Copy code
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => copyText(shareLink, "Pautan berjaya dicopy.")}>
+                      <Button variant="ghost" size="sm" onClick={() => copyText(shareLink, "Link copied.")}>
                         <Share2 aria-hidden="true" size={14} />
                         Copy link
                       </Button>
@@ -502,13 +651,13 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
                   <div className="grid gap-3 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                      Pautan shareable
+                      Shareable link
                     </p>
                     <code className="break-all rounded-[1rem] bg-[color:rgba(248,244,236,0.72)] p-3 text-xs">
                       {shareLink}
                     </code>
                     <p className="text-sm text-[color:var(--dl-slate)]">
-                      QR demo di bawah diberi dari invite code yang sama supaya mudah scan.
+                      The QR demo below uses the same invite code so it&rsquo;s easy to scan.
                     </p>
                   </div>
                 </div>
@@ -520,14 +669,13 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     </div>
                     <div className="grid gap-3">
                       <p className="text-sm text-[color:var(--dl-slate)]">
-                        Scan atau buka pautan untuk terus ke halaman join. Bila ahli baharu masuk,
-                        jumlah ahli dan cap semasa di halaman ini akan refresh sendiri.
+                        Scan or open the link to go straight to the join page. As new members join, the member count and current cap on this page refresh automatically.
                       </p>
                       <Link
                         className={cn(buttonVariants({ variant: "outline" }), "w-full justify-between sm:w-fit")}
                         href={`/join/${pool.inviteCode}`}
                       >
-                        Buka halaman join
+                        Open join page
                         <ArrowLeft aria-hidden="true" className="rotate-180" size={16} />
                       </Link>
                     </div>
@@ -552,46 +700,46 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   {pool.state === "draft"
                     ? "Lock pool"
                     : pool.state === "voting"
-                      ? "Undian dibuka"
+                      ? "Voting open"
                       : pool.state === "approved"
-                        ? "Menunggu NADI"
+                        ? "Awaiting NADI"
                         : pool.state === "active"
-                          ? "Sudah disahkan"
+                          ? "Confirmed"
                           : pool.state === "completed"
-                            ? "Selesai dibayar"
-                      : "Phase 3 aktif"}
+                            ? "Fully repaid"
+                      : "Phase 3 active"}
                 </Badge>
                 <CardTitle className="text-4xl">
                   {pool.state === "draft"
-                    ? "Bekukan roster ahli"
+                    ? "Freeze the member roster"
                     : pool.state === "voting"
-                      ? "Undian ahli sedang berjalan"
+                      ? "Member voting in progress"
                       : pool.state === "approved"
-                        ? "Ringkasan transaksi dah siap"
+                        ? "Transaction summary is ready"
                         : pool.state === "active"
-                          ? "Pool dah bergerak ke active"
+                          ? "The pool has moved to active"
                           : pool.state === "completed"
-                            ? "Kitaran pool ini dah selesai"
-                      : "Katalog sedia untuk dipilih"}
+                            ? "This pool's cycle is complete"
+                      : "Catalogue ready to choose from"}
                 </CardTitle>
                 <CardDescription className="text-base">
                   {pool.state === "draft"
-                    ? "Hanya initiator boleh lock. Bila dikunci, senarai ahli dan combined cap jadi rasmi untuk langkah seterusnya."
+                    ? "Only the initiator can lock. When locked, the member list and combined cap become final for the next step."
                     : pool.state === "voting"
-                      ? "Pilihan barang sudah ditetapkan. Ahli yang belum mengundi akan terus nampak modal undian pada kunjungan seterusnya."
+                      ? "The item choice is set. Members who haven't voted will see the voting modal on their next visit."
                       : pool.state === "approved"
-                        ? "Majoriti sudah dicapai. Sekarang hanya pengesahan penghantaran dari staf NADI diperlukan."
+                        ? "Majority reached. Now only NADI staff need to confirm delivery."
                         : pool.state === "active"
-                          ? "Staf NADI telah sahkan penghantaran. Sekarang ahli boleh mula bayar kitaran semasa sambil nampak visible record untuk semua ahli."
+                          ? "NADI staff have confirmed delivery. Members can now pay the current cycle and see a visible record shared by everyone."
                           : pool.state === "completed"
-                            ? "Semua kitaran bayaran balik telah direkodkan. Rekod ini kekal visible supaya kampung nampak cycle yang dihormati bersama."
+                            ? "Every repayment cycle has been recorded. The record stays visible so the village can see the cycle they honoured together."
                     : pool.state === "suggesting"
-                      ? "Cadangan telah dijana. Tapis ikut kategori dan pilih satu barang dari panel di bawah."
+                      ? "Suggestions have been generated. Filter by category and pick one item from the panel below."
                       : pool.state === "locked"
-                    ? `Pool dah dikunci. Combined cap: ${formatCurrency(
+                    ? `Pool locked. Combined cap: ${formatCurrency(
                         pool.combinedCapCents ?? 0,
-                      )}. Cadangkan barang.`
-                      : "Pool ini sudah cukup syarat untuk mula menilai cadangan katalog."}
+                      )}. Suggest items.`
+                      : "This pool is ready to start reviewing catalogue suggestions."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -599,8 +747,8 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   <>
                     <div className="rounded-[1.5rem] border border-dashed border-[color:rgba(122,46,46,0.18)] bg-[color:rgba(122,46,46,0.04)] p-4 text-sm text-[color:var(--dl-slate)]">
                       {isInitiator
-                        ? "Tambah sekurang-kurangnya seorang ahli lagi sebelum lock. Lepas lock, tak boleh join lagi."
-                        : "Tunggu initiator lock pool ini bila semua ahli dah cukup."}
+                        ? "Add at least one more member before locking. After locking, no one else can join."
+                        : "Wait for the initiator to lock the pool once everyone is in."}
                     </div>
 
                     <Button
@@ -610,14 +758,13 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       onClick={() => lockMutation.mutate()}
                     >
                       <Lock aria-hidden="true" size={18} />
-                      {lockMutation.isPending ? "Sedang lock..." : "Lock pool"}
+                      {lockMutation.isPending ? "Locking..." : "Lock pool"}
                     </Button>
                   </>
                 ) : pool.state === "locked" ? (
                   <>
                     <div className="rounded-[1.5rem] border border-[color:rgba(200,148,31,0.22)] bg-[color:rgba(200,148,31,0.08)] p-4 text-sm text-[color:var(--dl-slate)]">
-                      Klik `Cadangkan barang` untuk jana shortlist BM-first berasaskan cap pool, kategori
-                      need, dan katalog MyKasih yang muat dalam bajet semasa.
+                      Click &lsquo;Suggest items&rsquo; to generate a shortlist based on the pool cap, the need category, and MyKasih catalogue items that fit the current budget.
                     </div>
 
                     <Button
@@ -628,14 +775,13 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       onClick={() => suggestMutation.mutate(pool.suggestionFilter)}
                     >
                       <Sparkles aria-hidden="true" size={18} />
-                      {suggestMutation.isPending ? "Sedang jana..." : "Cadangkan barang"}
+                      {suggestMutation.isPending ? "Generating..." : "Suggest items"}
                     </Button>
                   </>
                 ) : pool.state === "suggesting" ? (
                   <>
                     <div className="rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4 text-sm text-[color:var(--dl-forest)]">
-                      5 cadangan sudah tersedia. Anda boleh tapis kategori atau jana semula shortlist jika
-                      mahu fokus pada bahagian katalog tertentu.
+                      5 suggestions are ready. You can filter by category or regenerate the shortlist if you want to focus on a specific catalogue area.
                     </div>
 
                     <Button
@@ -646,7 +792,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       onClick={() => suggestMutation.mutate(pool.suggestionFilter)}
                     >
                       <Sparkles aria-hidden="true" size={18} />
-                      {suggestMutation.isPending ? "Sedang jana semula..." : "Cadangkan semula"}
+                      {suggestMutation.isPending ? "Regenerating..." : "Regenerate suggestions"}
                     </Button>
                   </>
                 ) : (
@@ -657,28 +803,28 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                         <p className="text-base font-semibold text-[color:var(--dl-forest)]">
                           {selectedSuggestion
                             ? pool.state === "approved"
-                              ? `${selectedSuggestion.nameBm} lulus undian dan kini tunggu pengesahan NADI.`
+                              ? `${selectedSuggestion.nameBm} passed the vote and is awaiting NADI confirmation.`
                               : pool.state === "active"
-                                ? `${selectedSuggestion.nameBm} sudah disahkan untuk penghantaran pool ini.`
+                                ? `${selectedSuggestion.nameBm} has been confirmed for delivery to this pool.`
                                 : pool.state === "completed"
-                                  ? `${selectedSuggestion.nameBm} telah habis dibayar oleh semua ahli pool ini.`
-                                : `${selectedSuggestion.nameBm} telah dipilih untuk dibawa ke voting.`
+                                  ? `${selectedSuggestion.nameBm} has been fully paid off by every member of this pool.`
+                                : `${selectedSuggestion.nameBm} has been selected and sent to voting.`
                             : pool.state === "approved"
-                              ? "Pool ini sudah diluluskan."
+                              ? "This pool has been approved."
                               : pool.state === "completed"
-                                ? "Pool ini sudah selesai sepenuhnya."
-                              : "Pool ini sudah berada dalam voting."}
+                                ? "This pool is fully completed."
+                              : "This pool is in voting."}
                         </p>
                         <p className="text-sm text-[color:var(--dl-forest)]">
                           {pool.state === "voting"
                             ? currentUserVote
-                              ? `Undian anda direkodkan sebagai ${currentUserVote.vote === "YES" ? "Setuju" : "Tak setuju"}. Tally akan bergerak bila ahli lain hantar undian mereka.`
-                              : "Undian anda masih belum direkodkan. Buka modal undian untuk semak share anda sebelum hantar keputusan."
+                              ? `Your vote was recorded as ${currentUserVote.vote === "YES" ? "YES" : "NO"}. The tally moves as other members submit theirs.`
+                              : "Your vote hasn't been recorded yet. Open the voting modal to review your share before deciding."
                             : pool.state === "approved"
-                              ? "Semua ahli kini melihat ringkasan transaksi yang sama sementara staf NADI buat pengesahan penghantaran."
+                              ? "Every member now sees the same transaction summary while NADI staff confirm delivery."
                               : pool.state === "active"
-                                ? "Catatan bayaran balik kini dibuka. Ahli boleh bayar kitaran semasa terus dari ledger di bawah."
-                                : "Semua kitaran telah selesai. Rekod ini kekal dipapar supaya semua ahli nampak konteks pembelian dan penyelesaian yang sama."}
+                                ? "Repayment records are now open. Members can pay the current cycle directly from the ledger below."
+                                : "Every cycle is complete. The record stays visible so all members see the same purchase context and outcome."}
                         </p>
                       </div>
                     </div>
@@ -686,11 +832,11 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     {selectedSuggestion ? (
                       <div className="rounded-[1.25rem] bg-white/78 p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                          Pilihan semasa
+                          Current selection
                         </p>
                         <p className="mt-2 text-lg font-semibold">{selectedSuggestion.nameBm}</p>
                         <p className="mt-1 text-sm text-[color:var(--dl-slate)]">
-                          {formatCurrency(selectedSuggestion.priceCents)} · {selectedSuggestion.allocationPct}% cap pool
+                          {formatCurrency(selectedSuggestion.priceCents)} · {selectedSuggestion.allocationPct}% of pool cap
                         </p>
                       </div>
                     ) : null}
@@ -704,10 +850,10 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       >
                         <Vote aria-hidden="true" size={18} />
                         {voteMutation.isPending
-                          ? "Sedang hantar undian..."
+                          ? "Submitting vote..."
                           : currentUserVote
-                            ? "Undian sudah dihantar"
-                            : "Buka undian"}
+                            ? "Vote submitted"
+                            : "Open voting"}
                       </Button>
                     ) : awaitingNadi && session.user.role === "nadi_staff" ? (
                       <Link
@@ -715,7 +861,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                         href="/nadi/dashboard"
                       >
                         <ShieldCheck aria-hidden="true" size={18} />
-                        Buka portal NADI
+                        Open NADI portal
                       </Link>
                     ) : null}
                   </div>
@@ -723,7 +869,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
                 <div className="flex items-center gap-3 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 text-sm text-[color:var(--dl-slate)]">
                   <UsersRound aria-hidden="true" size={18} />
-                  Refresh automatik setiap 2 saat membantu anda nampak ahli baharu tanpa reload manual.
+                  Auto refresh every 2 seconds lets you see new members without manually reloading.
                 </div>
               </CardContent>
             </Card>
@@ -738,30 +884,30 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
             <Card>
               <CardHeader className="gap-3">
                 <Badge tone={pool.state === "voting" || pool.state === "completed" ? "forest" : "gold"}>
-                  {pool.state === "voting" ? "Tally undian" : "Keputusan pool"}
+                  {pool.state === "voting" ? "Vote tally" : "Pool outcome"}
                 </Badge>
                 <CardTitle className="text-4xl">
                   {pool.state === "voting"
-                    ? "Siapa dah setuju"
+                    ? "Who's said yes"
                     : pool.state === "completed"
-                      ? "Ringkasan selepas bayaran"
-                      : "Ringkasan selepas undian"}
+                      ? "Summary after repayment"
+                      : "Summary after voting"}
                 </CardTitle>
                 <CardDescription className="text-base">
                   {pool.state === "voting"
-                    ? "Tally ini bergerak bila ahli hantar undian. Majoriti mudah akan terus meluluskan pool."
+                    ? "The tally moves as members submit votes. A simple majority approves the pool automatically."
                     : pool.state === "approved"
-                      ? "Undian majoriti sudah dicapai. Langkah seterusnya ialah pengesahan penghantaran oleh staf NADI."
+                      ? "Vote majority reached. The next step is NADI staff confirming delivery."
                       : pool.state === "active"
-                        ? "Undian sudah selesai dan penghantaran telah disahkan. Rekod ini kekal sebagai rujukan ahli pool."
-                        : "Semua kitaran bayaran balik telah selesai. Rekod ini kini lengkap sebagai rujukan bersama untuk ahli pool."}
+                        ? "Voting is closed and delivery is confirmed. This record stays as a reference for pool members."
+                        : "Every repayment cycle is complete. The record is now a complete shared reference for pool members."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="rounded-[1.25rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
-                      Setuju
+                      Yes
                     </p>
                     <p className="mt-2 text-3xl font-semibold text-[color:var(--dl-forest)]">
                       {votingState.yesCount}
@@ -769,7 +915,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   </div>
                   <div className="rounded-[1.25rem] border border-[color:rgba(122,46,46,0.18)] bg-[color:rgba(122,46,46,0.06)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-maroon)]">
-                      Tak setuju
+                      No
                     </p>
                     <p className="mt-2 text-3xl font-semibold text-[color:var(--dl-maroon)]">
                       {votingState.noCount}
@@ -777,7 +923,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   </div>
                   <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                      Belum undi
+                      Not voted
                     </p>
                     <p className="mt-2 text-3xl font-semibold">
                       {votingState.pendingMemberIds.length}
@@ -787,21 +933,21 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
                 <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/78 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                    Majoriti perlu
+                    Majority required
                   </p>
                   <p className="mt-2 text-lg font-semibold">
-                    {votingState.majorityThreshold} daripada {votingState.totalMembers} ahli
+                    {votingState.majorityThreshold} of {votingState.totalMembers} members
                   </p>
                   <p className="mt-2 text-sm text-[color:var(--dl-slate)]">
                     {pool.state === "voting"
                       ? votingState.pendingMemberNames.length > 0
-                        ? `Menunggu undian daripada ${votingState.pendingMemberNames.join(", ")}.`
-                        : "Semua ahli sudah hantar keputusan untuk pusingan ini."
+                        ? `Awaiting votes from ${votingState.pendingMemberNames.join(", ")}.`
+                        : "Every member has now submitted a vote for this round."
                       : pool.state === "approved"
-                        ? "Undian cukup untuk lulus. Rekod share di sebelah telah dibekukan untuk pembelian ini."
+                        ? "The vote passed. The share record alongside is locked for this purchase."
                         : pool.state === "active"
-                          ? `NADI sahkan penghantaran pada ${formatDateTime(pool.deliveredAt)}.`
-                          : "Semua kitaran bayaran balik sudah lengkap untuk pool ini."}
+                          ? `NADI confirmed delivery on ${formatDateTime(pool.deliveredAt)}.`
+                          : "Every repayment cycle is complete for this pool."}
                   </p>
                 </div>
 
@@ -810,32 +956,32 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-gold-dark)]">
-                          Share anda
+                          Your share
                         </p>
                         <p className="mt-2 text-2xl font-semibold">{formatCurrency(currentUserShare.shareAmountCents)}</p>
                       </div>
-                      <Badge tone="gold">{currentUserShare.sharePct}% pool</Badge>
+                      <Badge tone="gold">{currentUserShare.sharePct}% of pool</Badge>
                     </div>
                     <p className="mt-3 text-sm text-[color:var(--dl-slate)]">
-                      Anggaran bayaran bulanan anda ialah {formatCurrency(currentUserShare.monthlyAmountCents)} selama{" "}
-                      {currentUserShare.totalCycles} bulan.
+                      Your estimated monthly payment is {formatCurrency(currentUserShare.monthlyAmountCents)} for{" "}
+                      {currentUserShare.totalCycles} months.
                     </p>
                     {isRepaymentState && currentUserRepayment ? (
                       <p className="mt-2 text-sm text-[color:var(--dl-forest)]">
                         {pool.state === "completed"
-                          ? `Semua ${currentUserRepayment.totalCycles} kitaran anda sudah selesai dibayar.`
+                          ? `All ${currentUserRepayment.totalCycles} of your cycles have been paid in full.`
                           : currentUserDueCycle
-                            ? `Kitaran ${currentUserDueCycle.cycleNumber} sedang dibuka. Baki semasa anda ${formatCurrency(currentUserRepayment.outstandingAmountCents)}.`
-                            : `Anda sudah bayar ${currentUserRepayment.cyclesPaid}/${currentUserRepayment.totalCycles} kitaran.`}
+                            ? `Cycle ${currentUserDueCycle.cycleNumber} is open. Your current outstanding balance is ${formatCurrency(currentUserRepayment.outstandingAmountCents)}.`
+                            : `You've paid ${currentUserRepayment.cyclesPaid}/${currentUserRepayment.totalCycles} cycles.`}
                       </p>
                     ) : currentUserVote ? (
                       <p className="mt-2 text-sm text-[color:var(--dl-forest)]">
-                        Undian anda: {currentUserVote.vote === "YES" ? "Setuju" : "Tak setuju"} · dihantar{" "}
+                        Your vote: {currentUserVote.vote === "YES" ? "YES" : "NO"} · submitted{" "}
                         {formatDateTime(currentUserVote.votedAt)}
                       </p>
                     ) : pool.state === "voting" ? (
                       <p className="mt-2 text-sm text-[color:var(--dl-maroon)]">
-                        Undian anda masih belum direkodkan untuk pool ini.
+                        Your vote hasn&rsquo;t been recorded yet for this pool.
                       </p>
                     ) : null}
                   </div>
@@ -846,23 +992,23 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
             <Card>
               <CardHeader className="gap-3">
                 <Badge tone={pool.state === "active" || pool.state === "completed" ? "forest" : "gold"}>
-                  {pool.state === "voting" ? "Anggaran transaksi" : pool.state === "completed" ? "Transaksi selesai" : "Transaksi pool"}
+                  {pool.state === "voting" ? "Transaction estimate" : pool.state === "completed" ? "Transaction complete" : "Pool transaction"}
                 </Badge>
                 <CardTitle className="text-4xl">
                   {pool.state === "voting"
-                    ? "Pecahan share sebelum lulus"
+                    ? "Share breakdown before approval"
                     : pool.state === "completed"
-                      ? "Apa yang telah diselesaikan"
-                      : "Apa yang telah dikunci"}
+                      ? "What was settled"
+                      : "What was locked in"}
                 </CardTitle>
                 <CardDescription className="text-base">
                   {pool.state === "voting"
-                    ? "Setiap ahli nampak jumlah share yang sama sebelum buat keputusan supaya undian lebih jelas dan telus."
+                    ? "Every member sees the same share amount before deciding so the vote is clear and transparent."
                     : pool.state === "approved"
-                      ? "Transaksi ini kekal visible kepada semua ahli sementara menunggu pengesahan penghantaran."
+                      ? "The transaction stays visible to every member while delivery is confirmed."
                       : pool.state === "active"
-                        ? "Transaksi yang sama kekal dipapar selepas pengesahan untuk menunjukkan apa yang telah dibeli bersama."
-                        : "Transaksi dan pecahan share ini kini lengkap kerana semua kitaran bayaran balik telah direkodkan."}
+                        ? "The same transaction stays on display after confirmation to show what was bought together."
+                        : "The transaction and share breakdown is now complete since every repayment cycle has been recorded."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -876,7 +1022,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                        Harga pool
+                        Pool price
                       </p>
                       <p className="mt-2 text-lg font-semibold">{formatCurrency(selectedSuggestion.priceCents)}</p>
                     </div>
@@ -886,12 +1032,12 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                       </p>
                       <p className="mt-2 text-lg font-semibold">
                         {pool.state === "voting"
-                          ? "Menunggu majoriti"
+                          ? "Awaiting majority"
                           : pool.state === "approved"
-                            ? "Menunggu NADI"
+                            ? "Awaiting NADI"
                             : pool.state === "active"
                               ? "Active"
-                              : "Selesai"}
+                              : "Complete"}
                       </p>
                     </div>
                   </div>
@@ -914,25 +1060,25 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                         <div>
                           <div className="flex flex-wrap gap-2">
                             <strong className="text-lg">{member.name}</strong>
-                            {member.userId === session.user.id ? <Badge tone="forest">Anda</Badge> : null}
+                            {member.userId === session.user.id ? <Badge tone="forest">You</Badge> : null}
                           </div>
                           <p className="mt-1 text-sm text-[color:var(--dl-slate)]">
-                            Share {share.sharePct}% · allowance terkunci{" "}
+                            Share {share.sharePct}% · locked allowance{" "}
                             {formatCurrency(member.individualAllowanceAtLockCents ?? member.individualAllowanceCents)}
                             {repayment
-                              ? ` · bayar ${repayment.cyclesPaid}/${repayment.totalCycles} kitaran`
+                              ? ` · paid ${repayment.cyclesPaid}/${repayment.totalCycles} cycles`
                               : ""}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                            Jumlah share
+                            Total share
                           </p>
                           <p className="mt-2 text-lg font-semibold">{formatCurrency(share.shareAmountCents)}</p>
                         </div>
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                            Bulanan
+                            Monthly
                           </p>
                           <p className="mt-2 text-lg font-semibold">{formatCurrency(share.monthlyAmountCents)}</p>
                         </div>
@@ -943,10 +1089,10 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
                 {pool.transaction ? (
                   <div className="rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4 text-sm text-[color:var(--dl-forest)]">
-                    Transaksi diluluskan pada {formatDateTime(pool.transaction.approvedAt)}.
+                    Transaction approved on {formatDateTime(pool.transaction.approvedAt)}.
                     {pool.transaction.deliveredAt
-                      ? ` Penghantaran disahkan pada ${formatDateTime(pool.transaction.deliveredAt)}.`
-                      : " Menunggu pengesahan penghantaran dari NADI."}
+                      ? ` Delivery confirmed on ${formatDateTime(pool.transaction.deliveredAt)}.`
+                      : " Awaiting delivery confirmation from NADI."}
                   </div>
                 ) : null}
               </CardContent>
@@ -959,16 +1105,16 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
             <Card>
               <CardHeader className="gap-3">
                 <Badge tone={pool.state === "completed" ? "forest" : "gold"}>Repayment ledger</Badge>
-                <CardTitle className="text-4xl">Catatan bayaran balik pool</CardTitle>
+                <CardTitle className="text-4xl">Pool repayment record</CardTitle>
                 <CardDescription className="text-base">
-                  Rekod ini visible kepada semua ahli. Kitaran yang sudah dibayar kekal hijau, kitaran semasa tunggu ahli yang berkaitan, dan catatan lama tidak dipadam.
+                  This record is visible to every member. Paid cycles stay green, the current cycle waits for the relevant member, and old entries are never deleted.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid gap-3 lg:grid-cols-4">
                   <div className="rounded-[1.25rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
-                      Kitaran selesai
+                      Cycles paid
                     </p>
                     <p className="mt-2 text-3xl font-semibold text-[color:var(--dl-forest)]">
                       {repaymentSummary?.cyclesPaid ?? 0}
@@ -976,19 +1122,19 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   </div>
                   <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                      Jumlah kitaran
+                      Total cycles
                     </p>
                     <p className="mt-2 text-3xl font-semibold">{repaymentSummary?.cyclesTotal ?? 0}</p>
                   </div>
                   <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                      Ahli terlibat
+                      Members involved
                     </p>
                     <p className="mt-2 text-3xl font-semibold">{repaymentSummary?.memberCount ?? pool.members.length}</p>
                   </div>
                   <div className="rounded-[1.25rem] border border-[color:rgba(200,148,31,0.22)] bg-[color:rgba(200,148,31,0.08)] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-gold-dark)]">
-                      Progress pool
+                      Pool progress
                     </p>
                     <p className="mt-2 text-3xl font-semibold">{repaymentCompletionPct}%</p>
                   </div>
@@ -999,32 +1145,32 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-gold-dark)]">
-                          Bayaran anda
+                          Your payments
                         </p>
                         <p className="mt-2 text-2xl font-semibold">
                           {pool.state === "completed"
-                            ? "Semua selesai"
+                            ? "All settled"
                             : currentUserDueCycle
-                              ? `Kitaran ${currentUserDueCycle.cycleNumber} sedang dibuka`
-                              : "Tiada kitaran tertunggak buat masa ini"}
+                              ? `Cycle ${currentUserDueCycle.cycleNumber} is open`
+                              : "No outstanding cycles right now"}
                         </p>
                       </div>
                       <Badge tone={pool.state === "completed" || !currentUserDueCycle ? "forest" : "gold"}>
-                        {currentUserRepayment.cyclesPaid}/{currentUserRepayment.totalCycles} kitaran
+                        {currentUserRepayment.cyclesPaid}/{currentUserRepayment.totalCycles} cycles
                       </Badge>
                     </div>
                     <p className="mt-3 text-sm text-[color:var(--dl-slate)]">
-                      Baki outstanding anda sekarang {formatCurrency(currentUserRepayment.outstandingAmountCents)}.
+                      Your outstanding balance is {formatCurrency(currentUserRepayment.outstandingAmountCents)}.
                       {currentUserDueCycle
-                        ? ` Amaun untuk kitaran ini ialah ${formatCurrency(currentUserDueCycle.amountCents)}.`
-                        : " Tiada tindakan tambahan diperlukan pada masa ini."}
+                        ? ` This cycle's amount is ${formatCurrency(currentUserDueCycle.amountCents)}.`
+                        : " No further action required right now."}
                     </p>
                   </div>
                 ) : null}
 
                 {repaymentLedger.length === 0 ? (
                   <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4 text-sm text-[color:var(--dl-slate)]">
-                    Ledger repayment belum tersedia untuk pool ini.
+                    The repayment ledger isn&rsquo;t available for this pool yet.
                   </div>
                 ) : (
                   <div className="grid gap-4">
@@ -1037,17 +1183,17 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                           <div>
                             <div className="flex flex-wrap gap-2">
                               <strong className="text-lg">{entry.userName}</strong>
-                              {entry.userId === session.user.id ? <Badge tone="forest">Anda</Badge> : null}
-                              <Badge tone="neutral">{entry.progressPct}% siap</Badge>
+                              {entry.userId === session.user.id ? <Badge tone="forest">You</Badge> : null}
+                              <Badge tone="neutral">{entry.progressPct}% complete</Badge>
                             </div>
                             <p className="mt-1 text-sm text-[color:var(--dl-slate)]">
-                              Share {entry.sharePct}% · bulanan {formatCurrency(entry.monthlyAmountCents)} · baki{" "}
+                              Share {entry.sharePct}% · monthly {formatCurrency(entry.monthlyAmountCents)} · outstanding{" "}
                               {formatCurrency(entry.outstandingAmountCents)}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                              Jumlah share
+                              Total share
                             </p>
                             <p className="mt-2 text-lg font-semibold">{formatCurrency(entry.shareAmountCents)}</p>
                           </div>
@@ -1055,11 +1201,11 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
 
                         <div className="mt-4 grid gap-2">
                           <div className="hidden rounded-[1.1rem] bg-[color:rgba(248,244,236,0.72)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:grid sm:grid-cols-[0.8fr_0.95fr_0.9fr_1fr_auto]">
-                            <span>Kitaran</span>
+                            <span>Cycle</span>
                             <span>Status</span>
-                            <span>Amaun</span>
-                            <span>Dibayar pada</span>
-                            <span>Tindakan</span>
+                            <span>Amount</span>
+                            <span>Paid on</span>
+                            <span>Action</span>
                           </div>
 
                           {entry.cycles.map((cycle) => {
@@ -1080,9 +1226,9 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                               >
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:hidden">
-                                    Kitaran
+                                    Cycle
                                   </p>
-                                  <p className="mt-1 text-sm font-semibold sm:mt-0">Kitaran {cycle.cycleNumber}</p>
+                                  <p className="mt-1 text-sm font-semibold sm:mt-0">Cycle {cycle.cycleNumber}</p>
                                 </div>
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:hidden">
@@ -1096,7 +1242,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                                 </div>
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:hidden">
-                                    Amaun
+                                    Amount
                                   </p>
                                   <p className="mt-1 text-sm font-semibold sm:mt-0">
                                     {formatCurrency(cycle.amountCents)}
@@ -1104,7 +1250,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                                 </div>
                                 <div>
                                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)] sm:hidden">
-                                    Dibayar pada
+                                    Paid on
                                   </p>
                                   <p className="mt-1 text-sm text-[color:var(--dl-slate)] sm:mt-0">
                                     {formatDateTime(cycle.paidAt)}
@@ -1123,14 +1269,14 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                                         })
                                       }
                                     >
-                                      {isPayingThisCycle ? "Sedang bayar..." : "Bayar bulan ni"}
+                                      {isPayingThisCycle ? "Paying..." : "Pay this month"}
                                     </Button>
                                   ) : (
                                     <span className="text-sm text-[color:var(--dl-slate)]">
                                       {cycle.status === "PAID"
-                                        ? "Selesai"
+                                        ? "Done"
                                         : cycle.status === "DUE" && entry.userId === session.user.id
-                                          ? "Tunggu tindakan anda"
+                                          ? "Awaiting your action"
                                           : "—"}
                                     </span>
                                   )}
@@ -1166,23 +1312,23 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-[color:rgba(26,26,26,0.52)] px-4 py-6 sm:items-center">
             <Card className="w-full max-w-2xl overflow-hidden">
               <CardHeader className="gap-3 border-b border-[color:rgba(224,216,200,0.72)]">
-                <Badge tone="forest">Undian ahli</Badge>
-                <CardTitle className="text-4xl">Semak barang ini dulu sebelum undi.</CardTitle>
+                <Badge tone="forest">Member vote</Badge>
+                <CardTitle className="text-4xl">Review the item before voting.</CardTitle>
                 <CardDescription className="text-base">
-                  Semua ahli nampak item dan pecahan share yang sama supaya keputusan pool dibuat dengan jelas.
+                  Every member sees the same item and share breakdown so the pool decision is made clearly.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 py-6">
                 <div className="grid gap-4 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 sm:grid-cols-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                      Barang
+                      Item
                     </p>
                     <p className="mt-2 text-lg font-semibold">{selectedSuggestion.nameBm}</p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                      Harga
+                      Price
                     </p>
                     <p className="mt-2 text-lg font-semibold">{formatCurrency(selectedSuggestion.priceCents)}</p>
                   </div>
@@ -1190,7 +1336,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
                       Allocation
                     </p>
-                    <p className="mt-2 text-lg font-semibold">{selectedSuggestion.allocationPct}% cap pool</p>
+                    <p className="mt-2 text-lg font-semibold">{selectedSuggestion.allocationPct}% of pool cap</p>
                   </div>
                 </div>
 
@@ -1198,15 +1344,15 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-gold-dark)]">
-                        Share anda
+                        Your share
                       </p>
                       <p className="mt-2 text-3xl font-semibold">{formatCurrency(currentUserShare.shareAmountCents)}</p>
                     </div>
-                    <Badge tone="gold">{currentUserShare.sharePct}% pool</Badge>
+                    <Badge tone="gold">{currentUserShare.sharePct}% of pool</Badge>
                   </div>
                   <p className="mt-3 text-sm text-[color:var(--dl-slate)]">
-                    Anggaran bayaran bulanan anda ialah {formatCurrency(currentUserShare.monthlyAmountCents)} selama{" "}
-                    {currentUserShare.totalCycles} bulan.
+                    Your estimated monthly payment is {formatCurrency(currentUserShare.monthlyAmountCents)} for{" "}
+                    {currentUserShare.totalCycles} months.
                   </p>
                 </div>
 
@@ -1222,7 +1368,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     onClick={() => voteMutation.mutate("YES")}
                   >
                     <CheckCircle2 aria-hidden="true" size={18} />
-                    {voteMutation.isPending ? "Sedang hantar..." : "Setuju"}
+                    {voteMutation.isPending ? "Submitting..." : "Yes"}
                   </Button>
                   <Button
                     className="w-full"
@@ -1232,7 +1378,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                     onClick={() => voteMutation.mutate("NO")}
                   >
                     <Clock3 aria-hidden="true" size={18} />
-                    {voteMutation.isPending ? "Sedang hantar..." : "Tak setuju"}
+                    {voteMutation.isPending ? "Submitting..." : "No"}
                   </Button>
                 </div>
 
@@ -1241,7 +1387,7 @@ export function PoolDetailPage({ poolId }: PoolDetailPageProps) {
                   variant="ghost"
                   onClick={closeVoteModal}
                 >
-                  Tutup dulu
+                  Close for now
                 </Button>
               </CardContent>
             </Card>

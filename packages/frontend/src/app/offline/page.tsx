@@ -15,14 +15,14 @@ export default function OfflinePage() {
           </div>
           <div className="space-y-3">
             <p className="section-kicker justify-center">Offline</p>
-            <h1 className="text-4xl">Internet terputus sekejap.</h1>
+            <h1 className="text-4xl">You&rsquo;re offline.</h1>
             <p className="text-sm text-[color:var(--dl-slate)] sm:text-base">
-              Bila sambungan kembali, skrin DuitLater akan segar semula. Buat masa ini anda masih
-              boleh kembali ke halaman utama yang sudah dicache.
+              When your connection returns, DuitLater will refresh automatically. In the meantime
+              you can return to the cached home page.
             </p>
           </div>
           <Link className={cn(buttonVariants({ variant: "primary", size: "lg" }), "mx-auto")} href="/">
-            Kembali ke utama
+            Back to home
           </Link>
         </div>
       </section>
