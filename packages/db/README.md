@@ -34,4 +34,4 @@ pnpm --filter db studio   # opens Prisma Studio at http://localhost:5555
 
 ## Schema today
 
-Just a `HealthCheck` smoke-test model so we can verify Postgres + Prisma talk to each other before layering on the real Kutu domain (tabung, members, ledger, rotations).
+DuitLater domain models: users, kampungs, pools, votes, transactions, repayments, MyKasih catalogue, and upload asset metadata. Uploaded files live on local VPS disk and are replicated by Syncthing; this package stores only their metadata.

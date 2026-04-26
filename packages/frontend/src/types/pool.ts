@@ -23,14 +23,14 @@ export type PoolNeedCategory =
 export type PoolSuggestionFilter = PoolNeedCategory | "semua";
 
 export const poolNeedCategories = [
-  { value: "makanan", label: "Makanan" },
-  { value: "alat-sekolah", label: "Alat sekolah" },
-  { value: "peralatan", label: "Peralatan" },
-  { value: "elektrik", label: "Elektrik" },
-  { value: "pertanian", label: "Pertanian" },
-  { value: "air", label: "Air" },
-  { value: "rumah", label: "Rumah" },
-  { value: "lain-lain", label: "Lain-lain" },
+  { value: "makanan", label: "Food" },
+  { value: "alat-sekolah", label: "School supplies" },
+  { value: "peralatan", label: "Equipment" },
+  { value: "elektrik", label: "Electrical" },
+  { value: "pertanian", label: "Farming" },
+  { value: "air", label: "Water" },
+  { value: "rumah", label: "Home" },
+  { value: "lain-lain", label: "Other" },
 ] as const satisfies ReadonlyArray<{ label: string; value: PoolNeedCategory }>;
 
 export type PoolMemberSnapshot = {

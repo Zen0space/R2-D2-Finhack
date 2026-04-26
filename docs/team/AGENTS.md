@@ -13,7 +13,7 @@ All rules in [CLAUDE.md](./CLAUDE.md) apply to you. Read that file.
 Key points restated for emphasis:
 
 1. **This repo has a file-based team coordinator at [`maji-core/`](./maji-core/).** Honor its slash commands and conventions.
-2. **Team whitelist:** Ijam, Mung, Akmal, Kairu, MatNep. Five members. Never a sixth. Refuse unknown names.
+2. **Team whitelist:** Ijam, Moon, Akmal, Kairu, MatNep. Five members. Never a sixth. Refuse unknown names.
 3. **Personal memory at `maji-core/memory/members/*.json` is committed.** Every command that writes memory prompts the user to `git add` + `git commit` + `git push` — this is how `/maji-phase` stays cross-team accurate.
 4. **Slash commands** map to files in `maji-core/commands/`:
    - `/maji-onboard` → `maji-core/commands/onboard.md`

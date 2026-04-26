@@ -24,7 +24,7 @@ No backend. No database. No auth server. Just markdown files + a small JSON per 
 | Codename | Archetype | Domain |
 |---|---|---|
 | Ijam | Narrative Spine | Business pitch · stage voice · stakeholder framing |
-| Mung | Foundation-Keeper | Backend · schema · auth · webhooks |
+| Moon | Foundation-Keeper | Backend · schema · auth · webhooks |
 | Akmal | Surface-Weaver | Frontend · UI · interaction · forms |
 | Kairu | Ladder-Keeper | Product · phase gates · scope discipline |
 | MatNep | Orthodox Eye | Design · brand · typography · accessibility |
@@ -86,7 +86,7 @@ maji-core/
 │   └── phase-gate.md           # ladder rules for phase advancement
 ├── heroes/                     # role cards — one per team member
 │   ├── ijam.md
-│   ├── mung.md
+│   ├── moon.md
 │   ├── akmal.md
 │   ├── kairu.md
 │   └── matnep.md

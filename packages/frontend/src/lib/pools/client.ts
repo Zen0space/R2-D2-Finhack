@@ -496,7 +496,7 @@ async function ensureSelectedSuggestion(pool: PoolRecord): Promise<PoolRecord> {
     imageUrl: product.imageUrl,
     rank: 1,
     reasoningBm:
-      "Item dipulihkan daripada katalog backend supaya keputusan undian dan ringkasan transaksi kekal kelihatan.",
+      "Item recovered from the backend catalogue so the vote outcome and transaction summary remain visible.",
   };
 
   return mergePoolUiCache({
@@ -554,7 +554,7 @@ async function hydratePoolRecord(basePool: BackendPool): Promise<PoolRecord> {
         selectedSuggestion?.nameBm ??
         product?.nameMs ??
         product?.name ??
-        "Item pool";
+        "Pool item";
       const repaymentLedger = ledger.data.ledger.map((entry) => mapLedgerEntry(entry));
       const repaymentSummary = mapRepaymentSummary(ledger.data.totals);
       const isRepaymentVisible = pool.state === "active" || pool.state === "completed";
@@ -797,7 +797,7 @@ export const poolsClient = {
     const pool = await fetchPoolRecord(poolId);
 
     if (!pool) {
-      throw new Error("Pool tak ditemui selepas bayaran dihantar.");
+      throw new Error("Pool not found after payment was submitted.");
     }
 
     return {

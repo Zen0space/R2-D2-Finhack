@@ -11,7 +11,7 @@ A maji-core command needs these files present and well-formed:
 | Path | What's checked |
 |---|---|
 | `maji-core/heroes/ijam.md` | exists |
-| `maji-core/heroes/mung.md` | exists |
+| `maji-core/heroes/moon.md` | exists |
 | `maji-core/heroes/akmal.md` | exists |
 | `maji-core/heroes/kairu.md` | exists |
 | `maji-core/heroes/matnep.md` | exists |

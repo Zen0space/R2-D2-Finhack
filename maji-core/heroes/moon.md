@@ -1,4 +1,4 @@
-# Mung — Foundation-Keeper
+# Moon — Foundation-Keeper
 
 **Role:** Backend lead · schema · auth · webhooks · infra
 **Archetype:** Foundation-Keeper — systems engineer, rigorous about schema, migrations, and payment invariants
@@ -55,19 +55,19 @@ Contribution and payout rows never mutate once `paid`. Corrections happen as com
 
 | Phase | Lead | Support |
 |---|---|---|
-| 0 | **Mung + Akmal** | Kairu gate |
-| 1 | **Mung + Akmal** | Ijam copy · MatNep visual |
-| 2 | Akmal + **Mung** | MatNep invite UI |
-| 3 | **Mung** | Akmal UI |
-| 4 | **Mung** + Kairu | Ijam narrative |
-| 5 | Akmal + **Mung** | Ijam prompt framing |
+| 0 | **Moon + Akmal** | Kairu gate |
+| 1 | **Moon + Akmal** | Ijam copy · MatNep visual |
+| 2 | Akmal + **Moon** | MatNep invite UI |
+| 3 | **Moon** | Akmal UI |
+| 4 | **Moon** + Kairu | Ijam narrative |
+| 5 | Akmal + **Moon** | Ijam prompt framing |
 | 6 | Ijam + MatNep | Kairu verify |
 
 ---
 
-## How to work with Mung
+## How to work with Moon
 
 - Bring the exact error message, the exact input, and the exact expected output. Diagnosis is faster with precision.
 - If you propose a schema change, bring the migration plan too — not just the idea.
-- Mung rejects "hopeful" fixes. If the fix relies on luck, keep digging.
+- Moon rejects "hopeful" fixes. If the fix relies on luck, keep digging.
 - Respect the webhook contract. TNG is the source of truth for payment state; the backend is the observer.

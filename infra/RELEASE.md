@@ -1,6 +1,6 @@
-# DuitLater · Release Runbook (AWS)
+# DuitLater · Release Runbook (Free Multi-VPS)
 
-End-to-end runbook for deploying dev + prod stacks to a single AWS EC2 host using pre-built Docker images from GHCR.
+End-to-end runbook for deploying dev + prod stacks to VPS/EC2 hosts using GHCR images, Caddy, Cloudflare Free DNS round-robin, and local upload sync.
 
 > Topology overview: see [`infra/README.md`](./README.md). This doc is the **cookbook** — every command you'll run from "blank AWS account" to "two stacks live."
 
@@ -25,17 +25,17 @@ End-to-end runbook for deploying dev + prod stacks to a single AWS EC2 host usin
 
 | You need | Why |
 |---|---|
-| AWS account + IAM user with EC2 + EIP permissions | Provision the box |
-| Domain (e.g. `duitlater.com`) with DNS edit access | Two A records: apex + `dev.` |
+| VPS/EC2 account with static public IPs | Provision the boxes |
+| Domain `duitlater.com` in Cloudflare Free DNS | Multiple proxied A records for apex + `dev.` |
 | GitHub PAT (classic) with `read:packages` scope | VPS authenticates to GHCR to pull images |
 | Local SSH key pair | Connecting to EC2 |
-| `aws` CLI configured (optional) | Faster than the console for repeat ops |
+| Peer VPS public IPs | Firewall allowlist for Postgres + Syncthing |
 
 The Actions workflow `backend-release.yml` is already wired — no setup needed in GitHub beyond merging code.
 
 ---
 
-## 2. One-time AWS provisioning
+## 2. One-time VPS provisioning
 
 ### 2.1 EC2 instance
 
@@ -47,7 +47,7 @@ The Actions workflow `backend-release.yml` is already wired — no setup needed 
 | Storage | 30 GB gp3, encrypted |
 | Key pair | create or reuse — save `.pem` locally |
 
-> **Why t3.medium and not t3.small:** until the frontend Dockerfile lands, the VPS builds the Next.js bundle for both stacks. `t3.small` (2 GB) OOMs during `next build`. Drop to `t3.small` once both images are pulled, not built.
+> **Why t3.medium and not t3.small:** frontend builds can still be memory-heavy until frontend image-pull automation lands.
 
 ### 2.2 Security Group
 
@@ -58,6 +58,8 @@ Create one SG, attach to the instance.
 | SSH | 22 | team IPs (`/32` each) | console |
 | HTTP | 80 | `0.0.0.0/0` | Caddy → ACME challenge + 80→443 redirect |
 | HTTPS | 443 | `0.0.0.0/0` | Caddy serves both subdomains |
+| Postgres | 5432 | peer VPS public IPs only | app-to-primary + replication |
+| Syncthing | 22000 | peer VPS public IPs only | upload file sync |
 
 Outbound: allow all (default).
 
@@ -67,19 +69,24 @@ Allocate one EIP. Associate with the instance. Use this IP for DNS — without a
 
 ### 2.4 DNS
 
-In your registrar / Route 53:
+In Cloudflare DNS, create these proxied records:
 
 ```
-duitlater.com         A   <ELASTIC_IP>   TTL 300
-dev.duitlater.com     A   <ELASTIC_IP>   TTL 300
+duitlater.com         A   <VPS_1_IP>   proxied
+duitlater.com         A   <VPS_2_IP>   proxied
+duitlater.com         A   <VPS_3_IP>   proxied
+dev.duitlater.com     A   <VPS_1_IP>   proxied
+dev.duitlater.com     A   <VPS_2_IP>   proxied
+dev.duitlater.com     A   <VPS_3_IP>   proxied
 ```
 
 Verify before continuing:
 ```bash
-dig +short duitlater.com         # → <ELASTIC_IP>
-dig +short dev.duitlater.com     # → <ELASTIC_IP>
+dig +short duitlater.com
+dig +short dev.duitlater.com
 ```
 Caddy needs both resolving correctly to obtain Let's Encrypt certs.
+Cloudflare Free DNS has no paid health monitor; remove a broken VPS IP manually during incidents.
 
 ---
 
@@ -113,6 +120,9 @@ cd duitlater
 ```bash
 cd /home/ubuntu/duitlater
 
+cp infra/.env.example infra/.env
+nano infra/.env
+
 # Backend
 cp packages/backend/.env.example packages/backend/.env.prod
 cp packages/backend/.env.example packages/backend/.env.dev
@@ -133,10 +143,14 @@ Each `.env.*` file must define at minimum:
 | `POSTGRES_USER` | `duitlater` | `duitlater` |
 | `POSTGRES_PASSWORD` | `<32-byte secret>` | `<different 32-byte secret>` |
 | `POSTGRES_DB` | `duitlater` | `duitlater_dev` |
-| `DATABASE_URL` | `postgresql://duitlater:<pwd>@duitlater-prod-postgres:5432/duitlater` | `postgresql://duitlater:<pwd>@duitlater-dev-postgres:5432/duitlater_dev` |
+| `DATABASE_URL` | `postgresql://duitlater:<pwd>@<primary-vps-ip>:5432/duitlater` | `postgresql://duitlater:<pwd>@<primary-vps-ip>:5432/duitlater_dev` |
 | `BETTER_AUTH_SECRET` | `<random 32 bytes>` | `<different random 32 bytes>` |
 | `BETTER_AUTH_URL` | `https://duitlater.com` | `https://dev.duitlater.com` |
 | `NODE_ENV` | `production` | `production` (yes — the dev *branch* runs in production mode on the VPS) |
+| `CORS_ORIGIN` | `https://duitlater.com` | `https://dev.duitlater.com` |
+| `FRONTEND_URL` | `https://duitlater.com` | `https://dev.duitlater.com` |
+| `UPLOAD_ROOT` | `/data/uploads` | `/data/uploads` |
+| `UPLOAD_PUBLIC_PATH` | `/uploads` | `/uploads` |
 
 Generate secrets:
 ```bash
@@ -145,7 +159,7 @@ openssl rand -base64 32      # password / auth secret
 
 Lock down the files:
 ```bash
-chmod 600 packages/backend/.env.* packages/frontend/.env.*
+chmod 600 infra/.env packages/backend/.env.* packages/frontend/.env.*
 ```
 
 ---
@@ -158,36 +172,40 @@ chmod 600 packages/backend/.env.* packages/frontend/.env.*
 
 ```bash
 cd /home/ubuntu/duitlater
-export DUITLATER_DOMAIN=duitlater.com
+
+# Start upload sync service first
+docker compose --env-file infra/.env -f infra/docker-compose.sync.yml -p sync up -d
 
 # Pull the backend image, build the frontend (until Dockerfile pull lands)
-docker compose -f infra/docker-compose.prod.yml -p prod pull
-docker compose -f infra/docker-compose.prod.yml -p prod up -d --build
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod pull
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod up -d --build
 
 # Wait for postgres healthy
-docker compose -f infra/docker-compose.prod.yml -p prod ps
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod ps
 
 # Apply DB migrations inside the running app container
-docker compose -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
 ```
 
 Verify:
 ```bash
 curl -sI https://duitlater.com               # 200 / 308 from Caddy
-curl -s  https://duitlater.com/api/health    # {"ok":true,"env":"production"}
+curl -s  https://duitlater.com/health        # {"ok":true,"db":"connected","env":"production"}
+curl -s  https://duitlater.com/api/v1/health # app/demo health
 ```
 
 ### 5.2 Bring dev up
 
 ```bash
-docker compose -f infra/docker-compose.dev.yml -p dev pull
-docker compose -f infra/docker-compose.dev.yml -p dev up -d --build
-docker compose -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev pull
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev up -d --build
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
 ```
 
 Verify:
 ```bash
-curl -s https://dev.duitlater.com/api/health
+curl -s https://dev.duitlater.com/health
+curl -s https://dev.duitlater.com/api/v1/health
 ```
 
 You now have two independent stacks behind one Caddy.
@@ -208,19 +226,19 @@ After the first deploy, every release is image-pull + restart. **No `--build`** 
 cd /home/ubuntu/duitlater
 git pull origin dev      # only needed if compose / Caddyfile changed
 
-docker compose -f infra/docker-compose.dev.yml -p dev pull app
-docker compose -f infra/docker-compose.dev.yml -p dev up -d app
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev pull app
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev up -d app
 
 # If schema changed
-docker compose -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev exec app pnpm --filter db migrate
 
 # Tail logs to confirm boot
-docker compose -f infra/docker-compose.dev.yml -p dev logs -f app
+docker compose --env-file infra/.env -f infra/docker-compose.dev.yml -p dev logs -f app
 ```
 
 Smoke test:
 ```bash
-curl -s https://dev.duitlater.com/api/health
+curl -s https://dev.duitlater.com/health
 ```
 
 ### 6.2 Prod release (merge to `main`)
@@ -231,11 +249,11 @@ Same flow, prod compose:
 cd /home/ubuntu/duitlater
 git pull origin main
 
-docker compose -f infra/docker-compose.prod.yml -p prod pull app
-docker compose -f infra/docker-compose.prod.yml -p prod up -d app
-docker compose -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod pull app
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod up -d app
+docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod exec app pnpm --filter db migrate
 
-curl -s https://duitlater.com/api/health
+curl -s https://duitlater.com/health
 ```
 
 ### 6.3 Frontend release (until image-pull lands)
@@ -243,7 +261,7 @@ curl -s https://duitlater.com/api/health
 ```bash
 cd /home/ubuntu/duitlater
 git pull origin <branch>
-docker compose -f infra/docker-compose.<dev|prod>.yml -p <dev|prod> up -d --build frontend
+docker compose --env-file infra/.env -f infra/docker-compose.<dev|prod>.yml -p <dev|prod> up -d --build frontend
 ```
 
 Slow on `t3.medium` (~2-4 min for `next build`). Mitigate by merging less often or by shipping `packages/frontend/Dockerfile` + `frontend-release.yml`.
@@ -264,9 +282,8 @@ docker compose -f infra/docker-compose.prod.yml -p prod up -d app
 
 Or override without editing the file:
 ```bash
-APP_TAG=sha-abc1234 docker compose -f infra/docker-compose.prod.yml -p prod up -d app
+BACKEND_TAG=sha-abc1234 docker compose --env-file infra/.env -f infra/docker-compose.prod.yml -p prod up -d app
 ```
-> Requires the compose file to use `${APP_TAG:-latest}` — a small follow-up if you want override-friendly rollbacks. Currently hardcoded to `:latest` / `:dev`.
 
 **Database rollback is harder.** If a migration broke prod, restore from a `pg_dump` (see [§8](#8-common-operations)) — there is no auto-rollback for schema changes. Prefer forward-only migrations.
 
@@ -372,6 +389,6 @@ GHCR images stay; delete manually in GitHub → Packages if desired.
 
 ## Owner
 
-Mung (primary deploy operator) · Ijam (sponsor credit + AWS account holder)
+Moon (primary deploy operator) · Ijam (sponsor credit + AWS account holder)
 
 *Last updated: 2026-04-25 · post-monorepo restructure*

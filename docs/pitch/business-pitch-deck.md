@@ -2,7 +2,7 @@
 title: "DuitLater"
 subtitle: "Sendiri tak mampu, ramai-ramai boleh."
 event: "TNG FINHACK 2026 · Financial Inclusion Track"
-team: "R2-D2 — Ijam · Mung · Akmal · Kairu · MatNep"
+team: "R2-D2 — Ijam · Moon · Akmal · Kairu · MatNep"
 date: "25–26 April 2026"
 duration: "4 minutes · 8 slides · landscape PDF"
 ---
@@ -178,7 +178,7 @@ Merchant network access + MySARA catalogue API untuk last-mile fulfilment.
 ::: contact :::
 
 **Pitch:** Ijam · zarulijam@gmail.com
-**Backend:** Mung · **Frontend:** Akmal · **PM:** Kairu · **Design:** MatNep
+**Backend:** Moon · **Frontend:** Akmal · **PM:** Kairu · **Design:** MatNep
 **Repo:** github.com/Zen0space/R2-D2-Finhack
 
 :::

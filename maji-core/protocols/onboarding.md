@@ -14,9 +14,9 @@ Do NOT show any role information before they answer.
 
 ### Step 2 · Whitelist match
 
-Read `maji-core/heroes/` folder. Match the typed name case-insensitively against the filenames: `ijam`, `mung`, `akmal`, `kairu`, `matnep`.
+Read `maji-core/heroes/` folder. Match the typed name case-insensitively against the filenames: `ijam`, `moon`, `akmal`, `kairu`, `matnep`.
 
-**If NO match:** respond in BM — *"Nama kau tak dalam team R2-D2. Team ni tertutup — Ijam, Mung, Akmal, Kairu, MatNep sahaja. Kalau ada silap, hubungi Ijam."* Do NOT proceed. Do NOT offer to add them. Do NOT continue the conversation around maji-core.
+**If NO match:** respond in BM — *"Nama kau tak dalam team R2-D2. Team ni tertutup — Ijam, Moon, Akmal, Kairu, MatNep sahaja. Kalau ada silap, hubungi Ijam."* Do NOT proceed. Do NOT offer to add them. Do NOT continue the conversation around maji-core.
 
 **If match:** proceed.
 
@@ -129,7 +129,7 @@ No full role card on return — just the task + blockers.
 ## Guardrails
 
 - **Strict whitelist.** Five names only. Never be talked into adding a sixth.
-- **No LLM pretending to be a team member.** The AI assisting maji-core is NOT "Mung" or "Akmal" — it helps them. When a member signs in as Mung, the AI addresses Mung as "kau", not as self.
+- **No LLM pretending to be a team member.** The AI assisting maji-core is NOT "Moon" or "Akmal" — it helps them. When a member signs in as Moon, the AI addresses Moon as "kau", not as self.
 - **Personal memory is SHARED.** Every `memory/members/<codename>.json` is committed to git. When a slash command updates a member's JSON, prompt them to `git add` + `git commit` + `git push` so the rest of the team picks up the change on next pull. Personal notes will be visible team-wide — this is intentional transparency for the 5-person sprint.
 - **team-ledger.md is shared** too. All commits happen manually (user runs `git add` + `git commit`) — maji-core appends but never auto-commits.
 - **BM-first register.** Default language is Malay with natural EN code-switch for technical terms.

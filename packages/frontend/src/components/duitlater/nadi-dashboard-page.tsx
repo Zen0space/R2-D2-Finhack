@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatErrorMessage } from "@/lib/api/errors";
+import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import {
   useNadiDashboardQuery,
   useNadiPoolsQuery,
@@ -20,17 +21,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 function formatDateTime(value: string | null) {
   if (!value) {
-    return "Belum direkod";
+    return "Not yet recorded";
   }
 
-  return new Intl.DateTimeFormat("ms-MY", {
+  return new Intl.DateTimeFormat("en-MY", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ms-MY", {
+  return new Intl.DateTimeFormat("en-MY", {
     dateStyle: "medium",
   }).format(new Date(value));
 }
@@ -54,7 +55,7 @@ export function NadiDashboardPage() {
     onSuccess: (updatedPool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
       queryClient.setQueryData(["pools", "detail", updatedPool.id], updatedPool);
-      toast.success("Penghantaran telah disahkan. Pool kini bergerak ke state active.");
+      toast.success("Delivery confirmed. The pool is now active.");
     },
     onError: (error) => {
       toast.error(formatErrorMessage(error, "Couldn't confirm delivery right now."));
@@ -83,10 +84,10 @@ export function NadiDashboardPage() {
         <div className="page-shell">
           <Card className="mx-auto max-w-2xl">
             <CardHeader className="gap-3">
-              <Badge tone="maroon">Auth diperlukan</Badge>
-              <CardTitle className="text-5xl">Masuk dulu untuk buka portal NADI.</CardTitle>
+              <Badge tone="maroon">Sign-in required</Badge>
+              <CardTitle className="text-5xl">Sign in to open the NADI portal.</CardTitle>
               <CardDescription className="text-base">
-                Portal ini dikhaskan untuk staf NADI yang nak sahkan penghantaran pool selepas majoriti undian dicapai.
+                This portal is reserved for NADI staff who need to confirm pool delivery once the vote majority is reached.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
@@ -97,7 +98,7 @@ export function NadiDashboardPage() {
                 Sign in
               </Link>
               <Link className={cn(buttonVariants({ variant: "outline", size: "lg" }))} href="/dashboard">
-                Balik dashboard
+                Back to dashboard
               </Link>
             </CardContent>
           </Card>
@@ -112,10 +113,10 @@ export function NadiDashboardPage() {
         <div className="page-shell">
           <Card className="mx-auto max-w-2xl">
             <CardHeader className="gap-3">
-              <Badge tone="maroon">Akses staf sahaja</Badge>
-              <CardTitle className="text-5xl">Akaun ini bukan akaun NADI.</CardTitle>
+              <Badge tone="maroon">Staff access only</Badge>
+              <CardTitle className="text-5xl">This isn&rsquo;t a NADI account.</CardTitle>
               <CardDescription className="text-base">
-                Guna akaun demo staf NADI dari halaman sign in untuk sahkan penghantaran pool yang sudah diluluskan.
+                Use the NADI staff demo account from the sign-in page to confirm delivery for approved pools.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
@@ -123,10 +124,10 @@ export function NadiDashboardPage() {
                 className={cn(buttonVariants({ variant: "primary", size: "lg" }))}
                 href="/sign-in?next=%2Fnadi%2Fdashboard"
               >
-                Masuk sebagai staf NADI
+                Sign in as NADI staff
               </Link>
               <Link className={cn(buttonVariants({ variant: "outline", size: "lg" }))} href="/dashboard">
-                Balik dashboard
+                Back to dashboard
               </Link>
             </CardContent>
           </Card>
@@ -156,26 +157,35 @@ export function NadiDashboardPage() {
 
       setIsRefreshCoolingDown(true);
       window.setTimeout(() => setIsRefreshCoolingDown(false), 15_000);
-      toast.success("Ringkasan minggu dijana semula.");
+      toast.success("Weekly summary regenerated.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Tak dapat jana semula ringkasan minggu.");
+      toast.error(error instanceof Error ? error.message : "Couldn't regenerate the weekly summary.");
     }
   }
 
   return (
     <main className="px-4 py-6 sm:px-6 lg:py-10">
       <div className="page-shell grid gap-6">
-        <header className="panel-surface rounded-[2.25rem] px-6 py-7 md:px-8 md:py-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <header className="panel-surface relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
+          <ScribbleCircle
+            color="forest"
+            size={300}
+            variant="loop"
+            className="-right-12 -top-14 opacity-15"
+          />
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="grid gap-4">
-              <div className="flex flex-wrap gap-3">
-                <Badge tone="gold">Portal NADI</Badge>
+              <div className="flex flex-wrap items-center gap-3">
+                <Logo width={130} />
+                <Badge tone="gold">NADI portal</Badge>
                 <Badge tone="forest">{session.user.kampung.name}</Badge>
               </div>
               <div className="grid gap-3">
-                <h1 className="text-5xl sm:text-6xl">Pengesahan penghantaran pool.</h1>
+                <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
+                  Pool delivery confirmation.
+                </BrushHeadline>
                 <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
-                  Halaman ini paparkan ringkasan pool di peringkat kampung, termasuk briefing mingguan BM-first untuk staf NADI. Tiada jumlah individu sensitif dipaparkan selain bilangan ahli dan status penghantaran.
+                  This page surfaces a village-level pool overview, including the weekly briefing for NADI staff. No sensitive individual amounts are shown beyond member counts and delivery status.
                 </p>
               </div>
             </div>
@@ -189,45 +199,45 @@ export function NadiDashboardPage() {
           <div className="mt-8 grid gap-4 lg:grid-cols-4">
             <div className="rounded-[1.75rem] border border-[color:rgba(122,46,46,0.12)] bg-[linear-gradient(160deg,rgba(122,46,46,0.96),rgba(200,148,31,0.94))] p-5 text-white">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/72">
-                Menunggu pengesahan
+                Awaiting confirmation
               </p>
               <p className="mt-3 text-5xl font-semibold">{pendingCount}</p>
               <p className="mt-3 text-sm text-white/78 sm:text-base">
-                Pool yang sudah lulus undian dan perlukan tindakan staf NADI.
+                Pools that have passed the vote and need NADI staff action.
               </p>
             </div>
 
             <div className="rounded-[1.75rem] border border-[color:var(--dl-sand)] bg-white/82 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                Sudah active
+                Currently active
               </p>
               <p className="mt-3 text-3xl font-semibold">{activeCount}</p>
               <p className="mt-2 text-sm text-[color:var(--dl-slate)]">
-                Pool yang sudah disahkan penghantarannya.
+                Pools whose delivery has been confirmed.
               </p>
             </div>
 
             <div className="rounded-[1.75rem] border border-[color:var(--dl-sand)] bg-white/82 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                Tempat duduk ahli
+                Member seats
               </p>
               <p className="mt-3 text-3xl font-semibold">{totalMembersInKampung}</p>
               <p className="mt-2 text-sm text-[color:var(--dl-slate)]">
-                Jumlah keahlian pool merentasi seluruh kampung anda.
+                Total pool memberships across your village.
               </p>
             </div>
 
             <div className="rounded-[1.75rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
-                Skor trust kampung
+                Village trust score
               </p>
               <p className="mt-3 text-3xl font-semibold text-[color:var(--dl-forest)]">
                 {stats ? Math.round(stats.kampung.trustScore) : "—"}
               </p>
               <p className="mt-2 text-sm text-[color:var(--dl-forest)]">
                 {stats
-                  ? `RM ${(stats.finance.totalDisbursedCents / 100).toLocaleString("ms-MY")} dah disalurkan · ${stats.finance.repaymentCompletionPct}% bayaran selesai.`
-                  : "Sedang muat metrik kampung."}
+                  ? `RM ${(stats.finance.totalDisbursedCents / 100).toLocaleString("en-MY")} disbursed · ${stats.finance.repaymentCompletionPct}% of repayments complete.`
+                  : "Loading village metrics."}
               </p>
             </div>
           </div>
@@ -238,7 +248,7 @@ export function NadiDashboardPage() {
             <CardHeader className="gap-3 border-b border-[color:rgba(224,216,200,0.72)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-3">
-                  <Badge tone="maroon">Ringkasan Minggu</Badge>
+                  <Badge tone="maroon">Weekly summary</Badge>
                   {weeklySummary ? (
                     <Badge tone={weeklySummary.provider === "alibaba-qwen" ? "forest" : "gold"}>
                       {weeklySummary.provider === "alibaba-qwen" ? "AI live" : "Demo heuristic"}
@@ -254,15 +264,15 @@ export function NadiDashboardPage() {
                 >
                   <RefreshCw aria-hidden="true" size={16} />
                   {isRefreshingSummary
-                    ? "Sedang jana..."
+                    ? "Generating..."
                     : isRefreshCoolingDown
-                      ? "Tunggu sekejap"
+                      ? "Wait a moment"
                       : "Refresh"}
                 </Button>
               </div>
-              <CardTitle className="text-4xl">Briefing mingguan untuk staf NADI</CardTitle>
+              <CardTitle className="text-4xl">Weekly briefing for NADI staff</CardTitle>
               <CardDescription className="text-base">
-                Ringkasan ini menumpukan pola kampung untuk minggu semasa, bukan butiran individu. Ia bantu staf nampak jumlah pool baharu, item yang paling menonjol, delta trust, dan signal yang perlukan perhatian.
+                This summary focuses on village-level patterns for the current week, not individual details. It helps staff see new pool counts, the most prominent items, the trust delta, and signals that need attention.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 py-6">
@@ -280,7 +290,7 @@ export function NadiDashboardPage() {
                 </>
               ) : summaryQuery.isError || !weeklySummary ? (
                 <div className="rounded-[1.5rem] border border-[color:rgba(122,46,46,0.18)] bg-[color:rgba(122,46,46,0.06)] p-4 text-sm text-[color:var(--dl-maroon)]">
-                  Ringkasan minggu belum dapat dijana sekarang. Cuba refresh semula bila sambungan backend kembali stabil.
+                  The weekly summary can&rsquo;t be generated right now. Try refreshing once the backend connection is stable.
                 </div>
               ) : (
                 <>
@@ -288,14 +298,14 @@ export function NadiDashboardPage() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/72">
-                          Tempoh ringkasan
+                          Summary period
                         </p>
                         <p className="mt-2 text-sm text-white/80">
-                          {formatDate(weeklySummary.weekStart)} hingga {formatDate(weeklySummary.weekEnd)}
+                          {formatDate(weeklySummary.weekStart)} to {formatDate(weeklySummary.weekEnd)}
                         </p>
                       </div>
                       <Badge className="border-white/16 bg-white/10 text-white" tone="neutral">
-                        Dijana {formatDateTime(weeklySummary.generatedAt)}
+                        Generated {formatDateTime(weeklySummary.generatedAt)}
                       </Badge>
                     </div>
                     <p className="mt-4 text-2xl font-semibold leading-tight sm:text-3xl">
@@ -306,21 +316,21 @@ export function NadiDashboardPage() {
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                        Pool dibentuk
+                        Pools formed
                       </p>
                       <p className="mt-2 text-3xl font-semibold">{weeklySummary.metrics.poolsFormedCount}</p>
                     </div>
                     <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                        Item menonjol
+                        Top item
                       </p>
                       <p className="mt-2 text-base font-semibold">
-                        {weeklySummary.metrics.topItemNameBm ?? "Belum menonjol"}
+                        {weeklySummary.metrics.topItemNameBm ?? "None yet"}
                       </p>
                     </div>
                     <div className="rounded-[1.25rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
-                        Delta trust
+                        Trust delta
                       </p>
                       <p className="mt-2 text-3xl font-semibold text-[color:var(--dl-forest)]">
                         {weeklySummary.metrics.trustDelta > 0 ? "+" : ""}
@@ -348,7 +358,7 @@ export function NadiDashboardPage() {
                       <div className="flex items-center gap-3 text-[color:var(--dl-maroon)]">
                         <TriangleAlert aria-hidden="true" size={18} />
                         <p className="text-sm font-semibold uppercase tracking-[0.18em]">
-                          Anomali minggu ini
+                          Anomalies this week
                         </p>
                       </div>
                       {weeklySummary.summary.anomaliesBm.map((anomaly) => (
@@ -360,7 +370,7 @@ export function NadiDashboardPage() {
                   ) : (
                     <div className="flex items-center gap-3 rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4 text-sm text-[color:var(--dl-forest)]">
                       <CheckCircle2 aria-hidden="true" size={18} />
-                      Tiada anomali besar dikesan untuk minggu ini. Ritma kampung masih terkawal.
+                      No major anomalies detected this week. The village rhythm is steady.
                     </div>
                   )}
 
@@ -368,7 +378,7 @@ export function NadiDashboardPage() {
                     <div className="flex items-center gap-3 text-[color:var(--dl-gold-dark)]">
                       <ShieldCheck aria-hidden="true" size={18} />
                       <p className="text-sm font-semibold uppercase tracking-[0.18em]">
-                        Cadangan tindakan
+                        Suggested action
                       </p>
                     </div>
                     <p className="mt-3 text-sm text-[color:var(--dl-ink)] sm:text-base">
@@ -382,27 +392,27 @@ export function NadiDashboardPage() {
 
           <Card>
             <CardHeader className="gap-3">
-              <Badge tone="forest">Signal kampung</Badge>
-              <CardTitle className="text-4xl">Meter ringkas untuk semakan cepat</CardTitle>
+              <Badge tone="forest">Village signal</Badge>
+              <CardTitle className="text-4xl">Quick meters for staff review</CardTitle>
               <CardDescription className="text-base">
-                Kad ini membantu staf baca jumlah yang paling penting tanpa tengok rekod individu.
+                These cards help staff scan the most important totals without looking at individual records.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
               <div className="rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-forest)]">
-                  Skor trust semasa
+                  Current trust score
                 </p>
                 <p className="mt-2 text-4xl font-semibold text-[color:var(--dl-forest)]">
                   {weeklySummary ? Math.round(weeklySummary.metrics.trustScore) : "—"}
                 </p>
                 <p className="mt-2 text-sm text-[color:var(--dl-forest)]">
-                  Dibaca pada peringkat kampung supaya NADI nampak health komuniti, bukan individu tertentu.
+                  Read at the village level so NADI sees community health, not individual identifiers.
                 </p>
               </div>
               <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                  Bayaran direkod minggu ini
+                  Payments recorded this week
                 </p>
                 <p className="mt-2 text-3xl font-semibold">
                   {weeklySummary?.metrics.repaymentsThisWeek ?? 0}
@@ -410,14 +420,14 @@ export function NadiDashboardPage() {
               </div>
               <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                  Signal lewat
+                  Late signals
                 </p>
                 <p className="mt-2 text-3xl font-semibold">
                   {weeklySummary?.metrics.latePaymentEvents ?? 0}
                 </p>
               </div>
               <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 text-sm text-[color:var(--dl-slate)]">
-                Refresh akan jana semula ringkasan minggu yang sama. Dalam demo ini, tindakan itu dikawal dengan cooldown ringkas supaya briefing tak dipanggil bertalu-talu.
+                Refresh regenerates the same week&rsquo;s summary. In this demo, it&rsquo;s rate-limited with a short cooldown so the briefing isn&rsquo;t called repeatedly.
               </div>
             </CardContent>
           </Card>
@@ -426,31 +436,30 @@ export function NadiDashboardPage() {
         <section className="grid gap-4">
           <div>
             <p className="section-kicker">Pending delivery</p>
-            <h2 className="mt-2 text-4xl">Pool yang perlu disahkan</h2>
+            <h2 className="mt-2 text-4xl">Pools that need confirmation</h2>
           </div>
 
           {pendingPools.length === 0 ? (
             <Card>
               <CardHeader className="gap-3">
-                <Badge tone="forest">Semua clear</Badge>
-                <CardTitle className="text-4xl">Tiada pool menunggu pengesahan sekarang.</CardTitle>
+                <Badge tone="forest">All clear</Badge>
+                <CardTitle className="text-4xl">No pools awaiting confirmation right now.</CardTitle>
                 <CardDescription className="text-base">
-                  Bila majoriti undian dicapai pada mana-mana pool kampung ini, kad penghantaran akan
-                  muncul semula di sini untuk tindakan staf NADI.
+                  When a vote majority is reached on any pool in this village, the delivery card will reappear here for NADI staff action.
                 </CardDescription>
               </CardHeader>
             </Card>
           ) : (
             <div className="grid gap-4 xl:grid-cols-2">
               {pendingPools.map((pool) => {
-                const selectedItem = pool.transaction?.itemNameBm ?? "Item belum direkod";
+                const selectedItem = pool.transaction?.itemNameBm ?? "Item not yet recorded";
                 const isPendingThisCard = confirmMutation.isPending && confirmMutation.variables === pool.id;
 
                 return (
                   <Card key={pool.id}>
                     <CardHeader className="gap-4">
                       <div className="flex flex-wrap items-center gap-3">
-                        <Badge tone="gold">Menunggu NADI</Badge>
+                        <Badge tone="gold">Awaiting NADI</Badge>
                         <Badge tone="neutral">{pool.kampungName}</Badge>
                       </div>
                       <div className="grid gap-2">
@@ -462,13 +471,13 @@ export function NadiDashboardPage() {
                       <div className="grid gap-3 sm:grid-cols-3">
                         <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                            Ahli
+                            Members
                           </p>
                           <p className="mt-2 text-lg font-semibold">{pool.members.length}</p>
                         </div>
                         <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                            Nilai pool
+                            Pool value
                           </p>
                           <p className="mt-2 text-lg font-semibold">
                             {formatCurrency(pool.transaction?.totalAmountCents ?? 0)}
@@ -476,15 +485,14 @@ export function NadiDashboardPage() {
                         </div>
                         <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                            Diluluskan
+                            Approved
                           </p>
                           <p className="mt-2 text-sm font-semibold">{formatDateTime(pool.approvedAt)}</p>
                         </div>
                       </div>
 
                       <div className="rounded-[1.5rem] border border-[color:rgba(200,148,31,0.22)] bg-[color:rgba(200,148,31,0.08)] p-4 text-sm text-[color:var(--dl-slate)]">
-                        Ahli pool sudah setuju pada pembelian ini. Pengesahan NADI akan memindahkan pool ke
-                        state active dan membuka langkah seterusnya.
+                        Pool members have agreed to this purchase. NADI confirmation will move the pool to the active state and unlock the next step.
                       </div>
 
                       <Button
@@ -494,7 +502,7 @@ export function NadiDashboardPage() {
                         onClick={() => confirmMutation.mutate(pool.id)}
                       >
                         <Truck aria-hidden="true" size={18} />
-                        {isPendingThisCard ? "Sedang sahkan..." : "Sahkan dah hantar"}
+                        {isPendingThisCard ? "Confirming..." : "Confirm delivered"}
                       </Button>
                     </CardContent>
                   </Card>
@@ -508,7 +516,7 @@ export function NadiDashboardPage() {
           <section className="grid gap-4">
             <div>
               <p className="section-kicker">Recently confirmed</p>
-              <h2 className="mt-2 text-4xl">Pool yang baru aktif</h2>
+              <h2 className="mt-2 text-4xl">Recently activated pools</h2>
             </div>
 
             <div className="grid gap-4 xl:grid-cols-2">
@@ -521,13 +529,13 @@ export function NadiDashboardPage() {
                     </div>
                     <CardTitle>{pool.name}</CardTitle>
                     <CardDescription className="text-base">
-                      {pool.transaction?.itemNameBm ?? "Item"} disahkan pada {formatDateTime(pool.deliveredAt)}.
+                      {pool.transaction?.itemNameBm ?? "Item"} confirmed on {formatDateTime(pool.deliveredAt)}.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-3">
                     <div className="flex items-center gap-3 rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4 text-sm text-[color:var(--dl-forest)]">
                       <CheckCircle2 aria-hidden="true" size={18} />
-                      Pool ini sudah melepasi langkah pengesahan NADI.
+                      This pool has cleared NADI confirmation.
                     </div>
                   </CardContent>
                 </Card>

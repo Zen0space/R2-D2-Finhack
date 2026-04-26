@@ -9,9 +9,9 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { formatErrorMessage } from "@/lib/api/errors";
-import { Badge } from "@/components/ui/badge";
+import { BrushHeadline, NumberedTab, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -21,18 +21,18 @@ import { poolNeedCategories, type PoolNeedCategory } from "@/types/pool";
 import type { MemberProfile } from "@/types/auth";
 
 const poolSchema = z.object({
-  name: z.string().trim().min(3, "Nama pool minimum 3 huruf."),
+  name: z.string().trim().min(3, "Pool name must be at least 3 characters."),
   statedNeedCategory: z
     .string()
-    .refine((value) => poolNeedCategories.some((category) => category.value === value), "Pilih kategori."),
-  statedNeedText: z.string().trim().min(12, "Terangkan keperluan pool dengan lebih jelas."),
+    .refine((value) => poolNeedCategories.some((category) => category.value === value), "Choose a category."),
+  statedNeedText: z.string().trim().min(12, "Describe the pool need more clearly."),
   targetBudgetRm: z
     .string()
     .trim()
     .refine((value) => {
       const amount = Number(value);
       return Number.isFinite(amount) && amount >= 50;
-    }, "Target budget minimum RM 50."),
+    }, "Target budget must be at least RM 50."),
 });
 
 type PoolComposerValues = z.infer<typeof poolSchema>;
@@ -70,7 +70,7 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
       ),
     onSuccess: (pool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      toast.success("Pool berjaya dicipta. Jemput ahli lain sekarang.");
+      toast.success("Pool created. Invite other members now.");
       form.reset();
       onClose();
       startTransition(() => router.push(`/pools/${pool.id}`));
@@ -94,21 +94,30 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
       }}
     >
       <div className="page-shell flex min-h-full items-center justify-center">
-        <Card className="w-full max-w-3xl overflow-hidden">
-          <CardHeader className="gap-4 border-b border-[color:rgba(224,216,200,0.72)]">
+        <Card className="relative w-full max-w-3xl overflow-hidden">
+          <ScribbleCircle
+            color="brick"
+            size={260}
+            variant="loop"
+            className="-right-12 -top-10 opacity-25"
+          />
+          <CardHeader className="relative gap-4 border-b border-[color:rgba(31,31,26,0.1)]">
             <div className="flex items-start justify-between gap-4">
-              <div className="grid gap-3">
-                <Badge tone="gold">Phase 2 frontend</Badge>
+              <div className="grid gap-4">
+                <NumberedTab number={1} title="Form Pool" rotate={-1.5}>
+                  At NADI centre · 1 of 4 in pool journey
+                </NumberedTab>
                 <div className="grid gap-2">
-                  <CardTitle className="text-5xl">Cipta pool baharu</CardTitle>
-                  <CardDescription className="max-w-2xl text-base">
-                    Isi nama, keperluan, kategori, dan target budget. Lepas ini anda akan terus
-                    masuk ke halaman detail pool untuk jemput ahli dan lock combined cap.
-                  </CardDescription>
+                  <BrushHeadline color="brick" size="xl" rotate={-2} as="h2">
+                    Create a new pool
+                  </BrushHeadline>
+                  <p className="zine-display max-w-2xl text-sm tracking-[0.06em] text-[var(--dl-zine-ink)] md:text-base">
+                    Fill in the name, need, category, and target budget. After this you go straight to the pool detail — invite members, lock the combined cap, then the Advisor suggests items.
+                  </p>
                 </div>
               </div>
 
-              <Button aria-label="Tutup modal" variant="ghost" size="sm" onClick={onClose}>
+              <Button aria-label="Close modal" variant="ghost" size="sm" onClick={onClose}>
                 <X aria-hidden="true" size={18} />
               </Button>
             </div>
@@ -119,11 +128,11 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
               className="grid gap-4"
               onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}
             >
-              <Field error={form.formState.errors.name?.message} htmlFor="pool-name" label="Nama pool" required>
+              <Field error={form.formState.errors.name?.message} htmlFor="pool-name" label="Pool name" required>
                 <Input
                   aria-invalid={Boolean(form.formState.errors.name)}
                   id="pool-name"
-                  placeholder="Contoh: Jahit Rezeki Gedangsa"
+                  placeholder="e.g. Jahit Rezeki Gedangsa"
                   {...form.register("name")}
                 />
               </Field>
@@ -131,7 +140,7 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
               <Field
                 error={form.formState.errors.statedNeedCategory?.message}
                 htmlFor="pool-category"
-                label="Kategori keperluan"
+                label="Need category"
                 required
               >
                 <Select
@@ -165,66 +174,79 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
               <Field
                 error={form.formState.errors.statedNeedText?.message}
                 htmlFor="pool-need"
-                label="Keperluan pool"
+                label="Pool need"
                 required
               >
                 <Textarea
                   aria-invalid={Boolean(form.formState.errors.statedNeedText)}
                   id="pool-need"
-                  placeholder="Contoh: Pool ini untuk beli mesin jahit kampung supaya dua keluarga boleh mula ambil tempahan baju sekolah."
+                  placeholder="e.g. This pool will buy a village sewing machine so two families can start taking school-uniform orders."
                   {...form.register("statedNeedText")}
                 />
               </Field>
 
               <Button className="mt-2 w-full" size="lg" type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Sedang cipta..." : "Cipta pool"}
+                {createMutation.isPending ? "Creating..." : "Create pool"}
                 <ArrowRight aria-hidden="true" size={18} />
               </Button>
             </form>
 
-            <div className="grid gap-4">
-              <div className="rounded-[1.75rem] border border-[color:rgba(122,46,46,0.12)] bg-[linear-gradient(160deg,rgba(122,46,46,0.94),rgba(200,148,31,0.92))] p-5 text-white">
-                <Badge className="border-white/16 bg-white/10 text-white" tone="neutral">
+            <div className="relative grid gap-4">
+              <div
+                className="relative overflow-hidden p-5 text-[var(--dl-zine-paper)]"
+                style={{
+                  background: "var(--dl-zine-teal)",
+                  boxShadow: "5px 5px 0 var(--dl-zine-teal-deep)",
+                }}
+              >
+                <span className="zine-display inline-block border border-[var(--dl-zine-paper)] px-2 py-0.5 text-xs uppercase tracking-[0.18em]">
                   {currentUser.kampung.name}
-                </Badge>
+                </span>
                 <div className="mt-4 grid gap-3">
-                  <h3 className="text-4xl">Pencipta pool pertama.</h3>
-                  <p className="text-sm text-white/78 sm:text-base">
-                    Bila anda submit, anda automatik jadi ahli pertama dengan allowance
-                    {` `}
-                    <strong className="text-white">RM {(currentUser.individualPayLaterAllowanceCents / 100).toFixed(0)}</strong>.
+                  <BrushHeadline color="cream" size="md" rotate={-2} as="h3">
+                    First pool creator.
+                  </BrushHeadline>
+                  <p className="text-sm text-[var(--dl-zine-paper)] opacity-90 sm:text-base">
+                    When you submit, you automatically become the first member with an allowance of{" "}
+                    <strong className="zine-display text-lg text-[var(--dl-zine-paper)]">
+                      RM {(currentUser.individualPayLaterAllowanceCents / 100).toFixed(0)}
+                    </strong>
+                    .
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-3 rounded-[1.75rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-5">
+              <div className="zine-card grid gap-3 p-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:rgba(200,148,31,0.14)] text-[color:var(--dl-gold-dark)]">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-[var(--dl-badge-forest-bg)] text-[var(--dl-zine-forest)]">
                     <UsersRound aria-hidden="true" size={20} />
                   </div>
                   <div>
-                    <strong className="block text-base">2 hingga 8 ahli</strong>
-                    <p className="text-sm text-[color:var(--dl-slate)]">
-                      Jemput 1 hingga 7 ahli lain sebelum lock pool.
+                    <strong className="zine-display block text-base tracking-wide">
+                      2 to 8 members
+                    </strong>
+                    <p className="text-sm text-[var(--dl-slate)]">
+                      Invite 1 to 7 other members before locking the pool.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:rgba(122,46,46,0.08)] text-[color:var(--dl-maroon)]">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-[var(--dl-badge-maroon-bg)] text-[var(--dl-zine-brick)]">
                     <ScrollText aria-hidden="true" size={20} />
                   </div>
                   <div>
-                    <strong className="block text-base">Need text penting</strong>
-                    <p className="text-sm text-[color:var(--dl-slate)]">
-                      Copy ini akan dibawa terus ke Phase 3 bila pool dah locked dan minta cadangan barang.
+                    <strong className="zine-display block text-base tracking-wide">
+                      Need text matters
+                    </strong>
+                    <p className="text-sm text-[var(--dl-slate)]">
+                      This copy is passed straight to the Advisor when the pool is locked and item suggestions are requested.
                     </p>
                   </div>
                 </div>
 
-                <p className="rounded-[1.25rem] border border-dashed border-[color:rgba(122,46,46,0.16)] bg-white/80 p-4 text-sm text-[color:var(--dl-slate)]">
-                  Demo frontend-only ini simpan data pool dalam browser semasa. Untuk ujian join dan
-                  live update paling stabil, buka link jemputan dalam browser yang sama.
+                <p className="border border-dashed border-[var(--dl-zine-brick)] bg-[var(--dl-zine-paper)] p-4 text-sm text-[var(--dl-slate)]">
+                  This frontend-only demo stores pool data in the current browser. For the most stable join and live updates, open the invite link in the same browser.
                 </p>
               </div>
             </div>

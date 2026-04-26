@@ -5,11 +5,15 @@ import { useAtom } from "jotai";
 import {
   ArrowRight,
   CheckCircle2,
+  Clock3,
+  CreditCard,
   LogOut,
+  PackageCheck,
   Plus,
   ShieldCheck,
   Sparkles,
-  SwatchBook,
+  Users,
+  Vote,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,6 +21,7 @@ import { startTransition } from "react";
 import { toast } from "sonner";
 import { poolComposerOpenAtom } from "@/store/pools";
 import { PoolComposerModal } from "@/components/duitlater/pool-composer-modal";
+import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/brand/zine";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,12 +29,12 @@ import { useKampungTrustQuery, usePoolsQuery } from "@/hooks/use-pools-query";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { authClient } from "@/lib/auth/client";
 import { cn, formatCurrency } from "@/lib/utils";
-import { poolNeedCategories } from "@/types/pool";
+import { poolNeedCategories, type PoolListItem } from "@/types/pool";
 
 const phaseFiveChecklist = [
-  "Pool yang sudah disahkan oleh NADI kini bawa catatan bayaran balik bulanan yang visible kepada semua ahli.",
-  "Ahli boleh bayar kitaran semasa terus dari detail pool dan lihat baki outstanding bergerak tanpa refresh manual.",
-  "Skor kepercayaan kampung kini hidup pada dashboard supaya kemajuan komuniti terasa kolektif, bukan individu semata-mata.",
+  "Monthly repayments are recorded inside active pools.",
+  "Members can open the pool ledger to review the current cycle and outstanding balance.",
+  "The village trust score moves with the whole community's repayment record.",
 ] as const;
 
 const stateTone = {
@@ -66,6 +71,61 @@ function getTrustTone(score: number) {
   return "maroon" as const;
 }
 
+function getPoolAction(pool: PoolListItem) {
+  switch (pool.state) {
+    case "draft":
+      return {
+        body: "Invite enough members before the combined cap can be locked.",
+        cta: "Open and share invite",
+        icon: Users,
+        title: "Complete your pool roster",
+      };
+    case "locked":
+    case "suggesting":
+      return {
+        body: "The pool is locked. Ask Penasihat for items that fit the combined cap.",
+        cta: "View item suggestions",
+        icon: Sparkles,
+        title: "Get Penasihat suggestions",
+      };
+    case "voting":
+      return {
+        body: "An item has been selected. Review the vote so the pool can move to approval.",
+        cta: "Review vote",
+        icon: Vote,
+        title: "Voting is in progress",
+      };
+    case "approved":
+      return {
+        body: "The pool is approved. NADI confirms delivery before repayments begin.",
+        cta: "Track delivery",
+        icon: PackageCheck,
+        title: "Waiting for NADI confirmation",
+      };
+    case "active":
+      return {
+        body: "The repayment cycle is active. Open the ledger to review this month's payment.",
+        cta: "Pay / view ledger",
+        icon: CreditCard,
+        title: "This month's payment",
+      };
+    case "completed":
+      return {
+        body: "This pool is complete. Its record remains as proof of community reliability.",
+        cta: "View completed record",
+        icon: CheckCircle2,
+        title: "Pool completed",
+      };
+    case "dissolved":
+      return {
+        body: "This pool has been dissolved and has no further action.",
+        cta: "View record",
+        icon: Clock3,
+        title: "Pool dissolved",
+      };
+  }
+}
+
 export function DashboardPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -79,7 +139,7 @@ export function DashboardPage() {
     onSuccess: () => {
       queryClient.setQueryData(["auth", "session"], null);
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      toast.success("Anda dah sign out.");
+      toast.success("You've been signed out.");
       startTransition(() => router.push("/sign-in"));
     },
     onError: () => {
@@ -107,19 +167,18 @@ export function DashboardPage() {
         <div className="page-shell">
           <Card className="mx-auto max-w-2xl">
             <CardHeader className="gap-3">
-              <Badge tone="maroon">Belum sign in</Badge>
-              <CardTitle className="text-5xl">Dashboard tunggu session anda.</CardTitle>
+              <Badge tone="maroon">Not signed in</Badge>
+              <CardTitle className="text-5xl">The dashboard is waiting for your session.</CardTitle>
               <CardDescription className="text-base">
-                Untuk Phase 2, anda perlu daftar masuk dulu supaya sistem tahu allowance siapa yang
-                akan masuk ke dalam pool.
+                For Phase 2, you need to sign in first so the system knows whose allowance will join the pool.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
               <Link className={cn(buttonVariants({ variant: "primary", size: "lg" }))} href="/sign-in">
-                Sign in sekarang
+                Sign in now
               </Link>
               <Link className={cn(buttonVariants({ variant: "outline", size: "lg" }))} href="/sign-up">
-                Cipta akaun
+                Create account
               </Link>
             </CardContent>
           </Card>
@@ -136,30 +195,45 @@ export function DashboardPage() {
   const activeCount = pools.filter((pool) => pool.state === "active").length;
   const completedCount = pools.filter((pool) => pool.state === "completed").length;
   const isNadiStaff = user.role === "nadi_staff";
-  const highlightedPool =
+  const nextActionPool =
     pools.find((pool) => pool.state === "active") ??
+    pools.find((pool) => pool.state === "voting") ??
     pools.find((pool) => pool.state === "approved") ??
+    pools.find((pool) => pool.state === "locked" || pool.state === "suggesting") ??
+    pools.find((pool) => pool.state === "draft") ??
+    pools.find((pool) => pool.state === "completed") ??
     pools.at(0);
+  const nextAction = nextActionPool ? getPoolAction(nextActionPool) : null;
+  const NextActionIcon = nextAction?.icon ?? ShieldCheck;
   const trust = trustQuery.data;
+  const trustProgress = trust ? Math.max(0, Math.min(100, Math.round(trust.score))) : 0;
 
   return (
     <>
       <main className="px-4 py-6 sm:px-6 lg:py-10">
         <div className="page-shell grid gap-6">
-          <header className="panel-surface rounded-[2.25rem] px-6 py-7 md:px-8 md:py-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <header className="panel-surface relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
+            <ScribbleCircle
+              color="brick"
+              size={300}
+              variant="loop"
+              className="-right-12 -top-14 opacity-15"
+            />
+            <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="grid gap-4">
-                <div className="flex flex-wrap gap-3">
-                  <Badge tone="gold">Dashboard</Badge>
-                  <Badge tone="forest">Phase 5 frontend</Badge>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Logo width={130} />
+                  <Badge tone="forest">My DuitLater</Badge>
                   {isNadiStaff ? <Badge tone="maroon">NADI staff</Badge> : null}
                 </div>
                 <div className="grid gap-3">
-                  <h1 className="text-5xl sm:text-6xl">Selamat datang, {firstName}.</h1>
+                  <BrushHeadline color="brick" size="2xl" rotate={-2} as="h1">
+                    Welcome, {firstName}.
+                  </BrushHeadline>
                   <p className="max-w-3xl text-base text-[color:var(--dl-slate)] sm:text-lg">
                     {isNadiStaff
-                      ? "Portal NADI masih urus penghantaran pool, sementara ahli kampung kini mula nampak catatan bayaran balik dan kesan terus pada skor kepercayaan komuniti."
-                      : "Sekarang anda dah boleh bergerak dari undian ke penghantaran, kemudian pantau bayaran balik bulanan bersama skor kepercayaan kampung anda."}
+                      ? "Review village delivery work from the staff portal, then return here for the member-facing repayment view."
+                      : "Create or join a pool, follow the vote, and keep track of repayments once delivery is confirmed."}
                   </p>
                 </div>
               </div>
@@ -168,7 +242,7 @@ export function DashboardPage() {
                 {!isNadiStaff ? (
                   <Button className="w-full sm:w-auto" size="default" onClick={() => setIsComposerOpen(true)}>
                     <Plus aria-hidden="true" size={16} />
-                    Cipta pool
+                    Create pool
                   </Button>
                 ) : null}
                 {isNadiStaff ? (
@@ -177,16 +251,9 @@ export function DashboardPage() {
                     href="/nadi/dashboard"
                   >
                     <ShieldCheck aria-hidden="true" size={16} />
-                    Portal NADI
+                    NADI portal
                   </Link>
                 ) : null}
-                <Link
-                  className={cn(buttonVariants({ variant: "outline" }), "w-full sm:w-auto")}
-                  href="/settings"
-                >
-                  <SwatchBook aria-hidden="true" size={16} />
-                  Settings
-                </Link>
                 <Button
                   className="w-full sm:w-auto"
                   variant="outline"
@@ -195,53 +262,65 @@ export function DashboardPage() {
                   disabled={signOutMutation.isPending}
                 >
                   <LogOut aria-hidden="true" size={16} />
-                  {signOutMutation.isPending ? "Sedang keluar..." : "Sign out"}
+                  {signOutMutation.isPending ? "Signing out..." : "Sign out"}
                 </Button>
               </div>
             </div>
 
             <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-              <Card className="overflow-hidden border-transparent bg-[linear-gradient(160deg,rgba(122,46,46,0.96),rgba(200,148,31,0.94))] text-white shadow-none">
-                <CardHeader className="gap-3 border-b border-white/14">
+              <Card
+                className="relative overflow-hidden border-transparent text-[var(--dl-zine-paper)] shadow-none"
+                style={{
+                  background: "var(--dl-zine-teal)",
+                  boxShadow: "6px 6px 0 var(--dl-zine-teal-deep)",
+                }}
+              >
+                <ScribbleCircle
+                  color="paper"
+                  size={260}
+                  variant="loop"
+                  className="-right-10 -top-12 opacity-25"
+                />
+                <CardHeader className="relative gap-3 border-b border-[rgba(245,240,220,0.2)]">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <Badge className="border-white/16 bg-white/10 text-white" tone="neutral">
-                      PayLater Saya
-                    </Badge>
+                    <span className="zine-display border border-[var(--dl-zine-paper)] px-2 py-0.5 text-xs uppercase tracking-[0.18em]">
+                      My PayLater
+                    </span>
                     <ShieldCheck aria-hidden="true" size={20} />
                   </div>
-                  <CardDescription className="text-white/75">
+                  <CardDescription className="text-[var(--dl-zine-paper)] opacity-80">
                     {isNadiStaff
-                      ? "Akaun demo NADI ini masih bawa profil kampung yang sama supaya anda boleh semak penghantaran pool untuk komuniti Felda Gedangsa."
-                      : "Allowance peribadi ini akan jadi sumbangan anda bila join atau cipta pool."}
+                      ? "This NADI demo account still carries the same village profile so you can review pool delivery for the Felda Gedangsa community."
+                      : "This personal allowance becomes your contribution when you join or create a pool."}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-4 py-6">
-                  <p className="data-figure text-5xl font-semibold tracking-[-0.08em] sm:text-6xl">
+                <CardContent className="relative grid gap-4 py-6">
+                  <p className="zine-display text-5xl tracking-[-0.02em] sm:text-7xl">
                     {formatCurrency(user.individualPayLaterAllowanceCents)}
                   </p>
-                  <p className="max-w-xl text-sm text-white/78 sm:text-base">
+                  <p className="max-w-xl text-sm text-[var(--dl-zine-paper)] opacity-85 sm:text-base">
                     {isNadiStaff
-                      ? `Akaun ini dipautkan ke ${user.kampung.name}. Buka portal NADI untuk tengok pool yang menunggu pengesahan penghantaran.`
-                      : `Anda dari ${user.kampung.name}. Pool kini guna allowance ahli yang dikunci untuk kira share undian, transaksi, dan catatan bayaran balik.`}
+                      ? `This account is linked to ${user.kampung.name}. Open the NADI portal to see pools awaiting delivery confirmation.`
+                      : `You're from ${user.kampung.name}. Pools now use locked member allowances to compute vote shares, transactions, and repayment records.`}
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-                        Pool draft
+                    <div className="border border-[rgba(245,240,220,0.25)] bg-[rgba(31,61,56,0.6)] p-4">
+                      <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-zine-paper)] opacity-80">
+                        Draft pools
                       </p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{draftCount}</p>
+                      <p className="zine-display mt-2 text-4xl text-[var(--dl-zine-paper)]">{draftCount}</p>
                     </div>
-                    <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-                        Bayaran aktif
+                    <div className="border border-[rgba(245,240,220,0.25)] bg-[rgba(31,61,56,0.6)] p-4">
+                      <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-zine-paper)] opacity-80">
+                        Active payments
                       </p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{activeCount}</p>
+                      <p className="zine-display mt-2 text-4xl text-[var(--dl-zine-paper)]">{activeCount}</p>
                     </div>
-                    <div className="rounded-[1.5rem] border border-white/14 bg-black/10 p-4 sm:col-span-2">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-                        {isNadiStaff ? "Menunggu NADI" : "Pool selesai"}
+                    <div className="border border-[rgba(245,240,220,0.25)] bg-[rgba(31,61,56,0.6)] p-4 sm:col-span-2">
+                      <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-zine-paper)] opacity-80">
+                        {isNadiStaff ? "Awaiting NADI" : "Completed pools"}
                       </p>
-                      <p className="mt-2 text-3xl font-semibold text-white">
+                      <p className="zine-display mt-2 text-4xl text-[var(--dl-zine-paper)]">
                         {isNadiStaff ? approvedCount : completedCount}
                       </p>
                     </div>
@@ -251,21 +330,43 @@ export function DashboardPage() {
 
               <Card>
                 <CardHeader className="gap-3">
-                <Badge tone="maroon">Apa baru</Badge>
-                  <CardTitle className="text-4xl">Catatan bayaran balik dah hidup.</CardTitle>
+                  <Badge tone="maroon">Next action</Badge>
+                  <CardTitle className="text-4xl">
+                    {isNadiStaff
+                      ? "Open the NADI portal."
+                      : nextAction
+                        ? nextAction.title
+                        : "Create your first pool."}
+                  </CardTitle>
                   <CardDescription className="text-base">
                     {isNadiStaff
-                      ? "Akaun NADI masih boleh lompat terus ke portal pengesahan, sementara akaun ahli mula nampak status bayaran aktif dan trust score kampung pada permukaan utama."
-                      : "Dari dashboard ini anda boleh terus buka pool aktif, semak kitaran bayaran semasa, dan tengok skor kepercayaan kampung berubah bila ahli bayar tepat pada masanya."}
+                      ? "Approved pools need delivery confirmation before members can start repayment."
+                      : nextAction
+                        ? nextAction.body
+                        : "Start with a small group. Once members join, the pool can lock its combined PayLater cap."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
-                  <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 text-sm text-[color:var(--dl-slate)]">
-                    {isNadiStaff
-                      ? "Portal NADI memaparkan pool approved untuk kampung yang sama, manakala dashboard ahli kini memegang visible record untuk fasa repayment."
-                      : highlightedPool
-                        ? `Pool ${highlightedPool.name} kini jadi laluan terpantas untuk sambung demo dari approval ke repayment ledger.`
-                        : "Jika anda terima invite code dari ahli lain, buka terus pautan `/join/:code`. Bila penghantaran disahkan, pool aktif akan mula memaparkan kitaran bayaran secara automatik."}
+                  <div className="flex items-start gap-3 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 text-sm text-[color:var(--dl-slate)]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] bg-[color:rgba(122,46,46,0.1)] text-[color:var(--dl-maroon)]">
+                      <NextActionIcon aria-hidden="true" size={18} />
+                    </div>
+                    <div className="grid gap-1">
+                      <p className="font-semibold text-[color:var(--dl-ink)]">
+                        {isNadiStaff
+                          ? "Delivery confirmation keeps the repayment timeline clean."
+                          : nextActionPool
+                            ? nextActionPool.name
+                            : "No pool yet"}
+                      </p>
+                      <p>
+                        {isNadiStaff
+                          ? "Use the staff view for delivery actions. Members will see repayment records here after confirmation."
+                          : nextActionPool
+                            ? `${stateLabel[nextActionPool.state]} · ${nextActionPool.memberCount}/${nextActionPool.memberCount + nextActionPool.remainingSlots} members`
+                            : "You can create a pool now or join one through an invite link."}
+                      </p>
+                    </div>
                   </div>
                   {isNadiStaff ? (
                     <Link
@@ -273,20 +374,20 @@ export function DashboardPage() {
                       href="/nadi/dashboard"
                     >
                       <ShieldCheck aria-hidden="true" size={18} />
-                      Buka portal NADI
+                      Open NADI portal
                     </Link>
-                  ) : highlightedPool ? (
+                  ) : nextActionPool && nextAction ? (
                     <Link
                       className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
-                      href={`/pools/${highlightedPool.id}`}
+                      href={`/pools/${nextActionPool.id}`}
                     >
                       <ArrowRight aria-hidden="true" size={18} />
-                      {highlightedPool.state === "active" ? "Buka pool aktif" : "Buka pool saya"}
+                      {nextAction.cta}
                     </Link>
                   ) : (
                     <Button className="w-full" variant="outline" size="lg" onClick={() => setIsComposerOpen(true)}>
                       <Plus aria-hidden="true" size={18} />
-                      Cipta pool pertama
+                      Create your first pool
                     </Button>
                   )}
                 </CardContent>
@@ -297,13 +398,20 @@ export function DashboardPage() {
           <section className="grid gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="section-kicker">Pool Saya</p>
-                <h2 className="mt-2 text-4xl">Pool yang anda cipta atau sertai</h2>
+                <p className="section-kicker">My Pools</p>
+                <h2 className="mt-2 text-4xl">Pools you&rsquo;ve created or joined</h2>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setIsComposerOpen(true)}>
-                <Plus aria-hidden="true" size={16} />
-                Tambah lagi
-              </Button>
+              {isNadiStaff ? (
+                <Link className={cn(buttonVariants({ variant: "ghost", size: "sm" }))} href="/nadi/dashboard">
+                  <ShieldCheck aria-hidden="true" size={16} />
+                  Open NADI portal
+                </Link>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={() => setIsComposerOpen(true)}>
+                  <Plus aria-hidden="true" size={16} />
+                  Add another
+                </Button>
+              )}
             </div>
 
             {poolsQuery.isLoading ? (
@@ -318,30 +426,30 @@ export function DashboardPage() {
             ) : pools.length === 0 ? (
               <Card>
                 <CardHeader className="gap-3">
-                  <Badge tone="maroon">Masih kosong</Badge>
+                  <Badge tone="maroon">Nothing yet</Badge>
                   <CardTitle className="text-4xl">
-                    {isNadiStaff ? "Belum ada pool untuk dipantau." : "Belum ada pool. Cipta atau sertai."}
+                    {isNadiStaff ? "No pools to monitor yet." : "No pools yet. Create or join one."}
                   </CardTitle>
                   <CardDescription className="text-base">
                     {isNadiStaff
-                      ? "Bila ada pool yang lulus undian di kampung ini, portal NADI akan mula memaparkan kad penghantaran di sini dan pada halaman khas staf."
-                      : "Sebaik sahaja anda cipta pool, kad detail pool akan muncul di sini dengan target budget, invite code, dan live cap semasa."}
+                      ? "When a pool passes voting in this village, the NADI portal will start showing delivery cards here and on the dedicated staff page."
+                      : "As soon as you create a pool, the pool detail card will appear here with target budget, invite code, and the live cap."}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-3">
                   {isNadiStaff ? (
                     <Link className={cn(buttonVariants({ variant: "primary", size: "lg" }))} href="/nadi/dashboard">
                       <ShieldCheck aria-hidden="true" size={18} />
-                      Portal NADI
+                      NADI portal
                     </Link>
                   ) : (
                     <Button size="lg" onClick={() => setIsComposerOpen(true)}>
                       <Plus aria-hidden="true" size={18} />
-                      Cipta pool
+                      Create pool
                     </Button>
                   )}
                   <Link className={cn(buttonVariants({ variant: "outline", size: "lg" }))} href="/">
-                    Lihat ringkasan
+                    View overview
                   </Link>
                 </CardContent>
               </Card>
@@ -350,7 +458,9 @@ export function DashboardPage() {
                 {pools.map((pool) => {
                   const categoryLabel =
                     poolNeedCategories.find((category) => category.value === pool.statedNeedCategory)?.label ??
-                    "Lain-lain";
+                    "Other";
+                  const poolAction = getPoolAction(pool);
+                  const PoolActionIcon = poolAction.icon;
 
                   return (
                     <Card key={pool.id}>
@@ -365,6 +475,7 @@ export function DashboardPage() {
                           <CardDescription className="text-base">
                             {categoryLabel} · invite code {pool.inviteCode}
                           </CardDescription>
+                          <p className="text-sm text-[color:var(--dl-slate)]">{poolAction.body}</p>
                         </div>
                       </CardHeader>
                       <CardContent className="grid gap-4">
@@ -377,7 +488,7 @@ export function DashboardPage() {
                           </div>
                           <div className="rounded-[1.25rem] border border-[color:var(--dl-sand)] bg-white/82 p-4">
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                              Ahli
+                              Members
                             </p>
                             <p className="mt-2 text-lg font-semibold">
                               {pool.memberCount}/{pool.memberCount + pool.remainingSlots}
@@ -397,7 +508,10 @@ export function DashboardPage() {
                           className={cn(buttonVariants({ variant: "outline" }), "w-full justify-between")}
                           href={`/pools/${pool.id}`}
                         >
-                          Buka detail pool
+                          <span className="inline-flex items-center gap-2">
+                            <PoolActionIcon aria-hidden="true" size={16} />
+                            {poolAction.cta}
+                          </span>
                           <ArrowRight aria-hidden="true" size={16} />
                         </Link>
                       </CardContent>
@@ -411,28 +525,28 @@ export function DashboardPage() {
           <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
             <Card>
               <CardHeader className="gap-3">
-                <Badge tone="forest">Profil</Badge>
-                <CardTitle className="text-4xl">Ringkasan ahli</CardTitle>
+                <Badge tone="forest">Profile</Badge>
+                <CardTitle className="text-4xl">Member summary</CardTitle>
                 <CardDescription className="text-base">
-                  Identiti dan kampung ini ikut terus ke semua tindakan anda, termasuk undian pool atau pengesahan NADI.
+                  Your identity and village travel with every action you take, including pool votes and NADI confirmations.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
                 <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.7)] p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                    Nama
+                    Name
                   </p>
                   <p className="mt-2 text-xl font-semibold">{user.name}</p>
                 </div>
                 <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/78 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                    E-mel
+                    Email
                   </p>
                   <p className="mt-2 text-lg">{user.email}</p>
                 </div>
                 <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-white/78 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--dl-slate)]">
-                    Kampung
+                    Village
                   </p>
                   <p className="mt-2 text-lg">
                     {user.kampung.name}, {user.kampung.district}
@@ -443,10 +557,10 @@ export function DashboardPage() {
 
             <Card>
               <CardHeader className="gap-3">
-                <Badge tone={trust ? getTrustTone(trust.score) : "gold"}>Skor kepercayaan</Badge>
-                <CardTitle className="text-4xl">Kampung anda dalam fasa bayar balik</CardTitle>
+                <Badge tone={trust ? getTrustTone(trust.score) : "gold"}>Trust score</Badge>
+                <CardTitle className="text-4xl">Your village in the repayment phase</CardTitle>
                 <CardDescription className="text-base">
-                  Visible record kini bukan sekadar undian dan penghantaran. Bayaran balik bulanan sudah mula membentuk reputasi kampung secara kolektif.
+                  The visible record is no longer just voting and delivery. Monthly repayments are now shaping the village reputation collectively.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
@@ -455,7 +569,7 @@ export function DashboardPage() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/72">
-                          Skor kepercayaan kampung anda
+                          Your village trust score
                         </p>
                         <p className="data-figure mt-3 text-5xl font-semibold tracking-[-0.08em]">
                           {Math.round(trust.score)}
@@ -466,8 +580,20 @@ export function DashboardPage() {
                       </Badge>
                     </div>
                     <p className="mt-3 max-w-xl text-sm text-white/78 sm:text-base">
-                      {`Skor kepercayaan kampung anda: ${Math.round(trust.score)} — ${trust.labelBm.toLowerCase()}. Bila ahli bayar mengikut kitaran, catatan ini jadi lebih kukuh untuk komuniti yang sama.`}
+                      {`Your village trust score: ${Math.round(trust.score)}. As members keep to the repayment cycle, this record strengthens for the whole community.`}
                     </p>
+                    <div className="mt-5 grid gap-2">
+                      <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/72">
+                        <span>Community reliability</span>
+                        <span>{trustProgress}%</span>
+                      </div>
+                      <div className="h-3 overflow-hidden rounded-full bg-black/20">
+                        <div
+                          className="h-full rounded-full bg-white shadow-[0_0_18px_rgba(255,255,255,0.35)]"
+                          style={{ width: `${trustProgress}%` }}
+                        />
+                      </div>
+                    </div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
                       <div className="rounded-[1.25rem] border border-white/14 bg-black/10 p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
@@ -483,7 +609,7 @@ export function DashboardPage() {
                       </div>
                       <div className="rounded-[1.25rem] border border-white/14 bg-black/10 p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-                          Pool kampung
+                          Village pools
                         </p>
                         <p className="mt-2 text-2xl font-semibold text-white">{trust.poolCount}</p>
                       </div>
@@ -493,7 +619,7 @@ export function DashboardPage() {
                   <div className="panel-surface h-44 animate-pulse rounded-[1.75rem] bg-[color:rgba(224,216,200,0.72)]" />
                 ) : (
                   <div className="rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 text-sm text-[color:var(--dl-slate)]">
-                    Skor kepercayaan kampung belum dapat dipanggil sekarang. Halaman ini akan cuba semula secara automatik.
+                    The village trust score can&rsquo;t be loaded right now. This page will retry automatically.
                   </div>
                 )}
 
@@ -511,7 +637,7 @@ export function DashboardPage() {
 
                 <div className="flex items-center gap-3 rounded-[1.5rem] border border-[color:rgba(47,106,63,0.18)] bg-[color:rgba(47,106,63,0.08)] p-4 text-sm text-[color:var(--dl-forest)]">
                   <CheckCircle2 aria-hidden="true" size={18} />
-                  Phase 5 kini bermula pada permukaan ahli: pool aktif memegang visible repayment ledger, dan dashboard membawa trust score kampung sebagai nadi kolektifnya.
+                  Active pools now hold the repayment ledger, while this dashboard keeps the village trust score visible as a shared signal.
                 </div>
               </CardContent>
             </Card>

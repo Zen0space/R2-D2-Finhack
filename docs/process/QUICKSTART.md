@@ -31,37 +31,31 @@ If your IDE doesn't autocomplete `/maji-onboard`, just type it in chat anyway �
 git clone <repo-url> duitlater
 cd duitlater
 
-# 2. Backend
-cd backend
-cp .env.example .env
-npm install
-cd ..
+# 2. Install workspace dependencies
+pnpm install
 
-# 3. Frontend
-cd frontend
-cp .env.example .env
-npm install
-cd ..
+# 3. Local env files
+cp packages/db/.env.example packages/db/.env
+cp packages/backend/.env.example packages/backend/.env
+cp packages/frontend/.env.example packages/frontend/.env.local
 
 # 4. Start Postgres
-docker compose -f infra/docker-compose.local.yml up -d
+pnpm db:up
 
 # 5. (Optional but recommended) verify Postgres is up
 docker compose -f infra/docker-compose.local.yml ps
+
+# 6. Apply migrations + seed demo data
+pnpm db:migrate
+pnpm --filter db seed:run
 ```
 
 ---
 
-## Running locally (two terminals)
+## Running locally
 
 ```bash
-# Terminal 1 — backend (:4000)
-cd backend
-npm run dev
-
-# Terminal 2 — frontend (:3000)
-cd frontend
-npm run dev
+pnpm dev
 ```
 
 ---
@@ -69,7 +63,8 @@ npm run dev
 ## Phase 0 testable outcome
 
 - Frontend renders at <http://localhost:3000>
-- `curl http://localhost:4000/health` → `{"ok":true,"service":"duitlater-backend","env":"development"}`
+- `curl http://localhost:4000/health` → `{"ok":true,"db":"connected","env":"development"}`
+- `curl http://localhost:4000/api/v1/health` → app/demo health
 
 If both pass: Phase 0 complete. Kairu's Tangga Hidup is ready to bear Phase 1.
 
@@ -78,28 +73,29 @@ If both pass: Phase 0 complete. Kairu's Tangga Hidup is ready to bear Phase 1.
 ## Phase 1 (Auth + Individual PayLater) kickoff
 
 ```bash
-cd backend
-# Author the schema in src/db/schema.ts (users with individual_paylater_allowance_cents, sessions, kampungs)
-npm run db:generate   # generates migration file
-npm run db:migrate    # applies it to Postgres
+# Author schema in packages/db/prisma/schema.prisma
+pnpm db:migrate:new -- --name <migration-name>
+pnpm db:migrate
 ```
 
-Then wire Better Auth + `/api/me` endpoint that returns the current user's individual PayLater allowance, per [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md) Phase 1.
+Better Auth and `/api/v1/me` are already wired; continue from the current phase in [DEVELOPMENT-PLAN.md](./DEVELOPMENT-PLAN.md).
 
 ---
 
 ## What was pre-scaffolded
 
-- Backend: Hono server with `/health`, env validation, Drizzle client + config, pino logger, Dockerfile
+- Backend: Hono server with `/health`, `/api/v1/*`, Better Auth, local upload route, Dockerfile
 - Frontend: Next.js 15 App Router, Tailwind v4 with brand tokens, landing page at `/`, Dockerfile
-- Infra: `infra/docker-compose.local.yml` (laptop Postgres), `infra/docker-compose.dev.yml` + `infra/docker-compose.prod.yml` (VPS dev/prod stacks, image-pull from GHCR), `infra/Caddyfile` (two-subdomain routing)
+- Infra: `infra/docker-compose.local.yml` (laptop Postgres), `infra/docker-compose.dev.yml` + `infra/docker-compose.prod.yml` (VPS dev/prod stacks), `infra/docker-compose.sync.yml` (Syncthing uploads), `infra/Caddyfile` (two-subdomain routing)
 - Docs: `pitch-deck.md`, `pitch-narration.md`
 
 ## What still needs team authoring (not pre-scaffolded, by design)
 
-- `src/db/schema.ts` actual tables — Mung drafts in Phase 1 huddle
-- Better Auth config + middleware — Mung drafts in Phase 1
-- Tabung routes + frontend pages — Mung + Akmal in Phase 1
+- `src/db/schema.ts` actual tables — Moon drafts in Phase 1 huddle
+- Better Auth config + middleware — Moon drafts in Phase 1
+- Tabung routes + frontend pages — Moon + Akmal in Phase 1
+- Additional production hardening and UI polish
+- Full automated tests for upload/proxy/failover paths
 - shadcn/ui components — run `npx shadcn@latest init` when Phase 1 needs the first input/button
 
 ---
@@ -108,7 +104,7 @@ Then wire Better Auth + `/api/me` endpoint that returns the current user's indiv
 
 | Symptom | Fix |
 |---|---|
-| `DATABASE_URL is required` | `cp .env.example .env` in `packages/backend/` |
+| `DATABASE_URL is required` | `cp packages/backend/.env.example packages/backend/.env` and `cp packages/db/.env.example packages/db/.env` |
 | Port 5432 already in use | Another Postgres is running. Stop it, or change port in `infra/docker-compose.local.yml` |
 | `pnpm install` fails on `argon2` | Needs build-essentials + python. On macOS: `xcode-select --install`. On Ubuntu: `sudo apt install -y build-essential python3` |
 | Next.js complains about Turbopack | Remove `--turbo` from `dev` script in `packages/frontend/package.json` — fallback to webpack |
