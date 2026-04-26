@@ -54,8 +54,12 @@ export function useSessionQuery() {
 
       return { user: mapToMemberProfile(body.data) };
     },
-    staleTime: Number.POSITIVE_INFINITY,
-    gcTime: Number.POSITIVE_INFINITY,
+    // Refresh session every 5 minutes while the tab is active so cookie
+    // renewals / role changes / server-side logout propagate without a
+    // hard refresh. Refetch on window focus catches the cross-tab case.
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: false,
   });
 }
