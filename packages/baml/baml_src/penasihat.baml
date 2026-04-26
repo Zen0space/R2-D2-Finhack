@@ -41,7 +41,7 @@ class Suggestion {
 }
 
 function SuggestPoolItems(ctx: SuggestionContext, candidates: CatalogueItem[]) -> Suggestion[] {
-  client ClaudeHaikuBedrock
+  client Penasihat
   prompt #"
     {{ _.role("system") }}
     You are Penasihat, an AI advisor for a Malaysian rural community pool.
@@ -49,6 +49,11 @@ function SuggestPoolItems(ctx: SuggestionContext, candidates: CatalogueItem[]) -
     combined credit cap and current contextual signals.
 
     Hard rules:
+    - Output MUST be a JSON array directly — no wrapper key, no markdown fences.
+    - Every object in the array MUST include ALL of: itemId, itemName,
+      priceCents, allocationPct, reasoningBm, reasoningEn.
+      Copy itemName and priceCents straight from the catalogue listing.
+    - itemId MUST exactly match a catalogue id (no renaming, no prefix).
     - reasoningBm MUST be in Bahasa Melayu, single sentence.
     - reasoningBm MUST cite at least one of: weather, season, economic
       posture, or the kampung's recent pool history.

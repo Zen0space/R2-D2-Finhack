@@ -25,7 +25,7 @@ async function main() {
   const weather = getWeatherForDate();
 
   console.log("🧪 Penasihat smoke test");
-  console.log("   model:    anthropic.claude-haiku-4-5-20251001-v1:0");
+  console.log("   model:    glm-5.1 (Z.AI Coding Plan)");
   console.log(`   endpoint: ${process.env.OPENAI_BASE_URL}`);
   console.log(`   weather:  ${weather.season} · ${weather.isRaining ? "raining" : "dry"} · ${weather.expectedTempC}°C`);
   console.log("");
