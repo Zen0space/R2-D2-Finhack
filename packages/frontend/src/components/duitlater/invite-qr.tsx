@@ -1,64 +1,51 @@
+"use client";
+
+import QRCode from "qrcode";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 type InviteQrProps = {
-  code: string;
-  className?: string | undefined;
+  value: string;
+  className?: string;
+  size?: number;
 };
 
-const GRID_SIZE = 13;
+export function InviteQr({ value, className, size = 220 }: InviteQrProps) {
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
 
-function hashSeed(seed: string) {
-  return seed.split("").reduce((hash, character) => {
-    return (hash * 33 + character.charCodeAt(0)) >>> 0;
-  }, 5381);
-}
-
-function isFinderCell(row: number, column: number) {
-  const isTopLeft = row <= 3 && column <= 3;
-  const isTopRight = row <= 3 && column >= GRID_SIZE - 4;
-  const isBottomLeft = row >= GRID_SIZE - 4 && column <= 3;
-
-  return isTopLeft || isTopRight || isBottomLeft;
-}
-
-function isFinderFill(row: number, column: number) {
-  const localRow = row < 4 ? row : row - (GRID_SIZE - 4);
-  const localColumn = column < 4 ? column : column - (GRID_SIZE - 4);
-  const edge = localRow === 0 || localRow === 3 || localColumn === 0 || localColumn === 3;
-  const center = localRow >= 1 && localRow <= 2 && localColumn >= 1 && localColumn <= 2;
-
-  return edge || center;
-}
-
-export function InviteQr({ className, code }: InviteQrProps) {
-  const seed = hashSeed(code);
-  const cells = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, index) => {
-    const row = Math.floor(index / GRID_SIZE);
-    const column = index % GRID_SIZE;
-
-    if (isFinderCell(row, column)) {
-      return isFinderFill(row, column);
-    }
-
-    const bit = (seed >> ((row + column + index) % 16)) & 1;
-    return (row + column + bit) % 2 === 0;
-  });
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(value, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: size * 2,
+      color: { dark: "#1f1f1a", light: "#f5f0dc" },
+    })
+      .then((url) => {
+        if (!cancelled) setDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [value, size]);
 
   return (
     <div
+      aria-label={`QR code for ${value}`}
       className={cn(
-        "grid aspect-square rounded-[1.75rem] border border-[color:var(--dl-sand)] bg-white p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]",
+        "flex aspect-square w-full items-center justify-center rounded-[1rem] border border-[color:var(--dl-sand)] bg-[var(--dl-paper-warm)] p-3",
         className,
       )}
-      style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}
     >
-      {cells.map((isFilled, index) => (
-        <span
-          aria-hidden="true"
-          className={cn("rounded-[2px]", isFilled ? "bg-[color:var(--dl-ink)]" : "bg-transparent")}
-          key={`${code}-${index}`}
-        />
-      ))}
+      {dataUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img alt="" aria-hidden="true" className="h-full w-full" src={dataUrl} />
+      ) : (
+        <span className="text-xs text-[color:var(--dl-slate)]">Generating QR…</span>
+      )}
     </div>
   );
 }

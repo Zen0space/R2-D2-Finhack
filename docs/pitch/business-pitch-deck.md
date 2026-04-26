@@ -135,7 +135,7 @@ Tiada welfare baru. Tiada lender baru. Cuma compose institusi yang dah ada.
 :::
 
 **Ops profile:**
-Backend: **Hono + Prisma + Postgres 17** · Frontend: **Next.js 15 + React 19 + Tailwind v4** · AI fallback: **Anthropic Claude** when Alibaba 5xx · Caddy reverse proxy · Docker Compose · GitHub Actions release pipeline → GHCR.
+Backend: **Hono + Prisma + Postgres 17** · Frontend: **Next.js 15 + React 19 + Tailwind v4** · AI fallback: **deterministic heuristic** when Alibaba 5xx · Caddy reverse proxy · Docker Compose · GitHub Actions release pipeline → GHCR.
 
 > Tiga server. Auto-failover via Cloudflare. Multi-cloud orchestration real, not theatre.
 

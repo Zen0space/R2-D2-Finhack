@@ -9,6 +9,7 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
+    "audit:kit": "bash scripts/audit.sh",
     "db:up": "docker compose -f infra/docker-compose.local.yml up -d",
     "db:down": "docker compose -f infra/docker-compose.local.yml down",
     "db:logs": "docker compose -f infra/docker-compose.local.yml logs -f postgres",

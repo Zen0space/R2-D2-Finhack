@@ -6,6 +6,7 @@ on:
     paths:
       - 'packages/backend/**'
       - 'packages/db/**'
+      - 'packages/baml/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
   pull_request:
@@ -13,6 +14,7 @@ on:
     paths:
       - 'packages/backend/**'
       - 'packages/db/**'
+      - 'packages/baml/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
 
@@ -37,6 +39,9 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm --filter db generate
+
+      - name: Generate BAML client
+        run: pnpm --filter baml generate
 
       - name: Typecheck backend
         run: pnpm --filter backend typecheck

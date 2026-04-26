@@ -1,15 +1,14 @@
 import Link from "next/link";
-import { Logo } from "@/components/duitlater/brand/zine";
 
 const productLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/nadi/dashboard", label: "Portal NADI" },
 ] as const;
 
-type TeamMember = { role: string; name: string; contact?: string };
+type TeamMember = { role: string; name: string };
 
 const team: TeamMember[] = [
-  { role: "Pitch", name: "Izham", contact: "zarulijam@gmail.com" },
+  { role: "Pitch", name: "Izham" },
   { role: "Backend", name: "Hakim" },
   { role: "Frontend", name: "Akmal" },
   { role: "PM", name: "Khairul" },
@@ -28,7 +27,9 @@ export function SiteFooter() {
     >
       <div className="page-shell grid gap-10 px-4 py-12 md:grid-cols-[1.3fr_1.1fr_1fr] md:gap-12">
         <div className="grid gap-3">
-          <Logo width={150} className="brightness-0 invert" />
+          <p className="zine-display text-2xl tracking-wide text-[var(--dl-paper)]">
+            DuitLater
+          </p>
           <p className="text-sm text-[var(--dl-paper)] opacity-85 md:max-w-xs">
             Pool TNG PayLater. Combine, vote, buy. TNG · NADI · MyKasih.
           </p>
@@ -51,14 +52,6 @@ export function SiteFooter() {
                   {member.role}
                 </span>
                 <span className="zine-display text-sm tracking-wide">{member.name}</span>
-                {member.contact ? (
-                  <a
-                    href={`mailto:${member.contact}`}
-                    className="brutal-link text-xs opacity-75 hover:opacity-100"
-                  >
-                    · {member.contact}
-                  </a>
-                ) : null}
               </li>
             ))}
           </ul>

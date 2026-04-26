@@ -26,7 +26,7 @@ graph TB
 
     subgraph External["External Services"]
         TNG["TNG PayLater sandbox<br/>(simulated for demo)"]
-        Claude["Anthropic Claude API<br/>AI Penasihat"]
+        Qwen["Alibaba Function Compute<br/>Qwen Penasihat"]
         MyKasih["MyKasih catalogue<br/>(seeded for demo)"]
     end
 
@@ -37,7 +37,7 @@ graph TB
     Caddy -->|handle_path /api/*| App
     App -->|SQL internal| Postgres
     App -->|HTTPS| TNG
-    App -->|HTTPS| Claude
+    App -->|HTTPS when configured| Qwen
     App -->|read-only seed| MyKasih
 ```
 
@@ -94,7 +94,7 @@ sequenceDiagram
     participant F as Frontend
     participant A as Backend (Hono)
     participant P as Postgres
-    participant C as Claude API
+    participant C as Alibaba FC / Qwen
 
     U->>F: Click "Cadangkan barang"
     F->>A: POST /api/penasihat/suggest<br/>{ poolId }
@@ -110,6 +110,7 @@ sequenceDiagram
     else cache miss
         A->>C: prompt: BM-first item ranker<br/>+ pool context (cap, stated need, season)<br/>+ candidate catalogue<br/>+ structured output schema
         C-->>A: { items: [{ id, name, price, allocation_pct, reasoning_bm }] × 5 }
+        Note over A,C: If Alibaba FC is unavailable, backend returns the same schema from local heuristic ranking.
         A->>P: INSERT pool_suggestions (cache)
         A-->>F: 5 ranked suggestions in BM
     end
@@ -363,8 +364,8 @@ erDiagram
 - `pool.state` transitions forward only (`draft → locked → suggesting → voting → approved → active → completed | dissolved`)
 - `pool.combined_cap_cents` set at lock time; never recalculated
 - `pool_members.individual_allowance_at_lock_cents` is a snapshot (TNG may change individual allowances later; pool obligation uses snapshot)
-- `paylater_obligations` rows are append-only after creation
 - `repayments` are append-only; corrections via compensating rows, never destructive UPDATE
+- `paylater_obligations` are created once, with mutable progress rollups such as `cyclesPaid`
 - `kampung_trust_scores` recalculated on every repayment or pool completion
 
 ---
@@ -432,8 +433,8 @@ NADI portal is a route within the same frontend (`/nadi/*`), gated by the user's
 ## External integration notes
 
 - **TNG PayLater** — for hackathon, simulated client returns success. Production: TNG sandbox API integration. Exposed via single backend service `services/tng.ts` for clean swap-out.
-- **Claude API** — `services/claude.ts` wraps Anthropic SDK. System prompt locked in `packages/backend/src/prompts/penasihat-suggest.md` (committed for review).
-- **MyKasih catalogue** — for hackathon, ~30 items seeded into `mykasih_catalogue` table from `packages/backend/src/db/seeds/catalogue.ts`. Production: sync job from MyKasih Foundation API (when partnership established).
+- **AI Penasihat** — `packages/backend/src/services/penasihat.ts` calls Alibaba Function Compute/Qwen when `ALIBABA_FUNCTION_COMPUTE_URL` is set; otherwise it returns deterministic heuristic suggestions with the same wire shape.
+- **MyKasih catalogue** — for hackathon, seeded into `MykasihProduct` via `packages/db/prisma/seed.ts` / seed runners. Production: sync job from MyKasih Foundation API when partnership is established.
 
 ---
 
@@ -474,12 +475,12 @@ graph LR
 |---|---|---|---|
 | Compute | Single EC2 | Vertical scale → t3.large | Auto Scaling Group + ALB |
 | Database | Single Postgres | Add read replica · `repayments` reads scale out | Migrate to Aurora multi-AZ with auto-scaling readers |
-| AI inference | Synchronous Claude call (~2-6s) | Cache common suggestions | Claude API auto-scales transparently |
+| AI inference | Alibaba FC call when configured; local heuristic fallback | Cache common suggestions | Dedicated AI worker or managed LLM gateway |
 | TNG webhooks | Inline processing | Redis queue (BullMQ) for async webhook handling | SQS + Lambda |
 | Static assets | Served from app | CloudFront CDN + S3 origin | Same · multi-region replication |
 | MyKasih catalogue | Seeded in DB | Sync job pulls from MyKasih API nightly | Real-time webhook from MyKasih on catalogue changes |
 
-**Key invariant:** Postgres remains canonical for the **append-only ledger** (contributions, payments, votes, kampung trust scores). All scale moves are around the ledger, not replacing it. Audit-ability + regulatory readiness preserved.
+**Key invariant:** Postgres remains canonical for the event ledger (`repayments`, votes, transactions). Derived rollups such as obligation progress and kampung trust score may update, but they are recalculable from canonical rows. All scale moves are around the ledger, not replacing it. Audit-ability + regulatory readiness preserved.
 
 ---
 
@@ -500,12 +501,13 @@ Security is layered, with each layer demonstrable in MVP:
 
 ### Money math
 - **All amounts in integer cents** — no floating-point drift
-- **`paylater_obligations` and `repayments` are append-only** — no destructive UPDATE, no DELETE
-- Corrections happen via compensating rows referencing originals
+- **`repayments` are append-only** — no destructive UPDATE, no DELETE for payment events
+- `paylater_obligations.cyclesPaid` is a mutable rollup derived from repayment rows
+- Corrections to payment events should happen via compensating rows referencing originals
 
 ### AI prompt privacy
-- **PII minimised in AI prompts** — only first name + numeric pool context + stated need passed to Claude. No raw financial transaction data in prompts.
-- System prompt locked in `packages/backend/src/prompts/penasihat-suggest.md` (committed for review)
+- **PII minimised in AI prompts** — current Penasihat context sends pool cap, stated need/category, kampung name, month, and catalogue candidates. No raw financial transaction data is sent.
+- Alibaba FC output is validated by the backend service shape; local heuristic fallback keeps demos available without external AI.
 
 ### Network security
 - **Postgres never publicly exposed** — Docker internal network only
@@ -519,6 +521,6 @@ Security is layered, with each layer demonstrable in MVP:
 - All NADI portal actions logged to audit trail (timestamp · user · action · scope)
 
 ### Audit trail
-- `pool_transactions`, `paylater_obligations`, `repayments`, `kampung_trust_scores` — all append-only
+- `pool_transactions` and `repayments` are canonical event records; `paylater_obligations` and kampung trust score fields include mutable rollups
 - NADI confirmation actions logged
 - Vote outcomes immutable after tally

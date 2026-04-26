@@ -56,7 +56,7 @@ Timing shown in `[mm:ss]` cues. Bracketed stage directions are notes, not spoken
 
 ***Technical Implementation —*** *Append-only ledger, HMAC webhooks, argon2 hashing, role-scoped NADI portal, scale path didokumenkan dari single EC2 sampai Aurora multi-AZ.*
 
-***Multi-Cloud Service Usage —*** **AWS** *(Gold sponsor) untuk main compute dan Postgres ledger.* **Alibaba Cloud** *(Platinum sponsor) untuk AI workload — Function Compute dengan Qwen LLM yang BM-native. Kedua-dua sponsor cloud tercapai. Failover ke Anthropic Claude kalau Alibaba down.*
+***Multi-Cloud Service Usage —*** **AWS** *(Gold sponsor) untuk main compute dan Postgres ledger.* **Alibaba Cloud** *(Platinum sponsor) untuk AI workload — Function Compute dengan Qwen LLM yang BM-native. Kedua-dua sponsor cloud tercapai. Kalau Alibaba down, backend fallback kepada heuristic supaya demo tak tersekat.*
 
 ***Impact & Feasibility —*** *Test bed real:* **NADI Felda Gedangsa, Hulu Selangor** *— Felda smallholder community, MCMC-run NADI centre, satu jam setengah drive dari sini. Tiada welfare baru direka. Tiada lender baru. Compose institusi yang dah ada.*
 

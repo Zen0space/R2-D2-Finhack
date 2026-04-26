@@ -42,7 +42,7 @@ DuitLater integrates AI across **three distinct layers of the project lifecycle*
 
 1. **Pre-product** — ~2,400 lines of planning artifacts (PRD · architecture · pitch deck · narration · dev plan · brand · team docs) generated through multi-agent AI orchestration before product code began. Every doc in this repo is evidence.
 2. **Process** — [`maji-core/`](./maji-core/) team coordinator ships with the repo: 6 slash commands, schema-locked persistent memory, phase gates (Kairu's ladder), Akal coding discipline, Jimat communication register.
-3. **In-product** — Penasihat catalogue suggester + NADI weekly summary with anomaly detection (multi-cloud routing: Alibaba Cloud Function Compute · Qwen primary · Anthropic Claude failover).
+3. **In-product** — Penasihat catalogue suggester + NADI weekly summary with anomaly detection (Alibaba Cloud Function Compute · Qwen when configured, deterministic heuristic fallback when it is not).
 
 Full breakdown: [docs/ai-methodology.md](./docs/ai-methodology.md).
 
@@ -131,7 +131,7 @@ Current prototype scope:
 
 Important accuracy note:
 - Current code has **Penasihat with Alibaba optional + heuristic fallback**.
-- Claude fallback and NADI weekly summary are product-roadmap items unless code is added later.
+- External LLM runtime fallback beyond Alibaba is a product-roadmap item unless code is added later; NADI weekly summary exists with Alibaba optional + heuristic fallback.
 - Free Cloudflare DNS gives round-robin DNS only, not paid health-checked automatic failover.
 
 ---

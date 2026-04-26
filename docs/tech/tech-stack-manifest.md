@@ -188,11 +188,12 @@ This gives one source of truth for: Prisma schema → generated client (used by 
 | `@aws-sdk/client-s3` | ^3.700 | S3 SDK v3 (modular) |
 | `@aws-sdk/s3-request-presigner` | ^3.700 | Presigned URL generator (direct-upload pattern) |
 
-### 1.6 AI — Claude (Penasihat)
+### 1.6 AI — Alibaba FC / Qwen (Penasihat)
 
 | Package | Version | Role |
 |---|---|---|
-| `@anthropic-ai/sdk` | ^0.32 | Claude API client (streaming + non-streaming) |
+| Alibaba Function Compute URL | env-provided | Optional Qwen-backed structured inference |
+| Local heuristic fallback | built-in | Deterministic suggestions and summaries when AI is unavailable |
 
 ### 1.7 Utilities — Scheduled jobs, dates, IDs, money
 
@@ -728,8 +729,10 @@ AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=<secret>
 S3_BUCKET=duitlater-uploads
 
-# Anthropic Claude
-ANTHROPIC_API_KEY=sk-ant-...
+# Alibaba Function Compute (optional AI)
+ALIBABA_FUNCTION_COMPUTE_URL=https://...
+ALIBABA_FUNCTION_COMPUTE_URL_NADI=https://...
+ALIBABA_FUNCTION_COMPUTE_KEY=<optional-shared-secret>
 
 # TNG eWallet (confirm at sponsor booth — used for principal collection + maturity payout)
 TNG_API_BASE=https://sandbox.tngwallet.com.my
@@ -763,7 +766,7 @@ NEXT_PUBLIC_SENTRY_DSN=<optional>
 ## Section 9 — Version Locks & Compatibility Notes
 
 - **Node 22 LTS** — current Active LTS (since Oct 2024). Native `fetch`, `--watch`, built-in `.env` loading, stable WebStreams. No 23/24 in prod.
-- **Postgres 17** — current stable (since Sep 2024). Drizzle 0.36+ + `pg` 8.13+ both fully compatible.
+- **Postgres 17** — current stable (since Sep 2024). Prisma + `pg` 8.13+ are the locked database path.
 - **pnpm 9.x** — workspace + `workspace:*` protocol. Pin via `packageManager` field in root `package.json` so all team members + CI use identical version.
 - **Next.js 15 App Router (not Pages)** — caching defaults flipped to opt-in; React 19 RC built in; turbopack dev stable. Pages Router is legacy.
 - **Tailwind v4 (not v3)** — Oxide engine; config moves from `tailwind.config.js` to CSS `@theme` blocks; `@import "tailwindcss"` replaces the three `@tailwind` directives.
@@ -861,8 +864,7 @@ pnpm --filter backend add \
   hono @hono/node-server \
   better-auth argon2 pg \
   zod @t3-oss/env-core dotenv \
-  @aws-sdk/client-s3 @aws-sdk/s3-request-presigner \
-  @anthropic-ai/sdk
+  @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
 
 # Workspace dependency on Prisma client + zod schemas
 pnpm --filter backend add db@workspace:*
@@ -967,7 +969,7 @@ pnpm -w add -D <pkg>               # add dep to root only
 | Request validation | zod | ✅ |
 | Env validation | @t3-oss/env-core | ✅ |
 | File uploads | AWS SDK + presigned URLs | ✅ |
-| AI chat (Penasihat) | @anthropic-ai/sdk | ✅ |
+| AI suggestions (Penasihat) | Alibaba FC env URL + heuristic fallback | ✅ |
 | Scheduled jobs (maturity payouts) | node-cron | ✅ |
 | Structured logging | pino | ✅ |
 | Rate limiting | hono-rate-limiter | ✅ |

@@ -223,9 +223,9 @@ Innovation and Security tracks were considered. Innovation would have required A
 
 | Criterion (verbatim) | DuitLater fit |
 |---|---|
-| **AI & Intelligent Systems** — *Effective and meaningful integration of AI to address the problem statements* | **Three layers across the project lifecycle.** Layer 1 (pre-product): ~2,400 lines of planning artifacts generated through multi-agent AI orchestration before product code began. Layer 2 (process): [`maji-core/`](../../maji-core/) team coordinator — 6 slash commands, phase gates, schema-locked persistent memory, Akal coding discipline, Jimat register. Layer 3 (in-product): Penasihat catalogue suggester (Claude API, structured BM output) + NADI weekly summary with anomaly detection. Full 3-layer story: [`docs/ai-methodology.md`](../ai-methodology.md). |
+| **AI & Intelligent Systems** — *Effective and meaningful integration of AI to address the problem statements* | **Three layers across the project lifecycle.** Layer 1 (pre-product): ~2,400 lines of planning artifacts generated through multi-agent AI orchestration before product code began. Layer 2 (process): [`maji-core/`](../../maji-core/) team coordinator — 6 slash commands, phase gates, schema-locked persistent memory, Akal coding discipline, Jimat register. Layer 3 (in-product): Penasihat catalogue suggester + NADI weekly summary, both Alibaba/Qwen-ready with deterministic fallback. Full 3-layer story: [`docs/ai-methodology.md`](../ai-methodology.md). |
 | **Technical Implementation** — *Scalability, robustness, security or prototype* | Append-only ledger · HMAC-verified webhooks · argon2 hashing · role-based NADI portal scoping · TypeScript strict end-to-end · explicit production scale path documented (read replica → ASG → Aurora multi-AZ) · rate limiting via `hono-rate-limiter` · full security posture in [ARCHITECTURE.md](../tech/ARCHITECTURE.md). |
-| **Multi-Cloud Service Usage** — *Effective and purposeful use of at least two or more cloud platforms* | **AWS + Anthropic Cloud** — AWS hosts main backend (EC2 + Postgres). Anthropic Claude API (separate cloud platform) hosts AI inference for Penasihat suggester and NADI weekly summary. Both are production-grade cloud services with distinct SLAs, billing, and failure domains. |
+| **Multi-Cloud Service Usage** — *Effective and purposeful use of at least two or more cloud platforms* | **AWS + Alibaba Cloud** — AWS hosts main backend (EC2 + Postgres). Alibaba Function Compute hosts optional Qwen inference for Penasihat and NADI summary when configured; the backend keeps deterministic fallback for demo resilience. |
 | **Impact & Feasibility** — *Real-world use case relevance, sustainability and potential adoption* | Test bed: **NADI Felda Gedangsa, Hulu Selangor** — real Felda smallholder community with existing MCMC-run NADI centre. Real institutional package: TNG (Gold sponsor · 23M users) + NADI/MCMC (188 centres nationally · 84 in Selangor) + MyKasih (3.7M monthly SARA recipients · 10,000+ merchant network). 2.9M B40 households nationally. No new welfare programme invented — DuitLater composes existing rails. No new credit instrument — uses TNG's existing PayLater risk model. |
 | **Presentation & Teamwork** — *Clarity in project demo and pitch, teamwork, documentation quality* | 4-min on-stage script in [pitch-narration.md](../pitch/pitch-narration.md) with recovery phrases per slide. 8-slide deck in [pitch-deck.md](../pitch/pitch-deck.md). Documentation quality: 600+ line PRD, ARCHITECTURE with 8 mermaid diagrams, WORLD manifesto, BRAND visual identity guide, DEVELOPMENT-PLAN with phase-by-phase testable outcomes. maji-core team coordinator with 6 slash commands, phase-gate enforcement, committed personal memory for cross-team visibility. |
 
@@ -255,7 +255,7 @@ Innovation and Security tracks were considered. Innovation would have required A
 
 **US-5 — Get item suggestions**
 > As a locked pool, I want AI Penasihat to suggest items from MyKasih catalogue that match our combined cap and stated need.
-- **Acceptance:** Click "Cadangkan barang" → Penasihat returns top-5 ranked items in BM with: item name, price, category, allocation% of pool cap, BM reasoning citing the pool's stated need. Powered by Claude API with structured output.
+- **Acceptance:** Click "Cadangkan barang" → Penasihat returns top-5 ranked items in BM with: item name, price, category, allocation% of pool cap, BM reasoning citing the pool's stated need. Powered by Alibaba/Qwen when configured, with deterministic fallback.
 
 **US-6 — Filter suggestions by category**
 > As a pool, I want to filter suggestions to specific categories (e.g., "alat ternakan" or "alat sekolah") so we can refine the choice.
@@ -329,14 +329,14 @@ Innovation and Security tracks were considered. Innovation would have required A
 - **F-AI1** `POST /api/penasihat/suggest`: body `{ poolId }`, requires auth + pool membership
 - **F-AI2** Backend assembles context: combined cap, stated need, kampung context, season (current month)
 - **F-AI3** Backend queries `mykasih_catalogue` table for items within cap range
-- **F-AI4** Claude API call with locked system prompt + structured output schema: `{ items: [{ id, name, price, category, allocation_pct, reasoning_bm, reasoning_en }] }`
+- **F-AI4** Alibaba Function Compute call with structured output schema, or local heuristic fallback: `{ items: [{ id, name, price, category, allocation_pct, reasoning_bm, reasoning_en }] }`
 - **F-AI5** Response cached per pool for 30 min (avoid re-spending API quota on UI re-renders)
 
 ### 9.5 AI NADI Weekly Summary
 
 - **F-NS1** `POST /api/nadi/summary`: body `{ kampungId, weekStart }`, requires `nadi_staff` role
 - **F-NS2** Backend assembles weekly context: pools formed, top-requested items, kampung trust score Δ, late-payment events
-- **F-NS3** Claude API call with structured output: `{ headline_bm, observations_bm: string[], anomalies_bm: string[], suggestion_bm }`
+- **F-NS3** Alibaba Function Compute call with structured output, or local heuristic fallback: `{ headline_bm, observations_bm: string[], anomalies_bm: string[], suggestion_bm }`
 - **F-NS4** Surfaces on `/nadi/dashboard` as the weekly briefing card
 - **F-NS5** Anomaly detection: clusters of 3+ late payments same week flagged as kampung-distress signal
 - **F-NS6** Audit-friendly — all summaries logged with generation timestamp
@@ -397,7 +397,7 @@ Innovation and Security tracks were considered. Innovation would have required A
 
 - Frontend Time-to-Interactive < 3s on a fresh laptop on conference WiFi
 - API p95 < 500ms for non-AI routes
-- Penasihat suggestion synchronous response < 6s (Claude API + DB query combined)
+- Penasihat suggestion synchronous response < 6s when Alibaba FC is configured; heuristic fallback should return sub-second after DB query
 
 ### 10.2 Security
 
@@ -406,7 +406,7 @@ Innovation and Security tracks were considered. Innovation would have required A
 - TNG sandbox webhooks HMAC-verified (when integrated)
 - Append-only repayment ledger (no DELETE, no destructive UPDATE)
 - NADI portal scope-limited (no individual member financial data exposed)
-- No PII passed to Claude API beyond first name + pool numbers + stated need
+- No raw financial transaction data passed to AI inference; Penasihat context is limited to pool cap, stated need/category, kampung name, month, and catalogue candidates
 
 ### 10.3 Accessibility
 
@@ -433,7 +433,7 @@ Innovation and Security tracks were considered. Innovation would have required A
 ### 10.6 Resilience
 
 - Graceful degradation if TNG sandbox unreachable: simulated approvals with clear "DEMO" badge
-- Graceful degradation if Claude API rate-limited: Penasihat falls back to non-AI catalogue browse + filter
+- Graceful degradation if Alibaba FC is unavailable or rate-limited: Penasihat falls back to deterministic catalogue ranking
 - Database connection failures → 503 with retry hint, not 500
 
 ---
@@ -456,7 +456,7 @@ Single EC2 t3.medium · ap-southeast-1 · 4-container Docker spine. Same-domain 
                   [ Better Auth · sessions ]
                              |
                              v outbound
-        [ TNG PayLater sandbox ] · [ Claude API ] · [ MyKasih catalogue (seeded) ]
+        [ TNG PayLater sandbox ] · [ Alibaba FC/Qwen optional ] · [ MyKasih catalogue (seeded) ]
 ```
 
 ### Repository layout — pnpm workspace monorepo
@@ -496,8 +496,8 @@ Schema generates the typed Prisma client; both backend and frontend import types
 ### Key invariants
 
 - Money columns are integer cents (never float)
-- `PaylaterObligation` rows append-only after creation
-- `Repayment` append-only; corrections via compensating rows
+- `Repayment` rows are append-only; corrections happen via compensating rows
+- `PaylaterObligation` is created once, while `cyclesPaid` is a mutable rollup derived from repayment rows
 - A `Pool` can only transition forward (`DRAFT → LOCKED → … → COMPLETED`)
 - `Pool.combinedCap` is computed at lock time; never recalculated
 - `KampungTrustScore` recalculated on every pool completion or payment event
@@ -548,7 +548,7 @@ Phase advancement gated by `/maji-gate`. See [maji-core/protocols/phase-gate.md]
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | TNG sandbox not provisioned by Day 1 | Medium | High | Backend abstracts payment provider; mock TNG client returns success in dev |
-| Claude API rate-limit during demo | Low | High | Pre-cache common Penasihat suggestions for demo pool |
+| AI provider rate-limit during demo | Low | High | Pre-cache common Penasihat suggestions; heuristic fallback remains available |
 | Phase 4 (vote + approval) eats Sunday morning | Medium | Medium | Cut to manual admin-button approval; preserve Phase 5 (repayment) window |
 | Phase 6 (NADI portal) ambitious for parallel | Medium | Low | Cut NADI portal to read-only summary; pitch deck still claims feature exists |
 | Demo machine fails on stage | Low | Critical | Backup video pre-recorded; pitch narration self-contained without screen |

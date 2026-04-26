@@ -103,7 +103,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 - Migration: `pnpm --filter db migrate` (catalogue seed runs as part of migration)
 - Routes:
   - `GET /api/catalogue` â€” list catalogue items (with category filter)
-  - `POST /api/penasihat/suggest` â€” body `{ poolId }`; backend assembles pool context (cap, stated need, current month for seasonal); calls Claude API with structured-output prompt; returns top 5 items with BM reasoning + allocation%; caches result on `PoolSuggestion` for 30 min
+  - `POST /api/penasihat/suggest` â€” body `{ poolId }`; backend assembles pool context (cap, stated need, current month for seasonal); calls Alibaba FC/Qwen when configured or local heuristic fallback; returns top 5 items with BM reasoning + allocation%; caches result on `PoolSuggestion` for 30 min
 
 **Frontend**
 - On locked pool detail: "Cadangkan barang" button â†’ calls suggest endpoint
@@ -190,7 +190,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 **Backend**
 - Route: `POST /api/nadi/summary` â€” body `{ kampungId, weekStart }`, requires `nadi_staff` role
 - Backend assembles weekly context: pools formed, top items requested, kampung trust score Î”, late-payment events
-- Calls `services/nadi-summary.ts` â†’ Claude API with structured-output prompt
+- Calls `services/nadi-summary.ts` â†’ Alibaba FC/Qwen when configured, otherwise heuristic summary
 - Output JSON: `{ headline_bm, observations_bm: string[], anomalies_bm: string[], suggestion_bm }`
 - Anomaly detection: clusters of 3+ late payments same week â†’ flagged as kampung-distress signal
 - Logged to `NadiSummary` table (audit + provider observability)
@@ -234,7 +234,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 - Deploy `penasihat-suggest` function (Node.js 18 Â· 512 MB Â· 10s timeout Â· HTTP trigger)
 - Deploy `nadi-summary` function (same specs)
 - Update `packages/backend/.env.prod` on all 3 EC2 with `ALIBABA_FUNCTION_COMPUTE_URL` + `ALIBABA_FUNCTION_COMPUTE_URL_NADI`
-- Test curl â†’ FC returns BM suggestions via Qwen; Claude as fallback on 5xx
+- Test curl â†’ FC returns BM suggestions via Qwen; heuristic fallback on 5xx
 
 **Bahagian C â€” Cross-cloud backup**
 - `pg_dump` cron on Server 1 (hourly â†’ AWS S3 `duitlater-postgres-backups`)
@@ -246,7 +246,7 @@ Every phase ships **backend + frontend together**. No "Phase 1: backend only, Ph
 
 **Time estimate:** 4â€“6 hours (Sunday 13:00 â†’ 19:00, parallel with Phase 5 tail + Phase 6)
 
-**Cut-line:** If Alibaba FC deploy slips, backend falls back to Claude API automatically â€” no demo blockage. If Cloudflare LB setup is incomplete, single-server deploy from `infra/RELEASE.md` is the fallback. Never let infra complexity block Phase 6 pitch polish.
+**Cut-line:** If Alibaba FC deploy slips, backend falls back to heuristic ranking automatically â€” no demo blockage. If Cloudflare LB setup is incomplete, single-server deploy from `infra/RELEASE.md` is the fallback. Never let infra complexity block Phase 6 pitch polish.
 
 **Owner:** Moon (primary Â· all infra) Â· Ijam (Alibaba Cloud sponsor credit redemption)
 
