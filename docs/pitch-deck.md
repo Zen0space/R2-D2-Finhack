@@ -90,7 +90,7 @@ Narration: [pitch-narration.md](./pitch-narration.md). This file is slide conten
 **Mapping table** (Inter 14pt)
 | Criterion | DuitLater fit |
 |---|---|
-| **AI & Intelligent Systems** | **3 layers** · (1) AI generated 2,400+ lines of planning artifacts before code · (2) `maji-core` team coordinator enforces phase gates + memory + discipline during build · (3) in-product Penasihat suggester + NADI summary · Qwen primary · Claude fallback |
+| **AI & Intelligent Systems** | **3 layers** · (1) AI generated 2,400+ lines of planning artifacts before code · (2) `maji-core` team coordinator enforces phase gates + memory + discipline during build · (3) in-product Penasihat suggester + NADI summary · Qwen when configured · heuristic fallback |
 | **Technical Implementation** | Append-only ledger · HMAC webhooks · argon2 · role-scoped NADI portal · documented scale path |
 | **Multi-Cloud Service Usage** | **AWS** (compute · DB · S3) + **Alibaba Cloud** (Function Compute · Qwen LLM · OSS mirror) — Gold + Platinum sponsors both used |
 | **Impact & Feasibility** | **NADI Felda Gedangsa** pilot · 188 NADIs nationally · 2.9M B40 households · zero new welfare programmes invented |
@@ -142,7 +142,7 @@ Narration: [pitch-narration.md](./pitch-narration.md). This file is slide conten
 | Caddy · TLS + path-routing | OSS · catalogue mirror |
 
 **Sub-text** (Inter 14pt, slate, centered)
-> Backend: Hono + Drizzle + Better Auth · Frontend: Next.js 15 + Tailwind v4 + shadcn/ui · AI fallback: Anthropic Claude. No Kubernetes, no Redis, no GraphQL.
+> Backend: Hono + Prisma + Better Auth · Frontend: Next.js 15 + Tailwind v4 · AI fallback: deterministic heuristic. No Kubernetes, no Redis, no GraphQL.
 
 ---
 

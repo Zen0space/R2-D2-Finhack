@@ -45,7 +45,7 @@ Mapped to Kairu's vertical-slice discipline (every phase = backend + frontend + 
 
 Add new decisions as bullet items below as the build progresses. Each entry: date · decision · context · who.
 
-- **2026-04-25 (pre-hackathon)** · Tech stack locked to Node + TS + Postgres + S3 + Better Auth + Hono + Drizzle + Next.js 15 + shadcn/ui · Moon & Akmal aligned · See [TECH-STACK.md](./TECH-STACK.md)
+- **2026-04-25 (pre-hackathon)** · Tech stack locked to Node + TS + Postgres + Better Auth + Hono + Prisma + Next.js 15 + Tailwind v4 · Moon & Akmal aligned · See [TECH-STACK.md](../tech/TECH-STACK.md)
 - **2026-04-25 (pre-hackathon)** · Deployment target: single EC2 t3.medium with Docker (caddy + frontend + app + postgres) · Pattern A (same-domain path-routing) selected for zero-CORS dev velocity · Ijam decision · See [ARCHITECTURE.md](./ARCHITECTURE.md)
 - **2026-04-25** · MatNep added as designer · classical direction + brand identity · External addition (not on original FINHACK roster) · Ijam decision
 - **2026-04-25** · Track switch from Financial Inclusion to **Innovation** with three-pillar umbrella (Kutu · Penasihat · Pengawal) · rationale: Innovation brief covers the full platform; Financial Inclusion would have been a single-pillar pitch. Phase 5 split into 5a (Penasihat chat) · 5b (Penasihat Robo-Advisor) · 5c (Pengawal scam sentinel). Adam removed from team; R2-D2 final at 5: Ijam, Moon, Akmal, Kairu, MatNep · Ijam decision

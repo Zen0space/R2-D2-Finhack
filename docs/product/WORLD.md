@@ -138,7 +138,7 @@ DuitLater stands on this lineage and brings it to the specific Malaysian institu
 - **Institutionally honest.** Three real Malaysian institutions, all with existing B40/Financial Inclusion mandate. Pitch claims verifiable.
 - **TNG-positioned.** DuitLater is a feature TNG could ship — not an external integration that fights against TNG's interests.
 - **Sponsor-aligned.** Financial Inclusion track wants solutions for unbanked + low-income communities. DuitLater addresses both verbatim.
-- **Tech-stack proportional.** Stack matches scope — Postgres + Hono + Next.js + Claude. No Kubernetes for a 48-hour MVP.
+- **Tech-stack proportional.** Stack matches scope — Postgres + Hono + Next.js + Alibaba/Qwen optional AI with heuristic fallback. No Kubernetes for a 48-hour MVP.
 - **Pitch-ready in 4 minutes.** The story explains itself; the demo proves it.
 - **Cultural authenticity.** No imported ROSCA model — Malaysian institutions, in Malaysian voice, on Malaysian rails, for Malaysian households.
 

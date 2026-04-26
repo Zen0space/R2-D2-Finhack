@@ -113,7 +113,7 @@ stateDiagram-v2
 |---|---|---|
 | `DRAFT` | Edit any field | Initiator |
 | `LOCKED` | Roster frozen · combinedCap fixed | TNG |
-| `SUGGESTING` | Penasihat queries Claude API | AI |
+| `SUGGESTING` | Penasihat queries Alibaba FC/Qwen when configured, otherwise heuristic ranker | AI |
 | `VOTING` | Each member votes once | Members |
 | `APPROVED` | TNG debits committed | TNG + Backend |
 | `ACTIVE` | Monthly repayments accrue | Members + NADI |
@@ -205,7 +205,7 @@ flowchart LR
     Postgres[("Postgres :5432<br/>Prisma 6")]
     Auth[Better Auth<br/>sessions]
     TNG["TNG PayLater<br/>sandbox"]
-    Claude["Claude API<br/>Penasihat"]
+    AI["Alibaba FC / Qwen<br/>Penasihat optional"]
     Cat["MyKasih catalogue<br/>seeded · 94 items"]
 
     Browser --> Caddy
@@ -215,7 +215,7 @@ flowchart LR
     Backend --> Postgres
     Backend <--> Auth
     Backend -->|outbound| TNG
-    Backend -->|outbound| Claude
+    Backend -->|outbound when configured| AI
     Backend --> Cat
 
     style Browser fill:#ffe4b5
@@ -307,7 +307,7 @@ flowchart TB
 flowchart LR
     subgraph Risks [Top risks]
         R1["TNG sandbox not<br/>provisioned Day 1"]
-        R2["Claude API rate-limit<br/>during demo"]
+        R2["AI provider rate-limit<br/>during demo"]
         R3["Phase 4 eats Sunday morning"]
         R4["Demo machine fails on stage"]
         R5["Pitch overruns 4 min"]

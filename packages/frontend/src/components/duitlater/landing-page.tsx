@@ -156,51 +156,45 @@ export function LandingPage() {
   return (
     <main className="zine-paper min-h-screen pb-24">
       {/* ─── HERO ────────────────────────────────────────────────────── */}
-      <ZineSection id="hero" color="brick" className="px-4 pb-24 pt-16 md:pb-28 md:pt-24">
-        <div className="page-shell relative">
-          <div className="relative z-10 mx-auto max-w-4xl text-center">
-            <span
-              className="zine-display inline-block border-2 border-[var(--dl-zine-paper)] px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-[var(--dl-zine-paper)] md:text-xs"
-              style={{ boxShadow: "3px 3px 0 var(--dl-zine-brick-dark)" }}
+      <ZineSection id="hero" color="brick" className="px-4 pb-20 pt-8 md:pb-28 md:pt-12">
+        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+          <span
+            className="zine-display inline-block border-2 border-[var(--dl-zine-paper)] px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-[var(--dl-zine-paper)] md:text-xs"
+            style={{ boxShadow: "3px 3px 0 var(--dl-zine-brick-dark)" }}
+          >
+            TNGD FINHACK 2026 · Financial Inclusion · Team R2-D2
+          </span>
+
+          <h1 className="mt-12">
+            <span className="sr-only">Sendiri tak mampu, ramai-ramai boleh!?</span>
+            <Image
+              src="/brand/sendiri_sendiri_png.png"
+              alt="Sendiri tak mampu, ramai-ramai boleh!?"
+              width={2077}
+              height={502}
+              priority
+              className="mx-auto h-auto w-full max-w-3xl select-none"
+            />
+          </h1>
+
+          <p className="mt-8 max-w-2xl text-lg leading-relaxed text-[var(--dl-zine-paper)] md:text-xl lg:text-2xl">
+            Pool TNG PayLater with neighbours. The pool lives on TNG. AI picks
+            from MyKasih. NADI hands over the goods. Open to anyone — no invite,
+            no bank account.
+          </p>
+
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/sign-up"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "zine-display !bg-[var(--dl-zine-paper)] !text-[var(--dl-zine-brick)] hover:!bg-[var(--dl-zine-paper-warm)]",
+              )}
+              style={{ boxShadow: "5px 5px 0 var(--dl-zine-brick-dark)" }}
             >
-              TNGD FINHACK 2026 · Financial Inclusion · Team R2-D2
-            </span>
-
-            <h1 className="mt-10 md:mt-14">
-              <span className="sr-only">Sendiri tak mampu, ramai-ramai boleh!?</span>
-              <Image
-                src="/brand/sendiri_sendiri_png.png"
-                alt="Sendiri tak mampu, ramai-ramai boleh!?"
-                width={2077}
-                height={502}
-                priority
-                className="mx-auto h-auto w-full max-w-3xl select-none"
-              />
-            </h1>
-
-            <p className="mx-auto mt-10 max-w-2xl text-lg leading-relaxed text-[var(--dl-zine-paper)] md:text-xl lg:text-2xl">
-              Pool TNG PayLater with neighbours. The pool lives on TNG. AI picks
-              from MyKasih. NADI hands over the goods. Open to anyone — no invite,
-              no bank account.
-            </p>
-
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/sign-up"
-                className={cn(
-                  buttonVariants({ size: "lg" }),
-                  "zine-display !bg-[var(--dl-zine-paper)] !text-[var(--dl-zine-brick)] hover:!bg-[var(--dl-zine-paper-warm)]",
-                )}
-                style={{ boxShadow: "5px 5px 0 var(--dl-zine-brick-dark)" }}
-              >
-                Try Now
-              </Link>
-              <InstallAppButton />
-            </div>
-
-            <p className="zine-display mt-6 text-[11px] uppercase tracking-[0.24em] text-[var(--dl-zine-paper)] opacity-70">
-              Just enter your name. Invite neighbours after.
-            </p>
+              Try Now
+            </Link>
+            <InstallAppButton />
           </div>
         </div>
       </ZineSection>
@@ -424,8 +418,10 @@ export function LandingPage() {
             </figcaption>
           </figure>
 
-          <p className="mt-6 max-w-2xl text-sm text-[var(--dl-slate)]">
-            Real institutions. Real settlement. Real household pool dynamics — not synthetic.
+          <p className="mt-6 max-w-2xl text-base text-[var(--dl-slate)] md:text-lg">
+            The kampung exists. The rails exist. Kutu already runs.
+            <br className="hidden md:block" />
+            <span className="font-semibold text-[var(--dl-zine-brick)]"> We connect — we don&rsquo;t invent.</span>
           </p>
 
           <ul className="mt-12 grid w-full gap-4 text-left sm:grid-cols-2">

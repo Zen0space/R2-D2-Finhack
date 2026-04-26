@@ -13,7 +13,7 @@ The split is deliberate:
 - **B40 user financial context stays in regional sovereign cloud** (Alibaba Cloud)
 - **AI inference cost optimised** (Qwen pricing for small structured-output is favourable)
 - **BM-native LLM** (Qwen handles Bahasa Melayu reasoning more accurately than English-first models)
-- **Failover preserved** — backend falls back to Anthropic Claude if Alibaba FC unreachable
+- **Failover preserved** — backend falls back to the deterministic heuristic ranker if Alibaba FC is unreachable
 
 ## Functions
 
@@ -60,7 +60,7 @@ ALIBABA_FUNCTION_COMPUTE_URL=http://localhost:8000/2016-08-15/proxy/duitlater-pe
   npm run dev
 ```
 
-If `ALIBABA_FUNCTION_COMPUTE_URL` is unset, the backend falls back to Anthropic Claude (or the heuristic stub if no Claude key either).
+If `ALIBABA_FUNCTION_COMPUTE_URL` is unset, the backend falls back to the local deterministic heuristic ranker.
 
 ## Multi-cloud architecture
 
@@ -89,4 +89,4 @@ If `ALIBABA_FUNCTION_COMPUTE_URL` is unset, the backend falls back to Anthropic 
 ## Notes
 
 - The `penasihat-suggest` function is a thin wrapper around DashScope's Qwen API. No DuitLater business logic lives in Alibaba Cloud — only the AI inference call. This keeps regulatory + ops surface minimal.
-- Qwen system prompt is duplicated between the FC handler and the backend's Anthropic Claude fallback path — kept in sync via `backend/src/services/penasihat.ts` as the canonical spec.
+- Qwen request/response shape is mirrored by the backend heuristic path; keep `backend/src/services/penasihat.ts` as the canonical wire contract.

@@ -128,10 +128,10 @@ Narration: [pitch-narration.md](./pitch-narration.md). This file is slide conten
 > Deliberately minimal.
 
 **Five logos**
-- Node.js · TypeScript · PostgreSQL · TNG eWallet · Claude API
+- Node.js · TypeScript · PostgreSQL · TNG eWallet · Alibaba/Qwen optional
 
 **Sub-text** (Inter 16pt, slate, centered)
-> Hono + Drizzle + Better Auth + Next.js 15 + shadcn/ui. One EC2. Four containers. No Kubernetes.
+> Hono + Prisma + Better Auth + Next.js 15 + Tailwind v4. One EC2. Four containers. No Kubernetes.
 
 ---
 

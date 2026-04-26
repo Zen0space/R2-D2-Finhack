@@ -82,7 +82,7 @@ Timing shown in `[mm:ss]` cues. Bracketed stage directions are notes, not spoken
 
 ## [03:00] — Slide 6 · Stack · 15 seconds
 
-*Stack minimal. Node, TypeScript, Postgres, TNG sandbox, Claude API. Hono + Drizzle + Better Auth + Next.js 15 + shadcn/ui. Satu EC2. Empat container. Tak Kubernetes, tak GraphQL, tak Redis. Scope match size.*
+*Stack minimal. Node, TypeScript, Postgres, TNG sandbox, Alibaba/Qwen optional. Hono + Prisma + Better Auth + Next.js 15 + Tailwind v4. Satu EC2. Empat container. Tak Kubernetes, tak GraphQL, tak Redis. Scope match size.*
 
 [Beat. Change slide.]
 
@@ -138,7 +138,7 @@ Timing shown in `[mm:ss]` cues. Bracketed stage directions are notes, not spoken
 | Situation | Recovery |
 |---|---|
 | Demo screen freezes | *"Let me continue while the demo recovers —"* skip to slide 6 early |
-| Penasihat slow to stream | *"Penasihat reasoning runs through Claude — first response can take a beat. Slide 6 architecture while it loads."* |
+| Penasihat slow to stream | *"Penasihat has a deterministic fallback, so we can keep moving while the AI route recovers."* |
 | Pool vote demo doesn't trigger | *"Vote tally runs in real-time — production has a 10-second poll. For demo, fast-forward."* |
 | Timer hits 3:30 on slide 5 | Cut repayment sub-demo. Verbal claim: *"Repayment ledger shipped — full demo in repo."* Jump to slide 7 |
 | Judge interrupts | *"Good question — let me answer after the pitch so I don't eat the clock."* |

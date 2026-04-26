@@ -126,7 +126,7 @@ Companion to the 4-min business pitch. Deeper architectural detail for technical
 
 **Failover preserved:**
 - Backend service router (`services/penasihat.ts`, `services/nadi-summary.ts`) calls Alibaba Function Compute primary
-- Falls back to **Anthropic Claude** on 5xx or timeout (>6s)
+- Falls back to deterministic backend heuristic ranking on 5xx or timeout (>6s)
 - Both providers receive identical structured-output schema
 - Provider used returned in response for observability
 
@@ -230,8 +230,8 @@ Backend (Server 1 · Hono):
         │     → Function calls Qwen-plus via DashScope API
         │     → Returns structured 5 suggestions
         │     ├─ on 200: return to user
-        │     └─ on 5xx/timeout: fallback to Claude
-        └─ else: call Anthropic Claude directly
+        │     └─ on 5xx/timeout: fallback to heuristic
+        └─ else: use local heuristic ranker
    4. Cache to pool_suggestions table for 30 min
    5. Return suggestions + provider field for observability
 ```
@@ -252,10 +252,10 @@ if (env.ALIBABA_FUNCTION_COMPUTE_URL) {
     const items = await callAlibabaFunctionCompute(ctx, candidates);
     return { items, provider: "alibaba-qwen" };
   } catch (err) {
-    logger.warn({ err }, "Alibaba FC failed; falling back to Anthropic Claude");
+    logger.warn({ err }, "Alibaba FC failed; falling back to heuristic");
   }
 }
-const items = await callClaude(ctx, candidates);
+const items = rankCandidatesHeuristic(ctx, candidates);
 return { items, provider: "anthropic-claude" };
 ```
 
@@ -289,7 +289,7 @@ This is **longitudinal pattern surfacing**, not single-shot inference. AI looks 
 
 - 188 NADI centres × weekly cycles = 9,776 weekly contexts annually
 - Cost-optimised serverless inference scales transparently
-- Same multi-cloud routing pattern (Alibaba primary, Claude fallback)
+- Same routing pattern (Alibaba when configured, heuristic fallback)
 
 :::
 
@@ -395,8 +395,8 @@ Forward-only transitions. Each transition logged with timestamp + initiator.
 ## Invariants
 
 - All money columns: integer cents (never float)
-- `paylater_obligations` rows append-only after creation
 - `repayments` append-only · corrections via compensating rows
+- `paylater_obligations.cyclesPaid` is a mutable rollup derived from repayment rows
 - Pool `combined_cap_cents` set at lock time · never recalculated
 - `kampung_trust_scores` recalculated on every repayment or pool completion event
 
@@ -461,13 +461,13 @@ for obj in s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=today)["Contents"]:
 
 ## Money math
 - All amounts in **integer cents** — no floating-point drift
-- `paylater_obligations` and `repayments` append-only
+- `repayments` append-only; obligation progress fields are mutable rollups
 - Corrections via compensating rows referencing originals
 
 ## Data sovereignty
 - B40 user financial context flows to **Alibaba Cloud** (regional sovereign) via Function Compute, not US-based AI providers as primary
 - PII minimised in AI prompts — only first name + numeric pool context + stated need
-- Anthropic Claude as failover only · explicit downgrade path with logging
+- Heuristic fallback path with explicit logging when Alibaba FC is unavailable
 
 ## Network security
 - Postgres never publicly exposed — Docker internal network only
@@ -596,13 +596,13 @@ S3 hourly backups              S3 + cross-cloud OSS daily                 Same �
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | TNG sandbox not provisioned by Day 1 | Medium | High | Backend abstracts payment provider · simulated client returns success |
-| Claude API rate-limit during demo | Low | High | Pre-cache common Penasihat responses |
+| AI provider rate-limit during demo | Low | High | Pre-cache common Penasihat responses; heuristic fallback remains available |
 | Phase 4 (vote + approval) eats Sunday morning | Medium | Medium | Cut to manual admin button · preserve Phase 5 window |
 | Demo machine fails on stage | Low | Critical | Backup video pre-recorded · narration self-contained |
 | Pitch overrun (>4 minutes) | Medium | High | Strict timer rehearsals (2× Sunday morning) · recovery phrases per slide |
 | Penasihat false positives (impractical items) | Medium | Medium | Curate seeded catalogue tightly · constrain Qwen prompt |
 | Kampung trust score reads as punitive | Low | High | Frame collectively · high-trust unlocks better terms (not low-trust penalised) |
-| Alibaba FC region down | Very low | Medium | Auto-failover to Anthropic Claude built into router |
+| Alibaba FC region down | Very low | Medium | Auto-failover to heuristic ranking built into router |
 | AWS ap-southeast-1 region down | Very low | Critical | Cross-cloud OSS backup mirror · DR drill documented |
 | Stack reconciliation between team's pivot Drizzle→Prisma | Low (resolved) | — | Team standardised on Prisma per `ijam2` branch |
 

@@ -48,9 +48,9 @@ Last updated: 25 April 2026
 | Package | Version | Role |
 |---|---|---|
 | `pg` | ^8.x | Postgres driver |
-| `drizzle-orm` | ^0.33+ | ORM |
-| `drizzle-kit` | ^0.24+ | Migration generator |
-| `drizzle-zod` | latest | Drizzle schema → zod bridge |
+| `prisma` | latest | Migration engine + schema tooling |
+| `@prisma/client` | latest | Generated DB client |
+| `@prisma/adapter-pg` | latest | Prisma Postgres adapter |
 
 ### 1.3 Validation & Environment
 
@@ -78,7 +78,8 @@ Last updated: 25 April 2026
 
 | Package | Version | Role |
 |---|---|---|
-| `@anthropic-ai/sdk` | ^0.27+ | Claude API client |
+| Alibaba Function Compute URL | env-provided | Optional Qwen-backed Penasihat/NADI inference |
+| Local heuristic fallback | built-in | Deterministic suggestions and summaries when AI service is unavailable |
 
 ### 1.7 Utilities
 
@@ -287,8 +288,10 @@ AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=<secret>
 S3_BUCKET=kutu-uploads
 
-# Anthropic
-ANTHROPIC_API_KEY=sk-ant-...
+# Alibaba Function Compute (optional AI)
+ALIBABA_FUNCTION_COMPUTE_URL=https://...
+ALIBABA_FUNCTION_COMPUTE_URL_NADI=https://...
+ALIBABA_FUNCTION_COMPUTE_KEY=<optional-shared-secret>
 
 # TNG eWallet
 TNG_API_BASE=https://sandbox.tngwallet.com.my
@@ -325,10 +328,9 @@ NEXT_PUBLIC_SENTRY_DSN=
 ```bash
 npm i hono @hono/node-server \
       better-auth argon2 \
-      drizzle-orm drizzle-zod pg \
+      @prisma/client pg \
       zod @t3-oss/env-core dotenv \
       @aws-sdk/client-s3 @aws-sdk/s3-request-presigner \
-      @anthropic-ai/sdk \
       node-cron date-fns nanoid \
       pino pino-pretty \
       hono-rate-limiter jose undici
@@ -380,7 +382,7 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 | Tailwind | v4 (not v3) | v4 config moves to CSS `@theme` |
 | React | 19 | Stable; Actions + `use()` hook available |
 | TypeScript | strict mode mandatory | Both repos |
-| ORM | Drizzle only (not Prisma) | Pick one — Drizzle for fast generate cycle |
+| ORM | Prisma only | Schema in `packages/db/prisma/schema.prisma` |
 
 ---
 
@@ -389,15 +391,15 @@ npx shadcn@latest add button input form label card dialog dropdown-menu \
 | Capability | Covered |
 |---|---|
 | HTTP framework | ✅ Hono |
-| Database persistence | ✅ Drizzle + pg + Postgres |
-| Migrations | ✅ drizzle-kit |
+| Database persistence | ✅ Prisma + pg + Postgres |
+| Migrations | ✅ Prisma migrations |
 | Authentication | ✅ Better Auth |
 | Session management | ✅ Better Auth |
 | Password hashing | ✅ argon2 |
 | Request validation | ✅ zod |
 | Env validation | ✅ @t3-oss/env-core |
 | File uploads | ✅ AWS SDK + presigned URLs |
-| AI chat | ✅ @anthropic-ai/sdk |
+| AI suggestions | ✅ Alibaba FC env URL + heuristic fallback |
 | Scheduled jobs | ✅ node-cron |
 | Logging | ✅ pino |
 | Rate limiting | ✅ hono-rate-limiter |

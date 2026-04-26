@@ -1219,8 +1219,8 @@ docker compose -f docker-compose.prod.yml -p prod restart app
 
 **Fix:**
 - Check Alibaba Cloud status page
-- Backend auto-falls-back to Anthropic Claude per the routing logic in `services/penasihat.ts`
-- Verify Claude API key in `.env.prod`
+- Backend auto-falls-back to heuristic ranking per the routing logic in `services/penasihat.ts`
+- Verify Alibaba Function Compute URL/key in `.env.prod`
 - Re-test FC endpoint directly with curl
 
 ### F.6 Optional OSS mirror fails
@@ -1386,7 +1386,7 @@ Setup ni mungkin ambik **4-6 jam first time** untuk Moon implement penuh (provis
 | Compute (web) | **VPS/EC2** × 3 | Same app stack on each server |
 | Database | **Postgres on VPS** | Streaming replication, manual primary promotion |
 | AI inference | **Alibaba Cloud Function Compute** | Qwen LLM (BM-native) |
-| AI fallback | **Anthropic** Claude | When Alibaba 5xx |
+| AI fallback | **Backend heuristic** | When Alibaba 5xx or unset |
 | Upload files | **Local VPS disk** | Syncthing syncs files only |
 | Optional backup | **AWS S3 / Alibaba OSS** | Add later after free baseline works |
 

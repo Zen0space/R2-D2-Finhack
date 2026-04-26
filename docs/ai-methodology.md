@@ -89,11 +89,11 @@ The full system is committed to the repo and runnable on Day 1. Judges can clone
 - BM reasoning grounded in the pool's stated need + seasonal context
 - EN reasoning supplemental
 
-**Multi-cloud routing:** [`backend/src/services/penasihat.ts`](../backend/src/services/penasihat.ts) calls **Alibaba Cloud Function Compute** (wrapping Qwen-plus, BM-native LLM) primary, falls back to **Anthropic Claude** on 5xx or timeout. Both providers receive identical structured-output schema.
+**Routing:** [`backend/src/services/penasihat.ts`](../packages/backend/src/services/penasihat.ts) calls **Alibaba Cloud Function Compute** (wrapping Qwen-plus, BM-native LLM) when configured, and falls back to a deterministic local heuristic on 5xx, timeout, or missing config. Both paths return the same structured-output schema.
 
 **Why Qwen primary:** Bahasa Melayu reasoning is more accurate on Qwen than on English-trained-then-multilingualised models. Cost-optimised for small structured-output workloads. Sponsor-aligned (Alibaba is Platinum sponsor). Data sovereignty narrative — B40 user financial context stays in regional sovereign cloud.
 
-**Demonstrable in pitch:** Slide 5 demo includes a live Penasihat call. Provider used (`alibaba-qwen` or `anthropic-claude`) is logged for observability.
+**Demonstrable in pitch:** Slide 5 demo includes a live Penasihat call. Provider used (`alibaba-qwen` or `heuristic`) is logged for observability.
 
 ### 3.2 NADI Weekly Summary — Anomaly Detection
 
@@ -107,7 +107,7 @@ The full system is committed to the repo and runnable on Day 1. Judges can clone
 
 **Anomaly detection rule:** clusters of 3+ late payments same week → flagged as kampung-distress signal, prompting NADI staff to follow up with affected members.
 
-**Multi-cloud routing:** Same pattern as Penasihat — [`backend/src/services/nadi-summary.ts`](../backend/src/services/nadi-summary.ts) routes to Alibaba Function Compute primary, Anthropic Claude fallback.
+**Routing:** Same pattern as Penasihat — [`packages/backend/src/services/nadi-summary.ts`](../packages/backend/src/services/nadi-summary.ts) routes to Alibaba Function Compute when configured, with deterministic heuristic fallback.
 
 **Why this earns the AI criterion deeper:** This is not single-shot inference — it's longitudinal pattern surfacing. AI looks across weekly state to identify something humans wouldn't easily spot at scale (188 NADI centres × weekly cycles = 9,776 weekly contexts annually). Cost-optimised serverless inference scales transparently.
 
@@ -147,6 +147,6 @@ Judges can verify each claim:
 
 - **Layer 1:** Browse `*.md` files in repo root and `docs/` — all committed, all timestamped, all in git history
 - **Layer 2:** Run `ls maji-core/` — see protocols (akal, jimat, bmad, phase-gate, schema, preflight, onboarding) + commands (6 prompt templates) + heroes (5 role cards) + memory (team-ledger.md committed)
-- **Layer 3:** `cat backend/src/services/penasihat.ts` — see the multi-cloud routing code · `cat backend/src/services/nadi-summary.ts` · `cat alibaba-function-compute/penasihat-suggest/index.js` — see the deployable Qwen wrapper
+- **Layer 3:** `cat packages/backend/src/services/penasihat.ts` — see the provider routing code · `cat packages/backend/src/services/nadi-summary.ts` · `cat alibaba-function-compute/penasihat-suggest/index.js` — see the deployable Qwen wrapper
 
 No layer is theatrical. Every layer is shipped.
