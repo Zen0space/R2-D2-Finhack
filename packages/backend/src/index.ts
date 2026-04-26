@@ -16,6 +16,7 @@ import { repaymentsRouter } from "./routes/repayments.js";
 import { kampungsRouter } from "./routes/kampungs.js";
 import { uploadsRouter } from "./routes/uploads.js";
 import { authVerificationRouter } from "./routes/auth-verification.js";
+import { authDemoRouter } from "./routes/auth-demo.js";
 import { ApiError, errorResponse } from "./lib/errors.js";
 import { prisma } from "db";
 
@@ -108,6 +109,10 @@ app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 app.use("/api/v1/pools/:id/suggest", aiLimiter);
 app.use("/api/v1/nadi/summary", aiLimiter);
 
+// Demo claim endpoint shares the auth rate limit budget — same brute-force
+// surface (an attacker enumerating names) and same protection needed.
+app.use("/api/v1/auth/demo/claim", authLimiter);
+
 // Simple ping with DB check — used by Caddy + Cloudflare LB health monitor
 app.get("/health", async (c) => {
   try {
@@ -134,6 +139,7 @@ app.route("/api/v1/mykasih", mykasihRouter);
 app.route("/api/v1/nadi", nadiRouter);
 app.route("/api/v1/uploads", uploadsRouter);
 app.route("/api/v1/auth", authVerificationRouter);
+app.route("/api/v1/auth/demo", authDemoRouter);
 
 const port = Number(process.env.PORT) || 4000;
 
