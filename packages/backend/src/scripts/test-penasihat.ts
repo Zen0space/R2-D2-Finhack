@@ -7,7 +7,7 @@
  * Usage (from repo root):
  *   pnpm --filter backend test:penasihat
  *
- * Requires BEDROCK_API_KEY + BEDROCK_OPENAI_BASE_URL in
+ * Requires OPENAI_API_KEY + OPENAI_BASE_URL in
  * packages/backend/.env (auto-loaded via dotenv/config).
  */
 
@@ -15,9 +15,9 @@ import "dotenv/config";
 import { b, getWeatherForDate } from "baml";
 
 async function main() {
-  if (!process.env.BEDROCK_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     console.error(
-      "❌ BEDROCK_API_KEY missing. Add it to packages/backend/.env or export it in the shell.",
+      "❌ OPENAI_API_KEY missing. Add it to packages/backend/.env or export it in the shell.",
     );
     process.exit(1);
   }
@@ -26,7 +26,7 @@ async function main() {
 
   console.log("🧪 Penasihat smoke test");
   console.log("   model:    anthropic.claude-haiku-4-5-20251001-v1:0");
-  console.log(`   endpoint: ${process.env.BEDROCK_OPENAI_BASE_URL}`);
+  console.log(`   endpoint: ${process.env.OPENAI_BASE_URL}`);
   console.log(`   weather:  ${weather.season} · ${weather.isRaining ? "raining" : "dry"} · ${weather.expectedTempC}°C`);
   console.log("");
 
