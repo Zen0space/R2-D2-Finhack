@@ -12,6 +12,14 @@ on:
       - '.github/workflows/backend-release.yml'
   workflow_dispatch:
 
+# Shared lock with frontend-release — never run two deploys against the same
+# VPS docker daemon in parallel; that triggers "removal of container ... is
+# already in progress" races. Builds still run in parallel; only the deploy
+# step queues.
+concurrency:
+  group: vps-dev-deploy
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build & push Docker image
@@ -66,10 +74,11 @@ jobs:
           script: |
             set -e
             cd /var/www/R2-D2-Finhack
-            git pull origin dev
+            git fetch origin dev
+            git reset --hard origin/dev
             export DUITLATER_DOMAIN=${{ secrets.DUITLATER_DOMAIN }}
             docker compose -f infra/docker-compose.dev.yml -p dev pull app
-            docker compose -f infra/docker-compose.dev.yml -p dev up -d app
+            docker compose -f infra/docker-compose.dev.yml -p dev up -d --remove-orphans app
             echo "✅ Dev backend deployed — migrations run automatically on container start"
             sleep 5
             docker compose -f infra/docker-compose.dev.yml -p dev logs app --tail 20

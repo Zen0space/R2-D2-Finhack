@@ -7,17 +7,24 @@ import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Logo } from "@/components/duitlater/brand/zine";
-import { InstallAppButton } from "@/components/pwa/install-app-button";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 
-type NavItem = { href: string; label: string; nadiOnly?: boolean };
+const landingAnchors = [
+  { href: "#gap", label: "Gap" },
+  { href: "#solution", label: "Solution" },
+  { href: "#stack", label: "Stack" },
+  { href: "#demo", label: "Demo" },
+  { href: "#ask", label: "Ask" },
+] as const;
 
-const navItems: NavItem[] = [
+type AppNavItem = { href: string; label: string; nadiOnly?: boolean };
+
+const appNav: AppNavItem[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/nadi/dashboard", label: "NADI" },
+  { href: "/nadi/dashboard", label: "NADI", nadiOnly: true },
 ];
 
 export function SiteHeader() {
@@ -49,9 +56,9 @@ export function SiteHeader() {
     onSuccess: () => {
       queryClient.setQueryData(["auth", "session"], null);
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      toast.success("Anda dah sign out.");
+      toast.success("You've been signed out.");
       setIsUserMenuOpen(false);
-      startTransition(() => router.push("/sign-in"));
+      startTransition(() => router.push("/"));
     },
     onError: () => toast.error("Couldn't sign out right now."),
   });
@@ -61,39 +68,65 @@ export function SiteHeader() {
   const firstName = user ? user.name.split(" ")[0] ?? user.name : null;
   const isNadiStaff = user?.role === "nadi_staff";
 
-  const visibleNav = navItems.filter((item) => (item.nadiOnly ? isNadiStaff : true));
+  const showAnchors = isLandingPath;
+  const visibleAppNav = appNav.filter((item) => (item.nadiOnly ? isNadiStaff : true));
 
   return (
     <header
       className="sticky top-0 z-40 border-b-[3px] border-[var(--dl-ink)] bg-[var(--dl-paper)]"
       style={{ boxShadow: "0 4px 0 var(--dl-ink)" }}
     >
-      <div className="page-shell flex h-16 items-center justify-between gap-4 md:h-[72px]">
-        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-3" aria-label="DuitLater home">
+      <div className="page-shell flex h-16 items-center gap-4 md:h-[72px]">
+        <Link
+          href={user && !isLandingPath ? "/dashboard" : "/"}
+          className="flex shrink-0 items-center gap-3"
+          aria-label="DuitLater home"
+        >
           <Logo width={130} priority={isLandingPath} />
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
-          {visibleNav.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <Link
+        {showAnchors ? (
+          <nav
+            className="hidden flex-1 items-center justify-center gap-1 md:flex"
+            aria-label="Sections"
+          >
+            {landingAnchors.map((item) => (
+              <a
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  "brutal-link zine-display px-3 py-2 text-sm tracking-[0.06em]",
-                  active && "text-[var(--dl-brick)]",
-                )}
-                data-active={active ? "true" : undefined}
+                className="brutal-link zine-display px-3 py-2 text-xs uppercase tracking-[0.18em] text-[var(--dl-ink)]"
               >
                 {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+              </a>
+            ))}
+          </nav>
+        ) : user ? (
+          <nav
+            className="hidden flex-1 items-center gap-1 md:flex"
+            aria-label="Primary"
+          >
+            {visibleAppNav.map((item) => {
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "brutal-link zine-display px-3 py-2 text-sm tracking-[0.06em]",
+                    active && "text-[var(--dl-brick)]",
+                  )}
+                  data-active={active ? "true" : undefined}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        ) : (
+          <div className="flex-1" />
+        )}
 
-        <div className="hidden items-center gap-3 md:flex">
-          <InstallAppButton />
+        <div className="hidden shrink-0 items-center gap-3 md:flex">
           {user ? (
             <div className="relative" ref={userMenuRef}>
               <button
@@ -107,7 +140,10 @@ export function SiteHeader() {
                   {firstName?.[0] ?? "?"}
                 </span>
                 <span className="hidden lg:inline">{firstName}</span>
-                <ChevronDown size={14} className={cn("transition-transform", isUserMenuOpen && "rotate-180")} />
+                <ChevronDown
+                  size={14}
+                  className={cn("transition-transform", isUserMenuOpen && "rotate-180")}
+                />
               </button>
               {isUserMenuOpen ? (
                 <div
@@ -117,12 +153,23 @@ export function SiteHeader() {
                 >
                   <div className="border-b-2 border-[var(--dl-ink)] pb-3">
                     <p className="zine-display text-base text-[var(--dl-ink)]">{user.name}</p>
-                    <p className="text-xs text-[var(--dl-slate)]">{user.email}</p>
-                    <p className="zine-display mt-1 text-[10px] uppercase tracking-[0.18em] text-[var(--dl-brick)]">
-                      {user.kampung.name}
-                    </p>
+                    {user.kampung?.name ? (
+                      <p className="zine-display mt-1 text-[10px] uppercase tracking-[0.18em] text-[var(--dl-brick)]">
+                        {user.kampung.name}
+                      </p>
+                    ) : null}
                   </div>
                   <ul className="grid gap-1 pt-3 text-sm">
+                    <li>
+                      <Link
+                        href="/dashboard"
+                        role="menuitem"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-2 py-1.5 hover:bg-[var(--dl-paper-warm)]"
+                      >
+                        Dashboard
+                      </Link>
+                    </li>
                     {isNadiStaff ? (
                       <li>
                         <Link
@@ -144,7 +191,7 @@ export function SiteHeader() {
                         className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-[var(--dl-brick)] hover:bg-[var(--dl-paper-warm)] disabled:opacity-50"
                       >
                         <LogOut size={14} />{" "}
-                        {signOutMutation.isPending ? "Sedang keluar..." : "Sign out"}
+                        {signOutMutation.isPending ? "Signing out..." : "Sign out"}
                       </button>
                     </li>
                   </ul>
@@ -152,14 +199,16 @@ export function SiteHeader() {
               ) : null}
             </div>
           ) : (
-            <>
-              <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/sign-in">
-                Sign in
-              </Link>
-              <Link className={cn(buttonVariants({ size: "sm" }))} href="/sign-up">
-                Daftar
-              </Link>
-            </>
+            <Link
+              href="/sign-up"
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "zine-display !bg-[var(--dl-brick)] !text-[var(--dl-paper)] hover:!bg-[var(--dl-brick-dark)]",
+              )}
+              style={{ boxShadow: "3px 3px 0 var(--dl-ink)" }}
+            >
+              Try Now
+            </Link>
           )}
         </div>
 
@@ -168,7 +217,7 @@ export function SiteHeader() {
           aria-label="Toggle menu"
           aria-expanded={isMenuOpen}
           onClick={() => setIsMenuOpen((v) => !v)}
-          className="md:hidden border-2 border-[var(--dl-ink)] p-2"
+          className="ml-auto border-2 border-[var(--dl-ink)] p-2 md:hidden"
           style={{ boxShadow: "2px 2px 0 var(--dl-ink)" }}
         >
           {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -178,49 +227,68 @@ export function SiteHeader() {
       {isMenuOpen ? (
         <div className="border-t-2 border-[var(--dl-ink)] bg-[var(--dl-paper)] md:hidden">
           <nav className="page-shell grid gap-1 py-3" aria-label="Mobile">
-            {visibleNav.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "zine-display border-l-4 px-3 py-2 text-sm tracking-[0.06em]",
-                    active
-                      ? "border-[var(--dl-brick)] bg-[var(--dl-paper-warm)] text-[var(--dl-brick)]"
-                      : "border-transparent text-[var(--dl-ink)]",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+            {showAnchors
+              ? landingAnchors.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="zine-display border-l-4 border-transparent px-3 py-2 text-xs uppercase tracking-[0.18em] text-[var(--dl-ink)]"
+                  >
+                    {item.label}
+                  </a>
+                ))
+              : user
+                ? visibleAppNav.map((item) => {
+                    const active =
+                      pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "zine-display border-l-4 px-3 py-2 text-sm tracking-[0.06em]",
+                          active
+                            ? "border-[var(--dl-brick)] bg-[var(--dl-paper-warm)] text-[var(--dl-brick)]"
+                            : "border-transparent text-[var(--dl-ink)]",
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })
+                : null}
+
             <div className="mt-2 grid gap-2 border-t-2 border-dashed border-[var(--dl-ink)]/30 pt-3">
               {user ? (
                 <>
                   <p className="zine-display text-xs uppercase tracking-[0.18em] text-[var(--dl-brick)]">
-                    {firstName} · {user.kampung.name}
+                    {firstName}
+                    {user.kampung?.name ? ` · ${user.kampung.name}` : ""}
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={() => signOutMutation.mutate()}
                     disabled={signOutMutation.isPending}
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "sm" }),
+                      "justify-center",
+                    )}
                   >
                     <LogOut size={14} /> Sign out
-                  </Button>
+                  </button>
                 </>
               ) : (
-                <>
-                  <Link className={cn(buttonVariants({ variant: "outline", size: "sm" }))} href="/sign-in">
-                    Sign in
-                  </Link>
-                  <Link className={cn(buttonVariants({ size: "sm" }))} href="/sign-up">
-                    Daftar
-                  </Link>
-                </>
+                <Link
+                  href="/sign-up"
+                  className={cn(
+                    buttonVariants({ size: "sm" }),
+                    "zine-display justify-center !bg-[var(--dl-brick)] !text-[var(--dl-paper)] hover:!bg-[var(--dl-brick-dark)]",
+                  )}
+                >
+                  Try Now
+                </Link>
               )}
-              <InstallAppButton />
             </div>
           </nav>
         </div>

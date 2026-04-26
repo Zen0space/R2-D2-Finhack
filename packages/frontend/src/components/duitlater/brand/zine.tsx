@@ -222,14 +222,17 @@ export function ZineSection({
   color = "paper",
   className,
   children,
+  id,
 }: {
   color?: ZineColor;
   className?: string;
   children: ReactNode;
+  id?: string;
 }) {
   return (
     <section
-      className={cn("relative overflow-hidden", className)}
+      id={id}
+      className={cn("relative overflow-hidden scroll-mt-20", className)}
       style={{ background: zineColorVar[color] }}
     >
       <div

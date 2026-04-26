@@ -21,18 +21,18 @@ import { poolNeedCategories, type PoolNeedCategory } from "@/types/pool";
 import type { MemberProfile } from "@/types/auth";
 
 const poolSchema = z.object({
-  name: z.string().trim().min(3, "Nama pool minimum 3 huruf."),
+  name: z.string().trim().min(3, "Pool name must be at least 3 characters."),
   statedNeedCategory: z
     .string()
-    .refine((value) => poolNeedCategories.some((category) => category.value === value), "Pilih kategori."),
-  statedNeedText: z.string().trim().min(12, "Terangkan keperluan pool dengan lebih jelas."),
+    .refine((value) => poolNeedCategories.some((category) => category.value === value), "Choose a category."),
+  statedNeedText: z.string().trim().min(12, "Describe the pool need more clearly."),
   targetBudgetRm: z
     .string()
     .trim()
     .refine((value) => {
       const amount = Number(value);
       return Number.isFinite(amount) && amount >= 50;
-    }, "Target budget minimum RM 50."),
+    }, "Target budget must be at least RM 50."),
 });
 
 type PoolComposerValues = z.infer<typeof poolSchema>;
@@ -70,7 +70,7 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
       ),
     onSuccess: (pool) => {
       queryClient.invalidateQueries({ queryKey: ["pools"] });
-      toast.success("Pool berjaya dicipta. Jemput ahli lain sekarang.");
+      toast.success("Pool created. Invite other members now.");
       form.reset();
       onClose();
       startTransition(() => router.push(`/pools/${pool.id}`));
@@ -109,16 +109,15 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
                 </NumberedTab>
                 <div className="grid gap-2">
                   <BrushHeadline color="brick" size="xl" rotate={-2} as="h2">
-                    Cipta pool baharu
+                    Create a new pool
                   </BrushHeadline>
                   <p className="zine-display max-w-2xl text-sm tracking-[0.06em] text-[var(--dl-zine-ink)] md:text-base">
-                    Isi nama, keperluan, kategori, dan target budget. Lepas ini terus masuk halaman
-                    detail pool — jemput ahli, lock combined cap, lepas tu Penasihat suggest barang.
+                    Fill in the name, need, category, and target budget. After this you go straight to the pool detail — invite members, lock the combined cap, then the Advisor suggests items.
                   </p>
                 </div>
               </div>
 
-              <Button aria-label="Tutup modal" variant="ghost" size="sm" onClick={onClose}>
+              <Button aria-label="Close modal" variant="ghost" size="sm" onClick={onClose}>
                 <X aria-hidden="true" size={18} />
               </Button>
             </div>
@@ -129,11 +128,11 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
               className="grid gap-4"
               onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}
             >
-              <Field error={form.formState.errors.name?.message} htmlFor="pool-name" label="Nama pool" required>
+              <Field error={form.formState.errors.name?.message} htmlFor="pool-name" label="Pool name" required>
                 <Input
                   aria-invalid={Boolean(form.formState.errors.name)}
                   id="pool-name"
-                  placeholder="Contoh: Jahit Rezeki Gedangsa"
+                  placeholder="e.g. Jahit Rezeki Gedangsa"
                   {...form.register("name")}
                 />
               </Field>
@@ -141,7 +140,7 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
               <Field
                 error={form.formState.errors.statedNeedCategory?.message}
                 htmlFor="pool-category"
-                label="Kategori keperluan"
+                label="Need category"
                 required
               >
                 <Select
@@ -175,19 +174,19 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
               <Field
                 error={form.formState.errors.statedNeedText?.message}
                 htmlFor="pool-need"
-                label="Keperluan pool"
+                label="Pool need"
                 required
               >
                 <Textarea
                   aria-invalid={Boolean(form.formState.errors.statedNeedText)}
                   id="pool-need"
-                  placeholder="Contoh: Pool ini untuk beli mesin jahit kampung supaya dua keluarga boleh mula ambil tempahan baju sekolah."
+                  placeholder="e.g. This pool will buy a village sewing machine so two families can start taking school-uniform orders."
                   {...form.register("statedNeedText")}
                 />
               </Field>
 
               <Button className="mt-2 w-full" size="lg" type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Sedang cipta..." : "Cipta pool"}
+                {createMutation.isPending ? "Creating..." : "Create pool"}
                 <ArrowRight aria-hidden="true" size={18} />
               </Button>
             </form>
@@ -205,10 +204,10 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
                 </span>
                 <div className="mt-4 grid gap-3">
                   <BrushHeadline color="cream" size="md" rotate={-2} as="h3">
-                    Pencipta pool pertama.
+                    First pool creator.
                   </BrushHeadline>
                   <p className="text-sm text-[var(--dl-zine-paper)] opacity-90 sm:text-base">
-                    Bila kau submit, kau automatik jadi ahli pertama dengan allowance{" "}
+                    When you submit, you automatically become the first member with an allowance of{" "}
                     <strong className="zine-display text-lg text-[var(--dl-zine-paper)]">
                       RM {(currentUser.individualPayLaterAllowanceCents / 100).toFixed(0)}
                     </strong>
@@ -224,10 +223,10 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
                   </div>
                   <div>
                     <strong className="zine-display block text-base tracking-wide">
-                      2 hingga 8 ahli
+                      2 to 8 members
                     </strong>
                     <p className="text-sm text-[var(--dl-slate)]">
-                      Jemput 1 hingga 7 ahli lain sebelum lock pool.
+                      Invite 1 to 7 other members before locking the pool.
                     </p>
                   </div>
                 </div>
@@ -238,17 +237,16 @@ export function PoolComposerModal({ currentUser, isOpen, onClose }: PoolComposer
                   </div>
                   <div>
                     <strong className="zine-display block text-base tracking-wide">
-                      Need text penting
+                      Need text matters
                     </strong>
                     <p className="text-sm text-[var(--dl-slate)]">
-                      Copy ini dibawa terus ke Penasihat bila pool dah locked dan minta cadangan barang.
+                      This copy is passed straight to the Advisor when the pool is locked and item suggestions are requested.
                     </p>
                   </div>
                 </div>
 
                 <p className="border border-dashed border-[var(--dl-zine-brick)] bg-[var(--dl-zine-paper)] p-4 text-sm text-[var(--dl-slate)]">
-                  Demo frontend-only ini simpan data pool dalam browser semasa. Untuk ujian join dan
-                  live update paling stabil, buka link jemputan dalam browser yang sama.
+                  This frontend-only demo stores pool data in the current browser. For the most stable join and live updates, open the invite link in the same browser.
                 </p>
               </div>
             </div>

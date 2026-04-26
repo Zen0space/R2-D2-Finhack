@@ -8,7 +8,7 @@ import "./globals.css";
 
 const appName = "DuitLater";
 const appDescription =
-  "BM-first shared PayLater app untuk pool komuniti, cadangan barang, dan aliran beli bersama.";
+  "Shared PayLater app for community pools, AI item suggestions, and group buying.";
 
 const display = Anton({
   subsets: ["latin"],
@@ -79,7 +79,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ms">
+    <html lang="en">
       <head>
         <link
           rel="preload"
