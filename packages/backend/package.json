@@ -12,6 +12,7 @@
   "dependencies": {
     "@hono/node-server": "^1.13.0",
     "@hono/zod-validator": "^0.7.6",
+    "baml": "workspace:*",
     "better-auth": "^1.6.9",
     "db": "workspace:*",
     "dotenv": "^16.6.1",

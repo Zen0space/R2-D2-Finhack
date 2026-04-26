@@ -7,15 +7,19 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc* ./
 COPY packages/backend/package.json ./packages/backend/
 COPY packages/db/package.json      ./packages/db/
+COPY packages/baml/package.json    ./packages/baml/
 
 RUN pnpm install --frozen-lockfile
 
 # Copy source after deps
 COPY packages/db      ./packages/db/
+COPY packages/baml    ./packages/baml/
 COPY packages/backend ./packages/backend/
 
 # Generate Prisma client into node_modules
 RUN pnpm --filter db generate
+# Generate BAML client (typed wrapper around the LLM call)
+RUN pnpm --filter baml generate
 
 ENV NODE_ENV=production
 EXPOSE 4000

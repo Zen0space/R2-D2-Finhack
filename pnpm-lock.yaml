@@ -36,6 +36,9 @@ importers:
       '@hono/zod-validator':
         specifier: ^0.7.6
         version: 0.7.6(hono@4.12.15)(zod@4.3.6)
+      baml:
+        specifier: workspace:*
+        version: link:../baml
       better-auth:
         specifier: ^1.6.9
         version: 1.6.9(@prisma/client@7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3))(typescript@5.9.3))(mysql2@3.15.3)(next@15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(pg@8.20.0)(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -64,6 +67,16 @@ importers:
       tsx:
         specifier: ^4.19.0
         version: 4.21.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/baml:
+    dependencies:
+      '@boundaryml/baml':
+        specifier: ^0.221.0
+        version: 0.221.0
+    devDependencies:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -262,6 +275,63 @@ packages:
 
   '@better-fetch/fetch@1.1.21':
     resolution: {integrity: sha512-/ImESw0sskqlVR94jB+5+Pxjf+xBwDZF/N5+y2/q4EqD7IARUTSpPfIo8uf39SYpCxyOCtbyYpUrZ3F/k0zT4A==}
+
+  '@boundaryml/baml-darwin-arm64@0.221.0':
+    resolution: {integrity: sha512-GxqdjVUodyKtgKX/CIDGZyz5lXS0d0iFnV2x7thMQM9ziMrOPcWd3qwflOLYdgDo6Hy9yMULrqtMPkCrmbwEHQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@boundaryml/baml-darwin-x64@0.221.0':
+    resolution: {integrity: sha512-wG3jsgOIr8C+09j0AFZY4F8EHvd1gKoKw6+HR1Oi+cw4pijklCk2LI0AIwMPzgG12BAxWV6jEIONMORmspesFQ==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@boundaryml/baml-linux-arm64-gnu@0.221.0':
+    resolution: {integrity: sha512-Xy1M3muUV2B/4f8dVUpX/IN2CI1m4hGtw31V+kQdFYsy3Hvo58qjijtlkKNYZOjqWBqVlgPMFhTvv8N0cD4N/w==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@boundaryml/baml-linux-arm64-musl@0.221.0':
+    resolution: {integrity: sha512-6RIkHCViXQEsn6Ts5Uk9c6SDgokkXGO4GkoHpoNnKluTJtuB/B2nUOv2O147GFDqtspFDL2jk5d+oiYibfMn0g==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@boundaryml/baml-linux-x64-gnu@0.221.0':
+    resolution: {integrity: sha512-YoOz6N6E37UE4ULRCe24P/Ov2pNxjvI4R+I6Bwhkqdt5HOGsJrf2uJUSC+XxKZpkPqlbo1gGZPoCB0lcyeSkeA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@boundaryml/baml-linux-x64-musl@0.221.0':
+    resolution: {integrity: sha512-gY67VRXrixgTenDtDzVSMo0GjLbeofGtCZuArfiDgCglfJ5/KGBSgwzqrrTuyUVLGK902NmCaYA5OrPSXezSzg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@boundaryml/baml-win32-arm64-msvc@0.221.0':
+    resolution: {integrity: sha512-pTHPv6GVlW7nLVszgm7P7+PdQ97JJ8xnRp3/TeP/ya5z08wKi0ejOInLzElMyZVTB+XY707qGlM9CreJnDH3vg==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@boundaryml/baml-win32-x64-msvc@0.221.0':
+    resolution: {integrity: sha512-XP3CxwsYxOZAOzkWqZd2Dg8iNpDOMrbA/Bz3nqI7oX/wL+ZMkHJwjWQwxIVL+sg2rp+TceV+21UPb6LTmt+qJw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+
+  '@boundaryml/baml@0.221.0':
+    resolution: {integrity: sha512-pPOp2JVsG4Wa/tMLnJv/rxil5jsuVDgxnA0xO0h4lKy7t/fKCXOVvO+nzpOZ4byLTP/Ow+8pVvoKRKvx1J/Hsw==}
+    engines: {node: '>= 10'}
+    hasBin: true
 
   '@electric-sql/pglite-socket@0.1.1':
     resolution: {integrity: sha512-p2hoXw3Z3LQHwTeikdZNsFBOvXGqKY2hk51BBw+8NKND8eoH+8LFOtW9Z8CQKmTJ2qqGYu82ipqiyFZOTTXNfw==}
@@ -934,6 +1004,9 @@ packages:
 
   '@rushstack/eslint-patch@1.16.1':
     resolution: {integrity: sha512-TvZbIpeKqGQQ7X0zSCvPH9riMSFQFSggnfBjFZ1mEoILW+UuXCKwOoPcgjMwiUtRqFZ8jWhPJc4um14vC6I4ag==}
+
+  '@scarf/scarf@1.4.0':
+    resolution: {integrity: sha512-xxeapPiUXdZAE3che6f3xogoJPeZgig6omHEy1rIY5WVsB3H2BHNnZH+gHG6x91SCWyQCzWGsuL2Hh3ClO5/qQ==}
 
   '@serwist/build@9.5.7':
     resolution: {integrity: sha512-bcIeDFgsMnUq8Sqhnv15KXZhusXekpP9v8MPWVtF7+6WmNqDPztqYjGVgQz2VxOhCgrTu3ji/KeGeuKV+TN8vQ==}
@@ -3088,6 +3161,43 @@ snapshots:
 
   '@better-fetch/fetch@1.1.21': {}
 
+  '@boundaryml/baml-darwin-arm64@0.221.0':
+    optional: true
+
+  '@boundaryml/baml-darwin-x64@0.221.0':
+    optional: true
+
+  '@boundaryml/baml-linux-arm64-gnu@0.221.0':
+    optional: true
+
+  '@boundaryml/baml-linux-arm64-musl@0.221.0':
+    optional: true
+
+  '@boundaryml/baml-linux-x64-gnu@0.221.0':
+    optional: true
+
+  '@boundaryml/baml-linux-x64-musl@0.221.0':
+    optional: true
+
+  '@boundaryml/baml-win32-arm64-msvc@0.221.0':
+    optional: true
+
+  '@boundaryml/baml-win32-x64-msvc@0.221.0':
+    optional: true
+
+  '@boundaryml/baml@0.221.0':
+    dependencies:
+      '@scarf/scarf': 1.4.0
+    optionalDependencies:
+      '@boundaryml/baml-darwin-arm64': 0.221.0
+      '@boundaryml/baml-darwin-x64': 0.221.0
+      '@boundaryml/baml-linux-arm64-gnu': 0.221.0
+      '@boundaryml/baml-linux-arm64-musl': 0.221.0
+      '@boundaryml/baml-linux-x64-gnu': 0.221.0
+      '@boundaryml/baml-linux-x64-musl': 0.221.0
+      '@boundaryml/baml-win32-arm64-msvc': 0.221.0
+      '@boundaryml/baml-win32-x64-msvc': 0.221.0
+
   '@electric-sql/pglite-socket@0.1.1(@electric-sql/pglite@0.4.1)':
     dependencies:
       '@electric-sql/pglite': 0.4.1
@@ -3617,6 +3727,8 @@ snapshots:
   '@rtsao/scc@1.1.0': {}
 
   '@rushstack/eslint-patch@1.16.1': {}
+
+  '@scarf/scarf@1.4.0': {}
 
   '@serwist/build@9.5.7(browserslist@4.28.1)(typescript@5.9.3)':
     dependencies:

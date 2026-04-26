@@ -568,6 +568,7 @@ poolsRouter.post("/:id/suggest", zValidator("param", idParamSchema), async (c) =
       statedNeed: pool.statedNeed,
       statedNeedCategory: pool.category,
       kampungName: pool.kampung.name,
+      kampungId: pool.kampungId,
       monthOfYear: new Date().getMonth() + 1,
     },
     candidates,
