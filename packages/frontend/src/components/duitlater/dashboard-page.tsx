@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clock3,
   CreditCard,
+  LogIn,
   LogOut,
   PackageCheck,
   Plus,
@@ -17,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition } from "react";
+import { startTransition, useState } from "react";
 import { toast } from "sonner";
 import { poolComposerOpenAtom } from "@/store/pools";
 import { PoolComposerModal } from "@/components/duitlater/pool-composer-modal";
@@ -25,6 +26,7 @@ import { BrushHeadline, Logo, ScribbleCircle } from "@/components/duitlater/bran
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useKampungTrustQuery, usePoolsQuery } from "@/hooks/use-pools-query";
 import { useSessionQuery } from "@/hooks/use-session-query";
 import { authClient } from "@/lib/auth/client";
@@ -126,10 +128,48 @@ function getPoolAction(pool: PoolListItem) {
   }
 }
 
+function extractInviteCode(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  // Match either a bare code (alphanumeric 4–32) or the last path segment of a URL.
+  const fromUrl = trimmed.match(/\/join\/([A-Za-z0-9]{4,32})/);
+  if (fromUrl?.[1]) return fromUrl[1].toUpperCase();
+  const bare = trimmed.match(/^[A-Za-z0-9]{4,32}$/);
+  if (bare) return trimmed.toUpperCase();
+  return null;
+}
+
 export function DashboardPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isComposerOpen, setIsComposerOpen] = useAtom(poolComposerOpenAtom);
+  const [joinInput, setJoinInput] = useState("");
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  function handleJoinSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const code = extractInviteCode(joinInput);
+    if (!code) {
+      setJoinError("Paste a valid invite code or link.");
+      return;
+    }
+    setJoinError(null);
+    startTransition(() => router.push(`/join/${code}`));
+  }
+
+  async function handleJoinPaste() {
+    if (typeof navigator === "undefined" || !navigator.clipboard?.readText) {
+      toast.error("Clipboard not available — paste manually.");
+      return;
+    }
+    try {
+      const text = await navigator.clipboard.readText();
+      setJoinInput(text);
+      setJoinError(null);
+    } catch {
+      toast.error("Couldn't read clipboard. Paste manually.");
+    }
+  }
   const { data: session, isLoading } = useSessionQuery();
   const poolsQuery = usePoolsQuery(session?.user.id ?? null);
   const trustQuery = useKampungTrustQuery(session?.user.kampung.id ?? null);
@@ -266,6 +306,52 @@ export function DashboardPage() {
                 </Button>
               </div>
             </div>
+
+            {!isNadiStaff ? (
+              <form
+                className="relative mt-6 grid gap-2 rounded-[1.5rem] border border-[color:var(--dl-sand)] bg-[color:rgba(248,244,236,0.72)] p-4 sm:flex sm:items-center"
+                onSubmit={handleJoinSubmit}
+              >
+                <div className="grid gap-1 sm:flex-1">
+                  <label
+                    htmlFor="join-code-input"
+                    className="zine-display text-[10px] uppercase tracking-[0.22em] text-[color:var(--dl-slate)]"
+                  >
+                    Got an invite? Paste code or link
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="join-code-input"
+                      placeholder="E7UG2Z96 or https://duitlater.com/join/E7UG2Z96"
+                      value={joinInput}
+                      onChange={(event) => {
+                        setJoinInput(event.target.value);
+                        if (joinError) setJoinError(null);
+                      }}
+                      autoComplete="off"
+                      spellCheck={false}
+                      aria-invalid={Boolean(joinError)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="default"
+                      onClick={handleJoinPaste}
+                      title="Paste from clipboard"
+                    >
+                      Paste
+                    </Button>
+                  </div>
+                  {joinError ? (
+                    <p className="text-xs text-[color:var(--dl-brick)]">{joinError}</p>
+                  ) : null}
+                </div>
+                <Button type="submit" size="default" className="sm:self-end">
+                  <LogIn aria-hidden="true" size={16} />
+                  Join pool
+                </Button>
+              </form>
+            ) : null}
 
             <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
               <Card
