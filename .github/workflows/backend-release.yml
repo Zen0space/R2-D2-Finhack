@@ -66,7 +66,8 @@ jobs:
           script: |
             set -e
             cd /var/www/R2-D2-Finhack
-            git pull origin dev
+            git fetch origin dev
+            git reset --hard origin/dev
             docker compose -f infra/docker-compose.dev.yml -p dev pull app
             docker compose -f infra/docker-compose.dev.yml -p dev up -d app
             echo "✅ Dev backend deployed"
