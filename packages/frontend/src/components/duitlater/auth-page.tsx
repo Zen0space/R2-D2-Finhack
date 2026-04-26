@@ -228,11 +228,34 @@ function DemoAccountsPanel() {
 }
 
 const DEFAULT_KAMPUNG_FALLBACK_ID = "cmoejhqhj000iqlstfjemg1h1";
+// Persists the random "Try Now" credentials per-browser so reopening or
+// signing back in lands you on the SAME demo account (and your pools).
+const TRY_CREDS_STORAGE_KEY = "duitlater.try.creds";
+
+type TryCreds = { email: string; password: string; name: string };
 
 function randomHex(byteLength: number): string {
   const bytes = new Uint8Array(byteLength);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function readTryCreds(): TryCreds | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(TRY_CREDS_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<TryCreds>;
+    if (!parsed.email || !parsed.password || !parsed.name) return null;
+    return parsed as TryCreds;
+  } catch {
+    return null;
+  }
+}
+
+function writeTryCreds(creds: TryCreds) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(TRY_CREDS_STORAGE_KEY, JSON.stringify(creds));
 }
 
 function TryNowFormCard({ nextPath }: { nextPath: string }) {
@@ -246,6 +269,19 @@ function TryNowFormCard({ nextPath }: { nextPath: string }) {
 
   const mutation = useMutation({
     mutationFn: async (values: TryNowFormValues) => {
+      // Returning user (same browser, same name) → sign back in to keep their pools.
+      const existing = readTryCreds();
+      if (existing && existing.name.trim().toLowerCase() === values.name.trim().toLowerCase()) {
+        const signInResult = await authClient.signIn.email({
+          email: existing.email,
+          password: existing.password,
+        });
+        if (!signInResult.error) {
+          return { stage: "signed-in" as const };
+        }
+        // Account doesn't exist server-side any more (DB reset, etc.) — fall through to fresh sign-up.
+      }
+
       const kampungRes = await fetch(
         `${API_BASE}/api/v1/kampungs?q=Felda%20Gedangsa&limit=1`,
       );
@@ -268,6 +304,8 @@ function TryNowFormCard({ nextPath }: { nextPath: string }) {
         kampungId,
       });
       if (result.error) throw new Error(result.error.message ?? "Couldn't create your account.");
+
+      writeTryCreds({ email, password, name: values.name });
       return { stage: "signed-up" as const };
     },
     onSuccess: async () => {
