@@ -1,11 +1,32 @@
-# DuitLater · dev stack (dev branch → dev.duitlater.com)
-# Caddy runs in the prod stack and routes to these dev containers
-# through the shared duitlater_web network.
+# DuitLater · combined dev + prod stack (run with -p dev)
+# Caddy fronts all four hostnames (prod + dev, frontend + api) and routes
+# to the matching container via Docker DNS on the shared duitlater_web net.
 #
 # First-time: docker compose -f infra/docker-compose.dev.yml -p dev up -d
 # Subsequent: docker compose -f infra/docker-compose.dev.yml -p dev pull app && up -d app
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: duitlater-dev-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DUITLATER_DOMAIN: ${DUITLATER_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - caddy_dev_data:/data
+      - caddy_dev_config:/config
+    networks:
+      - web
+    depends_on:
+      - app
+      - frontend
+      - prod-app
+      - prod-frontend
+
   frontend:
     image: ghcr.io/zen0space/duitlater-frontend:${DEV_FRONTEND_TAG:-dev}
     container_name: duitlater-dev-frontend
